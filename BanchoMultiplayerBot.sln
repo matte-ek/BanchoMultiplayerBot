@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BanchoMultiplayerBot", "BanchoMultiplayerBot\BanchoMultiplayerBot.csproj", "{839ECCE3-79C9-4274-B7F5-1D4FD02F42E9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BanchoMultiplayerBot.Host.Console", "BanchoMultiplayerBot.Host.Console\BanchoMultiplayerBot.Host.Console.csproj", "{A5F33F67-C2D2-408A-9157-8A3C257E3044}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{839ECCE3-79C9-4274-B7F5-1D4FD02F42E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{839ECCE3-79C9-4274-B7F5-1D4FD02F42E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{839ECCE3-79C9-4274-B7F5-1D4FD02F42E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{839ECCE3-79C9-4274-B7F5-1D4FD02F42E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A5F33F67-C2D2-408A-9157-8A3C257E3044}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5F33F67-C2D2-408A-9157-8A3C257E3044}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5F33F67-C2D2-408A-9157-8A3C257E3044}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5F33F67-C2D2-408A-9157-8A3C257E3044}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
