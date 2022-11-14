@@ -13,8 +13,10 @@ public class LobbyConfiguration
 
     public string Mods { get; set; } = string.Empty;
 
-    public int? Size;
+    public int? Size { get; set; } = 16;
 
+    public string? Password { get; set; } = string.Empty;
+    
     // Bot specific configuration
 
     public bool LimitStarRating { get; set; } = false;

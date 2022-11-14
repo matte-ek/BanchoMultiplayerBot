@@ -30,7 +30,7 @@ public class Bot
         Client = new BanchoClient(new BanchoClientConfig(new IrcCredentials(Configuration.Username, Configuration.Password)));
     }
 
-    public async Task Run()
+    public async Task RunAsync()
     {
         Client.OnAuthenticationFailed += () => throw new Exception($"Failed to authenticate with the username {Configuration.Username}");
         Client.OnAuthenticated += ClientOnAuthenticated;
@@ -48,13 +48,13 @@ public class Bot
         throw new NotImplementedException();
     }
     
-    public async Task AddLobby(string channel, LobbyConfiguration configuration)
+    public async Task AddLobbyAsync(string channel, LobbyConfiguration configuration)
     {
         var lobby = new Lobby(this, configuration, channel);
         
         Lobbies.Add(lobby);
         
-        await lobby.Setup();
+        await lobby.SetupAsync();
     }
     
     private void ClientOnChannelParted(IChatChannel channel)
@@ -69,7 +69,7 @@ public class Bot
         Logger.Error("Bot has been disconnected from Bancho!");
     }
 
-    private async void ClientOnAuthenticated()
+    private void ClientOnAuthenticated()
     {
         AutoRecoverExistingLobbies();
         CreateLobbiesFromConfiguration();
