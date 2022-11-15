@@ -12,10 +12,10 @@ public class LobbyManagerBehaviour : IBotBehaviour
     {
         _lobby = lobby;
         
-        lobby.MultiplayerLobby.OnMatchFinished += OnMatchFinished;
-        lobby.MultiplayerLobby.OnSettingsUpdated += OnRoomSettingsUpdated;
+        _lobby.MultiplayerLobby.OnMatchFinished += OnMatchFinished;
+        _lobby.MultiplayerLobby.OnSettingsUpdated += OnRoomSettingsUpdated;
 
-        lobby.OnLobbyChannelJoined += async () =>
+        _lobby.OnLobbyChannelJoined += async () =>
         {
             await _lobby.SendMessageAsync("!mp settings");
         };

@@ -1,5 +1,6 @@
 ﻿using BanchoMultiplayerBot.Behaviour;
-using BanchoMultiplayerBot.Models;
+using BanchoMultiplayerBot.Config;
+using BanchoSharp;
 using BanchoSharp.Multiplayer;
 
 namespace BanchoMultiplayerBot;
@@ -29,13 +30,15 @@ public class Lobby
     public async Task SetupAsync()
     {
         // Add default behaviours
-        Behaviours.Add(new LobbyManagerBehaviour());
-        Behaviours.Add(new MapManagerBehaviour());
+        AddBehaviour(new LobbyManagerBehaviour());
+        AddBehaviour(new MapManagerBehaviour());
         
         Bot.Client.OnChannelJoined += channel =>
         {
             if (channel.ChannelName != _channelName) return;
     
+            Console.WriteLine($"Joined: {channel.ChannelName} ({_channelName})");
+
             OnLobbyChannelJoined?.Invoke();
         };
             
@@ -44,7 +47,7 @@ public class Lobby
 
     public async Task SendMessageAsync(string message)
     {
-        
+        Console.WriteLine($"Message sent: {message}");   
     }
 
     private void AddBehaviour(IBotBehaviour behaviour)

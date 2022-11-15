@@ -1,6 +1,6 @@
 ﻿using BanchoSharp.Multiplayer;
 
-namespace BanchoMultiplayerBot.Models;
+namespace BanchoMultiplayerBot.Config;
 
 public class LobbyConfiguration
 {
@@ -24,6 +24,10 @@ public class LobbyConfiguration
     public float MinimumStarRating { get; set; }
     public float MaximumStarRating { get; set; }
 
+    // Bot will still display the set star rating limits, but will
+    // allow a specified margin.
+    public float? StarRatingErrorMargin { get; set; }
+    
     public bool LimitMapLength { get; set; } = false;
 
     public int MinimumMapLength { get; set; }

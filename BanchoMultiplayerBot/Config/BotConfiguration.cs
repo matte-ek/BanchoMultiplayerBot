@@ -1,4 +1,4 @@
-﻿namespace BanchoMultiplayerBot.Models;
+﻿namespace BanchoMultiplayerBot.Config;
 
 public class BotConfiguration
 {
@@ -7,6 +7,9 @@ public class BotConfiguration
     public string Username { get; set; } = null!;
     public string Password { get; set; } = null!;
 
+    // osu! API authentication
+    public string ApiKey { get; set; } = null!;
+    
     // Presets lobby configuration the bot will attempt to create
     // upon the bot starting.
     public LobbyConfiguration[]? LobbyConfigurations { get; set; }

@@ -1,4 +1,6 @@
-﻿using BanchoSharp.Multiplayer;
+﻿using BanchoMultiplayerBot.OsuApi;
+using BanchoMultiplayerBot.OsuApi.Exceptions;
+using BanchoSharp.Multiplayer;
 
 namespace BanchoMultiplayerBot.Behaviour;
 
@@ -20,10 +22,10 @@ public class MapManagerBehaviour : IBotBehaviour
     {
         _lobby = lobby;
         
-        lobby.MultiplayerLobby.OnBeatmapChanged += OnBeatmapChanged;
+        _lobby.MultiplayerLobby.OnBeatmapChanged += OnBeatmapChanged;
     }
 
-    private void OnBeatmapChanged(BeatmapShell beatmap)
+    private async void OnBeatmapChanged(BeatmapShell beatmap)
     {
         // Ignore the beatmap change made by the bot.
         if (_botAppliedBeatmap && beatmap.Id == _lastBotAppliedBeatmap)
@@ -33,27 +35,51 @@ public class MapManagerBehaviour : IBotBehaviour
             return;
         }
         
-        // TODO: use the osu! API to get the star rating and length of the map
+        // TODO: Figure out some clever way to deal with double time, as it's
+        // the only global mod that should matter here. For now we're ignoring
+        // mods completely.
+
+        try
+        {
+            // Attempt to retrieve beatmap info from the API
+            var beatmapInfo = await _lobby.Bot.OsuApi.GetBeatmapInformation(beatmap.Id);
+
+            if (beatmapInfo != null)
+            {
+                // Make sure we're within limits
+                await EnsureBeatmapLimits(beatmapInfo, beatmap.Id);
+            }
+        }
+        catch (BeatmapNotFoundException)
+        {
+            await _lobby.SendMessageAsync($"Only submitted beat maps are allowed.");
+        }
+        catch (ApiKeyInvalidException)
+        {
+            await _lobby.SendMessageAsync($"Internal error while getting beatmap information, please try again.");
+        }
+        catch (Exception)
+        {
+            await _lobby.SendMessageAsync($"Internal error while getting beatmap information, please try again.");
+        }
     }
 
-    private async Task EnsureBeatmapLimits(int id)
+    private async Task EnsureBeatmapLimits(BeatmapModel beatmap, int id)
     {
-        if (IsAllowedBeatmapLength() && IsAllowedBeatmapStarRating())
+        if (IsAllowedBeatmapLength(beatmap) && IsAllowedBeatmapStarRating(beatmap))
         {
             // Update the fallback id whenever someone picks a map that's 
             // within limits, so we don't have to reset to the osu!tutorial everytime.
             _beatmapFallbackId = id;
 
-            await AnnounceNewBeatmap();
+            await AnnounceNewBeatmap(beatmap, id);
             
             return;
         }
-        
-        await SetBeatmap(_beatmapFallbackId);
 
-        // TODO: Improve these messages, to more clearly specify what's wrong with the beatmap.
+        await SetBeatmap(_beatmapFallbackId);
         
-        if (!IsAllowedBeatmapLength())
+        if (!IsAllowedBeatmapLength(beatmap))
         {
             await _lobby.SendMessageAsync($"The beatmap you've picked is too long/short, please pick another one.");
         }
@@ -71,18 +97,37 @@ public class MapManagerBehaviour : IBotBehaviour
         await _lobby.SendMessageAsync($"!mp map {id} 0");
     }
 
-    private async Task AnnounceNewBeatmap()
+    private async Task AnnounceNewBeatmap(BeatmapModel beatmapModel, int id)
     {
-        await _lobby.SendMessageAsync($"Beatmap: ");
+        await _lobby.SendMessageAsync($"[https://osu.ppy.sh/b/{id} {beatmapModel.Artist} - {beatmapModel.Title}] ([https://beatconnect.io/b/{id} Mirror])");
     }
     
-    private bool IsAllowedBeatmapStarRating()
+    private bool IsAllowedBeatmapStarRating(BeatmapModel beatmap)
     {
-        return false;
+        if (!_lobby.Configuration.LimitStarRating)
+            return true;
+        if (beatmap.DifficultyRating == null)
+            return false;
+        
+        var config = _lobby.Configuration;
+
+        float minRating = config.MinimumStarRating;
+        float maxRating = config.MaximumStarRating;
+        
+        if (config.StarRatingErrorMargin != null)
+        {
+            minRating -= config.StarRatingErrorMargin.Value;
+            maxRating += config.StarRatingErrorMargin.Value;
+        }
+
+        float mapStarRating = float.Parse(beatmap.DifficultyRating);
+
+
+        return true;
     }
 
-    private bool IsAllowedBeatmapLength()
+    private bool IsAllowedBeatmapLength(BeatmapModel beatmap)
     {
-        return false;
+        return true;
     }
 }

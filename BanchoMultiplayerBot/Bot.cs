@@ -1,6 +1,7 @@
-﻿using System.IO;
-using System.Text.Json;
-using BanchoMultiplayerBot.Models;
+﻿using System.Text.Json;
+using BanchoMultiplayerBot.Config;
+using BanchoMultiplayerBot.Config;
+using BanchoMultiplayerBot.OsuApi;
 using BanchoSharp;
 using BanchoSharp.Interfaces;
 
@@ -10,11 +11,12 @@ public class Bot
 {
 
     public BanchoClient Client { get; }
+    public OsuApiWrapper OsuApi { get; }
     public BotConfiguration Configuration { get; }
 
     public List<Lobby> Lobbies { get; } = new();
 
-    public event Action OnBotReady;
+    public event Action? OnBotReady;
     
     public Bot(string configurationFile)
     {
@@ -27,7 +29,8 @@ public class Bot
         var config = JsonSerializer.Deserialize<BotConfiguration>(reader);
 
         Configuration = config ?? throw new Exception("Failed to read configuration file.");
-        Client = new BanchoClient(new BanchoClientConfig(new IrcCredentials(Configuration.Username, Configuration.Password)));
+        Client = new BanchoClient(new BanchoClientConfig(new IrcCredentials(Configuration.Username, Configuration.Password), LogLevel.Trace));
+        OsuApi = new OsuApiWrapper(config.ApiKey);
     }
 
     public async Task RunAsync()
@@ -66,7 +69,7 @@ public class Bot
         // TODO: Attempt to reconnect
         // This may be required to be implemented in BanchoSharp
         
-        Logger.Error("Bot has been disconnected from Bancho!");
+        Console.WriteLine("Bot has been disconnected from Bancho!");
     }
 
     private void ClientOnAuthenticated()
