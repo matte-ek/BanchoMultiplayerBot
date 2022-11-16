@@ -19,6 +19,8 @@ public class LobbyConfiguration
     
     // Bot specific configuration
 
+    public string[]? Behaviours { get; set; }
+    
     public bool LimitStarRating { get; set; } = false;
 
     public float MinimumStarRating { get; set; }

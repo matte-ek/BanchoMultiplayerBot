@@ -1,5 +1,7 @@
-﻿using BanchoMultiplayerBot.OsuApi;
+﻿using System.Globalization;
+using BanchoMultiplayerBot.OsuApi;
 using BanchoMultiplayerBot.OsuApi.Exceptions;
+using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
 
 namespace BanchoMultiplayerBot.Behaviour;
@@ -23,6 +25,17 @@ public class MapManagerBehaviour : IBotBehaviour
         _lobby = lobby;
         
         _lobby.MultiplayerLobby.OnBeatmapChanged += OnBeatmapChanged;
+        _lobby.OnUserMessage += OnUserMessage; 
+    }
+
+    private async void OnUserMessage(IPrivateIrcMessage msg)
+    {
+        if (msg.Content.StartsWith("!r") || msg.Content.StartsWith("!regulations"))
+        {
+            var timeSpan = TimeSpan.FromSeconds(_lobby.Configuration.MaximumMapLength);
+            
+            await _lobby.SendMessageAsync($"Star rating: {_lobby.Configuration.MinimumStarRating:.0#} - {_lobby.Configuration.MaximumStarRating:.0#}, max length: {timeSpan.ToString(@"mm\:ss\:fff")}");
+        }
     }
 
     private async void OnBeatmapChanged(BeatmapShell beatmap)
@@ -99,7 +112,7 @@ public class MapManagerBehaviour : IBotBehaviour
 
     private async Task AnnounceNewBeatmap(BeatmapModel beatmapModel, int id)
     {
-        await _lobby.SendMessageAsync($"[https://osu.ppy.sh/b/{id} {beatmapModel.Artist} - {beatmapModel.Title}] ([https://beatconnect.io/b/{id} Mirror])");
+        await _lobby.SendMessageAsync($"[https://osu.ppy.sh/b/{id} {beatmapModel.Artist} - {beatmapModel.Title}] - ([https://beatconnect.io/b/{id} Mirror])");
     }
     
     private bool IsAllowedBeatmapStarRating(BeatmapModel beatmap)
@@ -110,9 +123,8 @@ public class MapManagerBehaviour : IBotBehaviour
             return false;
         
         var config = _lobby.Configuration;
-
-        float minRating = config.MinimumStarRating;
-        float maxRating = config.MaximumStarRating;
+        var minRating = config.MinimumStarRating;
+        var maxRating = config.MaximumStarRating;
         
         if (config.StarRatingErrorMargin != null)
         {
@@ -120,10 +132,9 @@ public class MapManagerBehaviour : IBotBehaviour
             maxRating += config.StarRatingErrorMargin.Value;
         }
 
-        float mapStarRating = float.Parse(beatmap.DifficultyRating);
+        var mapStarRating = float.Parse(beatmap.DifficultyRating, CultureInfo.InvariantCulture);
 
-
-        return true;
+        return maxRating >= mapStarRating && mapStarRating >= minRating;
     }
 
     private bool IsAllowedBeatmapLength(BeatmapModel beatmap)

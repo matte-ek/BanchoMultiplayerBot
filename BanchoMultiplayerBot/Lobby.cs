@@ -1,6 +1,7 @@
 ﻿using BanchoMultiplayerBot.Behaviour;
 using BanchoMultiplayerBot.Config;
 using BanchoSharp;
+using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
 
 namespace BanchoMultiplayerBot;
@@ -14,7 +15,9 @@ public class Lobby
 
     public List<IBotBehaviour> Behaviours { get; } = new();
 
-    public event Action? OnLobbyChannelJoined; 
+    public event Action? OnLobbyChannelJoined;
+    public event Action<IPrivateIrcMessage>? OnUserMessage;
+    public event Action<IPrivateIrcMessage>? OnAdminMessage;
 
     private readonly string _channelName;
     
@@ -33,6 +36,16 @@ public class Lobby
         AddBehaviour(new LobbyManagerBehaviour());
         AddBehaviour(new MapManagerBehaviour());
         
+        // Add "custom" behaviours
+        if (Configuration.Behaviours != null)
+        {
+            foreach (var behaviourName in Configuration.Behaviours)
+            {
+                if (behaviourName == "AutoHostRotate")
+                    AddBehaviour(new AutoHostRotateBehaviour());
+            }   
+        }
+
         Bot.Client.OnChannelJoined += channel =>
         {
             if (channel.ChannelName != _channelName) return;
@@ -41,6 +54,8 @@ public class Lobby
 
             OnLobbyChannelJoined?.Invoke();
         };
+        
+        Bot.Client.OnPrivateMessageReceived += ClientOnPrivateMessageReceived;
             
         await Bot.Client.JoinChannelAsync(_channelName);
     }
@@ -57,5 +72,14 @@ public class Lobby
         behaviour.Setup(this);
     }
     
+    private void ClientOnPrivateMessageReceived(IPrivateIrcMessage message)
+    {
+        if (message.Recipient != _channelName)
+            return;
+        if (message.IsBanchoBotMessage)
+            return;
+        
+        OnUserMessage?.Invoke(message);
+    }
 
 }
