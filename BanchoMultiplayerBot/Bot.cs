@@ -4,6 +4,7 @@ using BanchoMultiplayerBot.Config;
 using BanchoMultiplayerBot.OsuApi;
 using BanchoSharp;
 using BanchoSharp.Interfaces;
+using System.Collections.Concurrent;
 
 namespace BanchoMultiplayerBot;
 
@@ -17,6 +18,8 @@ public class Bot
     public List<Lobby> Lobbies { get; } = new();
 
     public event Action? OnBotReady;
+
+    private BlockingCollection<QueuedMessage> messageQueue = new();
     
     public Bot(string configurationFile)
     {
@@ -31,6 +34,15 @@ public class Bot
         Configuration = config ?? throw new Exception("Failed to read configuration file.");
         Client = new BanchoClient(new BanchoClientConfig(new IrcCredentials(Configuration.Username, Configuration.Password), LogLevel.Trace));
         OsuApi = new OsuApiWrapper(config.ApiKey);
+    }
+
+    public void SendMessage(string channel, string message)
+    {
+        messageQueue.Add(new QueuedMessage()
+        {
+            Channel = channel,
+            Content = message
+        });        
     }
 
     public async Task RunAsync()
@@ -78,6 +90,8 @@ public class Bot
         CreateLobbiesFromConfiguration();
         
         OnBotReady?.Invoke();
+
+        Task.Run(RunMessagePump);
     }
 
     private bool AutoRecoverExistingLobbies()
@@ -91,5 +105,47 @@ public class Bot
     private void CreateLobbiesFromConfiguration()
     {
         
+    }
+
+    private async Task RunMessagePump()
+    {
+        List<QueuedMessage> sentMessages = new();
+        
+        try
+        {
+            while (true)
+            {
+                var message = messageQueue.Take();
+
+                bool shouldThrottle;
+
+                do
+                {
+                    shouldThrottle = sentMessages.Count >= 3;
+                    
+                    // Remove old messages that are more than 5 seconds old
+                    sentMessages.RemoveAll(x => (DateTime.Now - x.Time).Seconds > 5.1);
+
+                    if (!shouldThrottle) continue;
+                   
+                    Console.WriteLine($"Throttling messages!");
+                
+                    Thread.Sleep(1000);
+                } while (shouldThrottle);
+                
+                message.Time = DateTime.Now;
+
+                Console.WriteLine($"Sending message '{message.Content}' from {message.Time} (current queue: {sentMessages.Count})");
+                
+              //  await Client.SendPrivateMessageAsync(message.Channel, message.Content);
+                
+                sentMessages.Add(message);
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            // An InvalidOperationException means that Take() was called on a completed collection,
+            // so we'll just exit out off this thread normally.
+        }
     }
 }

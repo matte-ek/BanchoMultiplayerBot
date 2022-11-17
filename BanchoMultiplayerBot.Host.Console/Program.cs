@@ -8,19 +8,19 @@ bot.OnBotReady += async () =>
 {
     var fakeConfig = new LobbyConfiguration
     {
-        Name = "Test lobby",
+        Name = "test lobby",
         Size = 16,
         Password = "",
         Behaviours = new [] { "AutoHostRotate" }, 
         LimitStarRating = true,
-        MaximumStarRating = 6f,
+        MaximumStarRating = 6.0f,
         MinimumStarRating = 4.5f,
         StarRatingErrorMargin = 0.1f,
         LimitMapLength = true,
-        MaximumMapLength = 300
+        MaximumMapLength = 330
     };
 
-    await bot.AddLobbyAsync("#mp_105094051", fakeConfig);
+    await bot.AddLobbyAsync("#mp_105119080", fakeConfig);
 };
 
 await bot.RunAsync();

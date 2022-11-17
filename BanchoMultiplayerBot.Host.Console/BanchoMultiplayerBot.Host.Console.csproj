@@ -11,4 +11,10 @@
       <ProjectReference Include="..\BanchoMultiplayerBot\BanchoMultiplayerBot.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Reference Include="BanchoSharp">
+        <HintPath>..\..\..\CLionProjects\BanchoSharp\BanchoSharp\bin\Release\net6.0\BanchoSharp.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
 </Project>

@@ -13,11 +13,12 @@ namespace BanchoMultiplayerBot.Behaviour;
 /// </summary>
 public class MapManagerBehaviour : IBotBehaviour
 {
-    private Lobby _lobby = null!;
+    public event Action? OnNewAllowedMap; 
 
+    private Lobby _lobby = null!;
+    
     private bool _botAppliedBeatmap;
     private int _lastBotAppliedBeatmap;
-
     private int _beatmapFallbackId = 2116202;
     
     public void Setup(Lobby lobby)
@@ -28,13 +29,13 @@ public class MapManagerBehaviour : IBotBehaviour
         _lobby.OnUserMessage += OnUserMessage; 
     }
 
-    private async void OnUserMessage(IPrivateIrcMessage msg)
+    private void OnUserMessage(IPrivateIrcMessage msg)
     {
         if (msg.Content.StartsWith("!r") || msg.Content.StartsWith("!regulations"))
         {
             var timeSpan = TimeSpan.FromSeconds(_lobby.Configuration.MaximumMapLength);
             
-            await _lobby.SendMessageAsync($"Star rating: {_lobby.Configuration.MinimumStarRating:.0#} - {_lobby.Configuration.MaximumStarRating:.0#}, max length: {timeSpan.ToString(@"mm\:ss\:fff")}");
+            _lobby.SendMessage($"Star rating: {_lobby.Configuration.MinimumStarRating:.0#} - {_lobby.Configuration.MaximumStarRating:.0#} | Max length: {timeSpan.ToString(@"mm\:ss")}");
         }
     }
 
@@ -60,24 +61,24 @@ public class MapManagerBehaviour : IBotBehaviour
             if (beatmapInfo != null)
             {
                 // Make sure we're within limits
-                await EnsureBeatmapLimits(beatmapInfo, beatmap.Id);
+                EnsureBeatmapLimits(beatmapInfo, beatmap.Id);
             }
         }
         catch (BeatmapNotFoundException)
         {
-            await _lobby.SendMessageAsync($"Only submitted beat maps are allowed.");
+            _lobby.SendMessage($"Only submitted beat maps are allowed.");
         }
         catch (ApiKeyInvalidException)
         {
-            await _lobby.SendMessageAsync($"Internal error while getting beatmap information, please try again.");
+            _lobby.SendMessage($"Internal error while getting beatmap information, please try again.");
         }
         catch (Exception)
         {
-            await _lobby.SendMessageAsync($"Internal error while getting beatmap information, please try again.");
+            _lobby.SendMessage($"Internal error while getting beatmap information, please try again.");
         }
     }
 
-    private async Task EnsureBeatmapLimits(BeatmapModel beatmap, int id)
+    private void EnsureBeatmapLimits(BeatmapModel beatmap, int id)
     {
         if (IsAllowedBeatmapLength(beatmap) && IsAllowedBeatmapStarRating(beatmap))
         {
@@ -85,34 +86,48 @@ public class MapManagerBehaviour : IBotBehaviour
             // within limits, so we don't have to reset to the osu!tutorial everytime.
             _beatmapFallbackId = id;
 
-            await AnnounceNewBeatmap(beatmap, id);
+            AnnounceNewBeatmap(beatmap, id);
             
             return;
         }
 
-        await SetBeatmap(_beatmapFallbackId);
+        SetBeatmap(_beatmapFallbackId);
         
         if (!IsAllowedBeatmapLength(beatmap))
         {
-            await _lobby.SendMessageAsync($"The beatmap you've picked is too long/short, please pick another one.");
+            _lobby.SendMessage($"The beatmap you've picked is too long, please pick another one.");
         }
         else
         {
-            await _lobby.SendMessageAsync($"The beatmap you've picked is out of the lobby star range, please pick another one.");
+            _lobby.SendMessage($"The beatmap you've picked is out of the lobby star range, please pick another one.");
         }
     }
 
-    private async Task SetBeatmap(int id)
+    private void SetBeatmap(int id)
     {
         _botAppliedBeatmap = true;
         _lastBotAppliedBeatmap = id;
         
-        await _lobby.SendMessageAsync($"!mp map {id} 0");
+        _lobby.SendMessage($"!mp map {id} 0");
     }
 
-    private async Task AnnounceNewBeatmap(BeatmapModel beatmapModel, int id)
+    private void AnnounceNewBeatmap(BeatmapModel beatmapModel, int id)
     {
-        await _lobby.SendMessageAsync($"[https://osu.ppy.sh/b/{id} {beatmapModel.Artist} - {beatmapModel.Title}] - ([https://beatconnect.io/b/{id} Mirror])");
+        try
+        {
+            if (beatmapModel.TotalLength != null)
+            {
+                var timeSpan = TimeSpan.FromSeconds(int.Parse(beatmapModel.TotalLength));
+
+                _lobby.SendMessage($"[https://osu.ppy.sh/b/{id} {beatmapModel.Artist} - {beatmapModel.Title}] (BPM: {beatmapModel.Bpm} | Length: {timeSpan.ToString(@"mm\:ss")}) - ([https://beatconnect.io/b/{id} Mirror])");
+                
+                OnNewAllowedMap?.Invoke();
+            }
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
     }
     
     private bool IsAllowedBeatmapStarRating(BeatmapModel beatmap)
@@ -139,6 +154,13 @@ public class MapManagerBehaviour : IBotBehaviour
 
     private bool IsAllowedBeatmapLength(BeatmapModel beatmap)
     {
-        return true;
+        if (!_lobby.Configuration.LimitMapLength)
+            return true;
+        if (beatmap.TotalLength == null)
+            return false;
+        
+        var mapLength = int.Parse(beatmap.TotalLength, CultureInfo.InvariantCulture);
+        
+        return _lobby.Configuration.MaximumMapLength >= mapLength && mapLength >= _lobby.Configuration.MinimumMapLength ;
     }
 }

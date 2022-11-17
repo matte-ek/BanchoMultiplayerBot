@@ -15,53 +15,53 @@ public class LobbyManagerBehaviour : IBotBehaviour
         _lobby.MultiplayerLobby.OnMatchFinished += OnMatchFinished;
         _lobby.MultiplayerLobby.OnSettingsUpdated += OnRoomSettingsUpdated;
 
-        _lobby.OnLobbyChannelJoined += async () =>
+        _lobby.OnLobbyChannelJoined += () =>
         {
-            await _lobby.SendMessageAsync("!mp settings");
+            _lobby.SendMessage("!mp settings");
         };
     }
 
-    private async void OnMatchFinished()
+    private void OnMatchFinished()
     {
         // Run "!mp settings" to receive updated information from Bancho.
-        await _lobby.SendMessageAsync("!mp settings");
+        _lobby.SendMessage("!mp settings");
     }
 
-    private async void OnRoomSettingsUpdated()
+    private void OnRoomSettingsUpdated()
     {   
         // At this point we should have received updated information
         // from "!mp settings"
 
-        await EnsureRoomName();
-        await EnsureRoomSize();
-        await EnsureRoomPassword();
+        EnsureRoomName();
+        EnsureRoomSize();
+        EnsureRoomPassword();
     }
 
-    private async Task EnsureRoomName()
+    private void EnsureRoomName()
     {
         if (_lobby.MultiplayerLobby.Name == _lobby.Configuration.Name)
             return;
 
-        await _lobby.SendMessageAsync($"!mp name {_lobby.Configuration.Name}");
+        _lobby.SendMessage($"!mp name {_lobby.Configuration.Name}");
     }
 
-    private async Task EnsureRoomSize()
+    private void EnsureRoomSize()
     {
         if (_lobby.Configuration.Size == null)
             return;
             
         // We cannot verify anything here, so just update it all the time.
         
-        await _lobby.SendMessageAsync($"!mp set 0 0 {_lobby.Configuration.Size}");
+        _lobby.SendMessage($"!mp set 0 0 {_lobby.Configuration.Size}");
     }
 
-    private async Task EnsureRoomPassword()
+    private void EnsureRoomPassword()
     {
         if (_lobby.Configuration.Password == null)
             return;
         
         // We cannot verify anything here either.
         
-        await _lobby.SendMessageAsync($"!mp password {_lobby.Configuration.Password}");
+        _lobby.SendMessage($"!mp password {_lobby.Configuration.Password}");
     }
 }

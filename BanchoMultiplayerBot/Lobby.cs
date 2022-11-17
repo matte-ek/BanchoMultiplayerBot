@@ -35,6 +35,7 @@ public class Lobby
         // Add default behaviours
         AddBehaviour(new LobbyManagerBehaviour());
         AddBehaviour(new MapManagerBehaviour());
+        AddBehaviour(new AutoStartBehaviour());
         
         // Add "custom" behaviours
         if (Configuration.Behaviours != null)
@@ -51,18 +52,20 @@ public class Lobby
             if (channel.ChannelName != _channelName) return;
     
             Console.WriteLine($"Joined: {channel.ChannelName} ({_channelName})");
-
+            
             OnLobbyChannelJoined?.Invoke();
         };
         
         Bot.Client.OnPrivateMessageReceived += ClientOnPrivateMessageReceived;
             
-        await Bot.Client.JoinChannelAsync(_channelName);
+        // "Temporary" fix for the fact that JoinChannelAsync calls 
+        // OnChannelJoined
+        await Bot.Client.SendAsync($"JOIN {_channelName}");
     }
 
-    public async Task SendMessageAsync(string message)
+    public void SendMessage(string message)
     {
-        Console.WriteLine($"Message sent: {message}");   
+        Bot.SendMessage(_channelName, message);
     }
 
     private void AddBehaviour(IBotBehaviour behaviour)

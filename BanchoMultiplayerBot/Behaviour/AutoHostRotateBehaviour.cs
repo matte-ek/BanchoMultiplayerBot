@@ -6,27 +6,29 @@ namespace BanchoMultiplayerBot.Behaviour;
 public class AutoHostRotateBehaviour : IBotBehaviour
 {
     private Lobby _lobby = null!;
-
+    private PlayerVote _playerSkipVote = null!;
+    
     public List<string> Queue { get; private set; } = new();
-     
+
     public void Setup(Lobby lobby)
     {
         _lobby = lobby;
-
-        _lobby.MultiplayerLobby.OnPlayerJoined += async player =>
+        _playerSkipVote = new PlayerVote(_lobby, "Skip host vote");
+        
+        _lobby.MultiplayerLobby.OnPlayerJoined += player =>
         {
             Queue.Add(player.Name);
 
-            await OnQueueUpdated();
+            OnQueueUpdated();
         };
 
-        _lobby.MultiplayerLobby.OnPlayerDisconnected += async disconnectEventArgs =>
+        _lobby.MultiplayerLobby.OnPlayerDisconnected += disconnectEventArgs =>
         {
             if (Queue.Contains(disconnectEventArgs.Player.Name))
             {
                 Queue.Remove(disconnectEventArgs.Player.Name);
 
-                await OnQueueUpdated();
+                OnQueueUpdated();
             }
         };
 
@@ -39,7 +41,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
     {
         if (message.Content.StartsWith("!q") || message.Content.StartsWith("!queue"))
         {
-            await SendCurrentQueue();
+            SendCurrentQueue();
 
             return;
         }
@@ -52,17 +54,28 @@ public class AutoHostRotateBehaviour : IBotBehaviour
                 {
                     SkipCurrentPlayer();
 
-                    await OnQueueUpdated();
+                    OnQueueUpdated();
 
                     return;
                 }
             }
-            
-            // TODO: Player vote skip
+
+            var player = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name == message.Sender);
+            if (player is not null)
+            {
+                if (_playerSkipVote.Vote(player))
+                {
+                    SkipCurrentPlayer();
+
+                    OnQueueUpdated();
+
+                    return;
+                }
+            }
         }
     }
 
-    private async void OnSettingsUpdated()
+    private void OnSettingsUpdated()
     {
         foreach (var player in _lobby.MultiplayerLobby.Players)
         {
@@ -72,39 +85,41 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
         SkipCurrentPlayer();
 
-        await OnQueueUpdated();
-        await SendCurrentQueue();
+        OnQueueUpdated();
+        SendCurrentQueue();
     }
 
-    private async void OnHostChanged(MultiplayerPlayer player)
+    private void OnHostChanged(MultiplayerPlayer player)
     {
         if (!Queue.Any()) return;
             
         if (player.Name != Queue[0])
         {
-            await _lobby.SendMessageAsync($"!mp host {Queue[0]}");
+            _lobby.SendMessage($"!mp host {Queue[0]}");
+
+            _playerSkipVote.Reset();
         }
     }
 
-    private async Task OnQueueUpdated()
+    private void OnQueueUpdated()
     {
         if (!Queue.Any()) return;
         if (_lobby.MultiplayerLobby.Host is null) return;    
         
         if (_lobby.MultiplayerLobby.Host.Name != Queue[0])
         {
-            await _lobby.SendMessageAsync($"!mp host {Queue[0]}");
+            _lobby.SendMessage($"!mp host {Queue[0]}");
         }   
     }
 
-    private async Task SendCurrentQueue()
+    private void SendCurrentQueue()
     {
-        var queueStr = string.Join(", ", Queue, 0, 5);
+        var queueStr = string.Join(", ", Queue.Take(5));
 
         if (Queue.Count > 5)
             queueStr += "...";
 
-        await _lobby.SendMessageAsync($"Queue: {queueStr}");   
+        _lobby.SendMessage($"Queue: {queueStr}");   
     }
 
     private void SkipCurrentPlayer()

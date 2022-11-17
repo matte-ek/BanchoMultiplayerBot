@@ -8,7 +8,7 @@
 
     <ItemGroup>
       <Reference Include="BanchoSharp">
-        <HintPath>..\..\..\Documents\GitHub\BanchoSharp\BanchoSharp\bin\Release\net6.0\BanchoSharp.dll</HintPath>
+        <HintPath>..\..\..\CLionProjects\BanchoSharp\BanchoSharp\bin\Release\net6.0\BanchoSharp.dll</HintPath>
       </Reference>
     </ItemGroup>
 
