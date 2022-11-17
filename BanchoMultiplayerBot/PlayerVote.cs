@@ -24,7 +24,7 @@ public class PlayerVote
 
     public bool Vote(MultiplayerPlayer player)
     {
-        int requiredVotes = Lobby.MultiplayerLobby.Players.Count / 2 + 1;
+        int requiredVotes = Math.Max(Lobby.MultiplayerLobby.Players.Count / 2 + 1, 1);
 
         if (Votes.Contains(player))
         {

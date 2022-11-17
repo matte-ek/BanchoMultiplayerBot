@@ -8,6 +8,8 @@ public class AutoStartBehaviour : IBotBehaviour
     private PlayerVote _playerStartVote = null!;
 
     private bool _startTimerActive = false;
+    private Task? _startTimerTask;
+    private Task? _startTimerWarningTask;
     private CancellationTokenSource? _startTimerCancellationToken;
     
     public void Setup(Lobby lobby)
@@ -17,7 +19,7 @@ public class AutoStartBehaviour : IBotBehaviour
 
         _lobby.MultiplayerLobby.OnAllPlayersReady += () =>
         {
-            if (_lobby.Bot.Configuration.AutoStartAllPlayersReady != null && !_lobby.Bot.Configuration.AutoStartAllPlayersReady.Value)
+            if (_lobby.Bot.Configuration.AutoStartAllPlayersReady == null || !_lobby.Bot.Configuration.AutoStartAllPlayersReady.Value)
             {
                 return;
             }
@@ -43,8 +45,6 @@ public class AutoStartBehaviour : IBotBehaviour
 
     private void OnNewAllowedMap()
     {
-        AbortTimer();
-        
         if (_lobby.Bot.Configuration.EnableAutoStartTimer == null ||
             !_lobby.Bot.Configuration.EnableAutoStartTimer.Value ||
             _lobby.Bot.Configuration.AutoStartTimerTime == null) 
@@ -112,32 +112,39 @@ public class AutoStartBehaviour : IBotBehaviour
     {
         if (_startTimerActive)
         {
+            _startTimerActive = false;
+            
             AbortTimer();
         }
 
         if (length <= 1 || length >= 500)
             return;
+
+        _startTimerTask?.Wait();
+        _startTimerWarningTask?.Wait();
+        
+        Console.WriteLine("(Re)starting timer.");
         
         _startTimerCancellationToken?.Dispose();
         _startTimerCancellationToken = new CancellationTokenSource();
 
-        Task.Delay(1000 * length, _startTimerCancellationToken.Token).ContinueWith(x => 
+        _startTimerTask = Task.Delay(1000 * length, _startTimerCancellationToken.Token).ContinueWith(x => 
         {
-            if (_startTimerCancellationToken.IsCancellationRequested)
+            if (_startTimerCancellationToken.IsCancellationRequested || !_startTimerActive)
             {
                 return;
             }
             
-            _lobby.SendMessage("!mp start");
-
-            AbortTimer();
+            Console.WriteLine("Timer ended! Starting game...");
+            
+           // _lobby.SendMessage("!mp start");
         });
 
         if (length > 10)
         {
-            Task.Delay(1000 * (length - 10), _startTimerCancellationToken.Token).ContinueWith(x => 
+            _startTimerWarningTask = Task.Delay(1000 * (length - 10), _startTimerCancellationToken.Token).ContinueWith(x => 
             {
-                if (_startTimerCancellationToken.IsCancellationRequested)
+                if (_startTimerCancellationToken.IsCancellationRequested || !_startTimerActive)
                 {
                     return;
                 }
@@ -153,6 +160,8 @@ public class AutoStartBehaviour : IBotBehaviour
 
     private void AbortTimer()
     {
+        _startTimerActive = false;
+        
         try
         { 
             _startTimerCancellationToken?.Cancel(false);
@@ -161,7 +170,5 @@ public class AutoStartBehaviour : IBotBehaviour
         {
             // ignored
         }
-            
-        _startTimerActive = false;
     }
 }

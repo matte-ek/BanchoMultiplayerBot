@@ -8,7 +8,7 @@ bot.OnBotReady += async () =>
 {
     var fakeConfig = new LobbyConfiguration
     {
-        Name = "test lobby",
+        Name = "test auto rotate lobby",
         Size = 16,
         Password = "",
         Behaviours = new [] { "AutoHostRotate" }, 
@@ -20,7 +20,7 @@ bot.OnBotReady += async () =>
         MaximumMapLength = 330
     };
 
-    await bot.AddLobbyAsync("#mp_105119080", fakeConfig);
+    await bot.CreateLobby(fakeConfig);
 };
 
 await bot.RunAsync();

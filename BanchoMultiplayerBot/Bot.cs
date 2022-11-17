@@ -5,6 +5,7 @@ using BanchoMultiplayerBot.OsuApi;
 using BanchoSharp;
 using BanchoSharp.Interfaces;
 using System.Collections.Concurrent;
+using BanchoSharp.Multiplayer;
 
 namespace BanchoMultiplayerBot;
 
@@ -20,7 +21,7 @@ public class Bot
     public event Action? OnBotReady;
 
     private BlockingCollection<QueuedMessage> messageQueue = new();
-    
+
     public Bot(string configurationFile)
     {
         if (!File.Exists(configurationFile))
@@ -55,12 +56,18 @@ public class Bot
         await Client.ConnectAsync();
     }
 
-    public void CreateLobby()
+    public async Task CreateLobby(LobbyConfiguration configuration)
     {
-        // TODO: Integrate this somehow with BanchoSharp, currently BanchoSharp will automatically
-        // create a MultiplayerLobby for us.
-
-        throw new NotImplementedException();
+        Client.BanchoBotEvents.OnTournamentLobbyCreated += async multiplayerLobby =>
+        {
+            var lobby = new Lobby(this, configuration, (MultiplayerLobby)multiplayerLobby);
+        
+            Lobbies.Add(lobby);
+        
+            await lobby.SetupAsync(true);
+        };
+        
+        await Client.MakeTournamentLobbyAsync(configuration.Name);
     }
     
     public async Task AddLobbyAsync(string channel, LobbyConfiguration configuration)
@@ -104,7 +111,6 @@ public class Bot
 
     private void CreateLobbiesFromConfiguration()
     {
-        
     }
 
     private async Task RunMessagePump()
@@ -127,17 +133,15 @@ public class Bot
                     sentMessages.RemoveAll(x => (DateTime.Now - x.Time).Seconds > 5.1);
 
                     if (!shouldThrottle) continue;
-                   
-                    Console.WriteLine($"Throttling messages!");
-                
+                    
                     Thread.Sleep(1000);
                 } while (shouldThrottle);
                 
                 message.Time = DateTime.Now;
 
-                Console.WriteLine($"Sending message '{message.Content}' from {message.Time} (current queue: {sentMessages.Count})");
+                Console.WriteLine($"Sending message '{message.Content}' from {message.Time} (current queue: {sentMessages.Count})"); 
                 
-              //  await Client.SendPrivateMessageAsync(message.Channel, message.Content);
+                await Client.SendPrivateMessageAsync(message.Channel, message.Content);
                 
                 sentMessages.Add(message);
             }

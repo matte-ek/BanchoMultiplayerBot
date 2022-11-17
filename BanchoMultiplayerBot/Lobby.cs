@@ -26,16 +26,24 @@ public class Lobby
         Bot = bot;
         Configuration = configuration;
         MultiplayerLobby = new MultiplayerLobby(Bot.Client, long.Parse(channel[4..]), channel);
-
         _channelName = channel;
     }
+    
+    public Lobby(Bot bot, LobbyConfiguration configuration, MultiplayerLobby lobby)
+    {
+        Bot = bot;
+        Configuration = configuration;
+        MultiplayerLobby = lobby;
+        _channelName = lobby.ChannelName;
+    }
 
-    public async Task SetupAsync()
+    public async Task SetupAsync(bool joined = false)
     {
         // Add default behaviours
         AddBehaviour(new LobbyManagerBehaviour());
         AddBehaviour(new MapManagerBehaviour());
         AddBehaviour(new AutoStartBehaviour());
+        AddBehaviour(new AbortVoteBehaviour());
         
         // Add "custom" behaviours
         if (Configuration.Behaviours != null)
@@ -47,20 +55,27 @@ public class Lobby
             }   
         }
 
-        Bot.Client.OnChannelJoined += channel =>
-        {
-            if (channel.ChannelName != _channelName) return;
-    
-            Console.WriteLine($"Joined: {channel.ChannelName} ({_channelName})");
-            
-            OnLobbyChannelJoined?.Invoke();
-        };
-        
         Bot.Client.OnPrivateMessageReceived += ClientOnPrivateMessageReceived;
+
+        if (!joined)
+        {
+            Bot.Client.OnChannelJoined += channel =>
+            {
+                if (channel.ChannelName != _channelName) return;
+    
+                Console.WriteLine($"Joined: {channel.ChannelName} ({_channelName})");
             
-        // "Temporary" fix for the fact that JoinChannelAsync calls 
-        // OnChannelJoined
-        await Bot.Client.SendAsync($"JOIN {_channelName}");
+                OnLobbyChannelJoined?.Invoke();
+            };
+            
+            // "Temporary" fix for the fact that JoinChannelAsync calls 
+            // OnChannelJoined
+            await Bot.Client.SendAsync($"JOIN {_channelName}");
+        }
+        else
+        {
+            OnLobbyChannelJoined?.Invoke();
+        }
     }
 
     public void SendMessage(string message)

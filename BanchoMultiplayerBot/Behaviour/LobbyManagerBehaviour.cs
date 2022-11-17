@@ -12,7 +12,8 @@ public class LobbyManagerBehaviour : IBotBehaviour
     {
         _lobby = lobby;
         
-        _lobby.MultiplayerLobby.OnMatchFinished += OnMatchFinished;
+        _lobby.MultiplayerLobby.OnMatchFinished += OnMatchFinishedOrAborted;
+        _lobby.MultiplayerLobby.OnMatchAborted += OnMatchFinishedOrAborted;
         _lobby.MultiplayerLobby.OnSettingsUpdated += OnRoomSettingsUpdated;
 
         _lobby.OnLobbyChannelJoined += () =>
@@ -21,7 +22,7 @@ public class LobbyManagerBehaviour : IBotBehaviour
         };
     }
 
-    private void OnMatchFinished()
+    private void OnMatchFinishedOrAborted()
     {
         // Run "!mp settings" to receive updated information from Bancho.
         _lobby.SendMessage("!mp settings");

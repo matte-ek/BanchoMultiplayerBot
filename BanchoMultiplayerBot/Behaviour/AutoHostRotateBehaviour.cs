@@ -104,7 +104,12 @@ public class AutoHostRotateBehaviour : IBotBehaviour
     private void OnQueueUpdated()
     {
         if (!Queue.Any()) return;
-        if (_lobby.MultiplayerLobby.Host is null) return;    
+        
+        if (_lobby.MultiplayerLobby.Host is null)
+        {
+            _lobby.SendMessage($"!mp host {Queue[0]}");
+            return;
+        }    
         
         if (_lobby.MultiplayerLobby.Host.Name != Queue[0])
         {
