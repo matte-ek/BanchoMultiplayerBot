@@ -65,6 +65,9 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         _lobby.OnAdminMessage += OnAdminMessage;
     }
 
+    /// <summary>
+    /// Skips the current host and makes the next player in the queue host instead.
+    /// </summary>
     public void ForceSkipPlayer()
     {
         SkipCurrentPlayer();
@@ -99,10 +102,11 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         }
     }
 
-    private async void OnUserMessage(IPrivateIrcMessage message)
+    private void OnUserMessage(IPrivateIrcMessage message)
     {
         Logger.Trace("AutoHostRotateBehaviour::OnUserMessage()");
 
+        // Allow the users to see the current queue
         if (message.Content.StartsWith("!q") || message.Content.StartsWith("!queue"))
         {
             SendCurrentQueue();
@@ -112,6 +116,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
         if (message.Content.StartsWith("!skip"))
         {
+            // If the host is sending the message, just skip.
             if (_lobby.MultiplayerLobby.Host is not null)
             {
                 if (message.Sender == _lobby.MultiplayerLobby.Host.Name)
@@ -124,6 +129,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
                 }
             }
 
+            // If the player isn't host, start a vote.
             var player = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name == message.Sender);
             if (player is not null)
             {
@@ -143,9 +149,9 @@ public class AutoHostRotateBehaviour : IBotBehaviour
     {
         Logger.Trace("AutoHostRotateBehaviour::OnSettingsUpdated()");
 
+        // Attempt to reload the old queue if we're recovering a previous session.
         if (_lobby.IsRecovering && _lobby.Configuration.PreviousQueue != null)
         {
-            // Attempt to reload old queue
             Queue.Clear();
 
             foreach (var player in _lobby.Configuration.PreviousQueue.Split(','))
@@ -165,6 +171,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
                 Queue.Add(player.Name);
         }
 
+        // Don't skip a player if we're just restoring a previous session.
         if (_lobby.IsRecovering)
         {
             return;
@@ -210,10 +217,15 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         }
     }
 
+    /// <summary>
+    /// Send the first 5 people in the queue in the lobby chat. The player names will include a 
+    /// zero width space to avoid tagging people.
+    /// </summary>
     private void SendCurrentQueue()
     {
         var cleanPlayerNamesQueue = new List<string>();
 
+        // Add a zero width space to the player names to avoid mentioning them
         foreach (var playerName in Queue.Take(5))
         {
             cleanPlayerNamesQueue.Add($"{playerName[0]}\u200B{playerName.Substring(1)}");
@@ -227,6 +239,9 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         _lobby.SendMessage($"Queue: {queueStr}");
     }
 
+    /// <summary>
+    /// Skips the first user in the queue, will NOT automatically update host.
+    /// </summary>
     private void SkipCurrentPlayer()
     {
         Logger.Trace("AutoHostRotateBehaviour::SkipCurrentPlayer()");

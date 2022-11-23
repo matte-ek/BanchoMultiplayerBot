@@ -24,7 +24,7 @@ public class MapManagerBehaviour : IBotBehaviour
     
     private bool _botAppliedBeatmap;
     private int _lastBotAppliedBeatmap;
-    private int _beatmapFallbackId = 2116202;
+    private int _beatmapFallbackId = 2116202; // use the osu! tutorial as default
     
     public void Setup(Lobby lobby)
     {
