@@ -1,0 +1,84 @@
+﻿@implements IDisposable
+@inject BotService Bot
+@page "/lobby/{IdStr}/configure"
+@using BanchoMultiplayerBot.Config
+
+<PageTitle>Configure Lobby</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">@($"{_lobby?.Configuration.Name} Config")</MudText>
+
+<MudForm @ref="_form">
+    <MudGrid>
+        <MudItem xs="6">
+            <MudPaper Class="pa-8 ma-2">
+                <MudText Typo="Typo.h6" GutterBottom="true">General</MudText>
+                <MudTextField @bind-Value="_configuration.Name" T="string" Label="Name" Required="true" RequiredError="Name is required!" Variant="Variant.Filled"/>
+                <MudNumericField @bind-Value="_configuration.Size" Label="Size" Variant="Variant.Filled" Min="1" Max="16" />
+                <MudTextField @bind-Value="_configuration.Password" T="string" Label="Password" Variant="Variant.Filled"/>
+            </MudPaper>
+            <MudPaper Class="pa-8 ma-2">
+                <MudText Typo="Typo.h6" GutterBottom="true">Map Regulations</MudText>
+                <MudSwitch @bind-Checked="_configuration!.LimitStarRating" Label="Limit star rating" Color="Color.Primary"/>
+                <MudNumericField @bind-Value="_configuration.MinimumStarRating" Label="Minimum star rating" Variant="Variant.Filled" Min="0" />
+                <MudNumericField @bind-Value="_configuration.MaximumStarRating" Label="Maximum star rating" Variant="Variant.Filled" Min="0" />
+                <MudNumericField @bind-Value="_configuration.StarRatingErrorMargin" Label="Star rating error margin" Variant="Variant.Filled" Min="0" Max="1" />
+                <MudSwitch @bind-Checked="_configuration!.LimitMapLength" Label="Limit map length" Color="Color.Primary"/>
+                <MudNumericField @bind-Value="_configuration.MinimumMapLength" Label="Minimum map length (s)" Variant="Variant.Filled" Min="0" />
+                <MudNumericField @bind-Value="_configuration.MaximumMapLength" Label="Maximum map length (s)" Variant="Variant.Filled" Min="0" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6">
+            <MudPaper Class="pa-8 ma-2">
+                <MudText Typo="Typo.h6" GutterBottom="true">Behaviours</MudText>
+                <MudSelect T="string" Label="Behaviours" MultiSelection="true" @bind-SelectedValues="_selectedBehaviours">
+                    @foreach (var option in _behaviourOptions)
+                    {
+                        <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudForm>
+
+@code 
+{
+    [Parameter]
+    public string? IdStr { get; set; }
+    
+    private MudForm? _form;
+    
+    private BanchoMultiplayerBot.Lobby? _lobby;
+    private LobbyConfiguration? _configuration;
+
+    private IEnumerable<string> _selectedBehaviours = new HashSet<string>();
+
+    protected override void OnInitialized()
+    {
+        ParseIdParameter();
+
+        if (_lobby == null)
+            return;
+        
+        _configuration = _lobby.Configuration;
+    }
+
+    public void Dispose()
+    {
+    }
+
+    private void ParseIdParameter()
+    {
+        if (IdStr == null || !int.TryParse(IdStr, out int lobbyId))
+        {
+            throw new Exception("Invalid lobby id");
+        }
+
+        _lobby = Bot.Lobbies[lobbyId];
+    }
+    
+    private readonly string[] _behaviourOptions =
+    {
+        "AutoHostRotate"
+    };
+}

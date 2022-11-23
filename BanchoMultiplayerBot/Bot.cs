@@ -6,31 +6,40 @@ using BanchoSharp;
 using BanchoSharp.Interfaces;
 using System.Collections.Concurrent;
 using BanchoSharp.Multiplayer;
+using BanchoMultiplayerBot.Behaviour;
 
 namespace BanchoMultiplayerBot;
 
 public class Bot
 {
 
-    public BanchoClient Client { get; }
+    public BanchoClient Client { get; private set;  }
     public OsuApiWrapper OsuApi { get; }
     public BotConfiguration Configuration { get; }
 
     public List<Lobby> Lobbies { get; } = new();
 
     public event Action? OnBotReady;
+    public event Action? OnLobbiesUpdated;
 
-    private BlockingCollection<QueuedMessage> messageQueue = new();
+    private readonly BlockingCollection<QueuedMessage> _messageQueue = new(20);
 
+    private bool _exitRequested = false;
+
+    private List<LobbyConfiguration> _lobbyCreationQueue = new();
+    
     public Bot(string configurationFile)
     {
         if (!File.Exists(configurationFile))
         {
-            throw new Exception("Failed to find configuration file.");
+            throw new Exception($"Failed to find configuration file");
         }
 
         var reader = File.OpenRead(configurationFile);
         var config = JsonSerializer.Deserialize<BotConfiguration>(reader);
+        
+        reader.Close();
+        reader.Dispose();
 
         Configuration = config ?? throw new Exception("Failed to read configuration file.");
         Client = new BanchoClient(new BanchoClientConfig(new IrcCredentials(Configuration.Username, Configuration.Password), LogLevel.Trace));
@@ -39,7 +48,7 @@ public class Bot
 
     public void SendMessage(string channel, string message)
     {
-        messageQueue.Add(new QueuedMessage()
+        _messageQueue.Add(new QueuedMessage()
         {
             Channel = channel,
             Content = message
@@ -52,21 +61,45 @@ public class Bot
         Client.OnAuthenticated += ClientOnAuthenticated;
         Client.OnDisconnected += ClientOnDisconnected;
         Client.OnChannelParted += ClientOnChannelParted;
+        Client.BanchoBotEvents.OnTournamentLobbyCreated += OnTournamentLobbyCreated;
         
         await Client.ConnectAsync();
     }
 
+    private async void OnTournamentLobbyCreated(IMultiplayerLobby multiplayerLobby)
+    {
+        var config = _lobbyCreationQueue.Find(x => x.Name == multiplayerLobby.Name);
+
+        // Lobby probably wasn't made by the bot.
+        if (config == null)
+        {
+            return;
+        }
+
+        _lobbyCreationQueue.Remove(config);
+
+        var lobby = new Lobby(this, config, (MultiplayerLobby)multiplayerLobby);
+
+        Lobbies.Add(lobby);
+
+        await lobby.SetupAsync(true);
+
+        OnLobbiesUpdated?.Invoke();
+    }
+
+    public async Task DisconnectAsync()
+    {
+        _exitRequested = true;
+        
+        await Client.DisconnectAsync();
+        
+        SaveBotState();
+    }
+
     public async Task CreateLobby(LobbyConfiguration configuration)
     {
-        Client.BanchoBotEvents.OnTournamentLobbyCreated += async multiplayerLobby =>
-        {
-            var lobby = new Lobby(this, configuration, (MultiplayerLobby)multiplayerLobby);
-        
-            Lobbies.Add(lobby);
-        
-            await lobby.SetupAsync(true);
-        };
-        
+        _lobbyCreationQueue.Add(configuration);
+
         await Client.MakeTournamentLobbyAsync(configuration.Name);
     }
     
@@ -77,42 +110,180 @@ public class Bot
         Lobbies.Add(lobby);
         
         await lobby.SetupAsync();
+
+        OnLobbiesUpdated?.Invoke();
     }
-    
+
     private void ClientOnChannelParted(IChatChannel channel)
     {
     }
     
     private void ClientOnDisconnected()
     {
-        // TODO: Attempt to reconnect
-        // This may be required to be implemented in BanchoSharp
-        
         Console.WriteLine("Bot has been disconnected from Bancho!");
     }
 
     private void ClientOnAuthenticated()
     {
-        AutoRecoverExistingLobbies();
-        CreateLobbiesFromConfiguration();
+        Task.Run(RunMessagePump);
+        
+        if (!AutoRecoverExistingLobbies())
+            CreateLobbiesFromConfiguration();
         
         OnBotReady?.Invoke();
 
-        Task.Run(RunMessagePump);
+        Task.Run(RunConnectionWatchdog);
     }
 
     private bool AutoRecoverExistingLobbies()
     {
-        // TODO: Automatically run the bot on already existing multiplayer lobbies
-        // This will be useful if the application were to crash, or is manually restarted.
+        if (!File.Exists("lobby_states.json"))
+            return false;
+        
+        var reader = File.OpenRead("lobby_states.json");
+        var lobbyStates = JsonSerializer.Deserialize<List<LobbyState>>(reader);
 
-        return false;
+        reader.Close();
+        reader.Dispose();
+        
+        if (lobbyStates == null)
+            return false;
+        
+        Client.OnChannelJoinFailure += async name =>
+        {
+            // Attempt to create a new lobby instead.
+            var lobbyName = lobbyStates.FirstOrDefault(x => x.Channel == name);
+            var lobbyConfig = Configuration.LobbyConfigurations?.FirstOrDefault(x => x.Name == lobbyName?.Name);
+
+            if (lobbyConfig == null)
+            {
+                return;
+            }
+            
+            Console.WriteLine($"Failed to find lobby by name {lobbyName?.Name}, creating new one instead.");
+
+            await CreateLobby(lobbyConfig);
+        };
+
+        int lobbyIndex = 0;
+        foreach (var lobby in lobbyStates)
+        {
+            // Attempt to find the correct configuration
+            var config = Configuration.LobbyConfigurations?.FirstOrDefault(x => x.Name == lobby.Name);
+
+            if (config == null)
+            {
+                // Not sure how I want the bot to behave in this case yet.
+                return false;
+            }
+
+            config.PreviousQueue = lobby.Queue;
+
+            Task.Delay(1 + (lobbyIndex * 4000)).ContinueWith(async task => { await AddLobbyAsync(lobby.Channel, config); });
+
+            lobbyIndex++;
+        }
+        
+        return true;
     }
 
     private void CreateLobbiesFromConfiguration()
     {
     }
 
+    private void SaveBotState()
+    {
+        SaveBotConfiguration();
+
+        if (!Lobbies.Any())
+            return;
+            
+        List<LobbyState> lobbyStates = new();
+
+        foreach (var lobby in Lobbies)
+        {
+            string? queue = null;
+
+            try
+            {
+
+                var autoHostRotateBehaviour = lobby.Behaviours.Find(x => x.GetType() == typeof(AutoHostRotateBehaviour));
+                if (autoHostRotateBehaviour != null)
+                {
+                    queue = string.Join(',', ((AutoHostRotateBehaviour)autoHostRotateBehaviour).Queue);
+                }
+            }
+            catch (Exception)
+            {
+            }
+
+            lobbyStates.Add(new LobbyState()
+            {
+                Channel = lobby.MultiplayerLobby.ChannelName,
+                Name = lobby.Configuration.Name,
+                Queue = queue
+            });
+        }
+        
+        File.WriteAllText("lobby_states.json", JsonSerializer.Serialize(lobbyStates));
+    }
+
+    private void SaveBotConfiguration()
+    {
+        Configuration.LobbyConfigurations = new LobbyConfiguration[Lobbies.Count];
+
+        for (int i = 0; i < Lobbies.Count; i++)
+        {
+            Configuration.LobbyConfigurations[i] = Lobbies[i].Configuration;
+        }
+        
+        File.WriteAllText("config.json", JsonSerializer.Serialize(Configuration));
+    }
+
+    private async Task RunConnectionWatchdog()
+    {
+        int connectionAttempts = 0;
+        
+        while (!_exitRequested)
+        {
+            if (!Client.IsConnected)
+            {
+                Console.WriteLine("DETECTED CONNECTION ERROR!");
+
+                while (connectionAttempts <= 10 && !Client.IsConnected)
+                {
+                    connectionAttempts++;
+                    
+                    Console.WriteLine("Attempting to reconnect in 10 seconds");
+
+                    await Task.Delay(10000);
+
+                    SaveBotState();
+                
+                    Client.Dispose();
+                    Lobbies.Clear();
+
+                    Client = new BanchoClient(new BanchoClientConfig(new IrcCredentials(Configuration.Username, Configuration.Password), LogLevel.Trace));
+                    
+                    _ = Task.Run(RunAsync);
+
+                    await Task.Delay(10000);
+                }
+
+                break;
+            }
+            
+            await Task.Delay(100);
+        }
+
+        if (!_exitRequested)
+        {
+            Console.WriteLine(Client.IsConnected
+                ? "Successfully re-connected to Bancho!"
+                : "Failed to restart the bot after 10 attempts.");
+        }
+    }
+    
     private async Task RunMessagePump()
     {
         List<QueuedMessage> sentMessages = new();
@@ -121,16 +292,16 @@ public class Bot
         {
             while (true)
             {
-                var message = messageQueue.Take();
+                var message = _messageQueue.Take();
 
                 bool shouldThrottle;
 
                 do
                 {
-                    shouldThrottle = sentMessages.Count >= 3;
+                    shouldThrottle = sentMessages.Count >= 8;
                     
                     // Remove old messages that are more than 5 seconds old
-                    sentMessages.RemoveAll(x => (DateTime.Now - x.Time).Seconds > 5.1);
+                    sentMessages.RemoveAll(x => (DateTime.Now - x.Time).Seconds > 5);
 
                     if (!shouldThrottle) continue;
                     

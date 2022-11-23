@@ -37,6 +37,8 @@ public class PlayerVote
 
         if (Votes.Count < requiredVotes) 
             return false;
+
+        Reset();
         
         OnVotePassed?.Invoke();
             

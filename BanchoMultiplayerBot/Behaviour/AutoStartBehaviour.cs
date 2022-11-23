@@ -1,4 +1,5 @@
-﻿using BanchoSharp.Interfaces;
+﻿using BanchoSharp;
+using BanchoSharp.Interfaces;
 
 namespace BanchoMultiplayerBot.Behaviour;
 
@@ -7,28 +8,40 @@ public class AutoStartBehaviour : IBotBehaviour
     private Lobby _lobby = null!;
     private PlayerVote _playerStartVote = null!;
 
-    private bool _startTimerActive = false;
+    private bool _startTimerTaskActive = true;
     private Task? _startTimerTask;
-    private Task? _startTimerWarningTask;
-    private CancellationTokenSource? _startTimerCancellationToken;
-    
+
+    private bool _startTimerActive = false;
+    private DateTime _startTimer;
+
+    private bool _shouldSendWarningMessage = false;
+    private bool _sentWarningMessage = false;
+
     public void Setup(Lobby lobby)
     {
         _lobby = lobby;
         _playerStartVote = new PlayerVote(_lobby, "Vote to start");
 
+        _startTimerTask = Task.Run(StartTimerTask); 
+
         _lobby.MultiplayerLobby.OnAllPlayersReady += () =>
         {
+            Logger.Trace("AutoStartBehaviour::OnAllPlayersReady()");
+
             if (_lobby.Bot.Configuration.AutoStartAllPlayersReady == null || !_lobby.Bot.Configuration.AutoStartAllPlayersReady.Value)
             {
                 return;
             }
             
             _lobby.SendMessage("!mp start");
+            
+            AbortTimer();
         };
 
         _lobby.MultiplayerLobby.OnMatchStarted += () =>
         {
+            Logger.Trace("AutoStartBehaviour::OnMatchStarted()");
+
             AbortTimer();
 
             _playerStartVote.Reset();
@@ -45,6 +58,8 @@ public class AutoStartBehaviour : IBotBehaviour
 
     private void OnNewAllowedMap()
     {
+        Logger.Trace("AutoStartBehaviour::OnNewAllowedMap()");
+
         if (_lobby.Bot.Configuration.EnableAutoStartTimer == null ||
             !_lobby.Bot.Configuration.EnableAutoStartTimer.Value ||
             _lobby.Bot.Configuration.AutoStartTimerTime == null) 
@@ -55,6 +70,8 @@ public class AutoStartBehaviour : IBotBehaviour
 
     private void OnUserMessage(IPrivateIrcMessage message)
     {
+        Logger.Trace("AutoStartBehaviour::OnUserMessage()");
+
         // Kind of a stupid fix to prevent loop backs
         bool isPlayer = message.Sender != _lobby.Bot.Configuration.Username;
 
@@ -62,17 +79,17 @@ public class AutoStartBehaviour : IBotBehaviour
         {
             try
             {
-                int requestedTime;
-
-                if (message.Content.StartsWith("!start"))
-                    requestedTime = int.Parse(message.Content.Split("!start ")[1]);
-                else
-                    requestedTime = int.Parse(message.Content.Split("!mp start ")[1]);
-
                 if (_lobby.MultiplayerLobby.Host is not null)
                 {
                     if (message.Sender == _lobby.MultiplayerLobby.Host.Name)
                     {
+                        int requestedTime;
+
+                        if (message.Content.StartsWith("!start"))
+                            requestedTime = int.Parse(message.Content.Split("!start ")[1]);
+                        else
+                            requestedTime = int.Parse(message.Content.Split("!mp start ")[1]);
+
                         StartTimer(requestedTime);
 
                         return;
@@ -112,63 +129,59 @@ public class AutoStartBehaviour : IBotBehaviour
     {
         if (_startTimerActive)
         {
-            _startTimerActive = false;
-            
             AbortTimer();
         }
 
         if (length <= 1 || length >= 500)
             return;
-
-        _startTimerTask?.Wait();
-        _startTimerWarningTask?.Wait();
         
         Console.WriteLine("(Re)starting timer.");
-        
-        _startTimerCancellationToken?.Dispose();
-        _startTimerCancellationToken = new CancellationTokenSource();
+     
+        // This was previously implemented with Task.Delay, and a cancellation token to cancel the delay
+        // task if we had to abort the timer. This however for some reason didn't exactly work all the time,
+        // not sure why yet. As a result, this has been changed to a always on task instead.
 
-        _startTimerTask = Task.Delay(1000 * length, _startTimerCancellationToken.Token).ContinueWith(x => 
-        {
-            if (_startTimerCancellationToken.IsCancellationRequested || !_startTimerActive)
-            {
-                return;
-            }
-            
-            Console.WriteLine("Timer ended! Starting game...");
-            
-           // _lobby.SendMessage("!mp start");
-        });
-
-        if (length > 10)
-        {
-            _startTimerWarningTask = Task.Delay(1000 * (length - 10), _startTimerCancellationToken.Token).ContinueWith(x => 
-            {
-                if (_startTimerCancellationToken.IsCancellationRequested || !_startTimerActive)
-                {
-                    return;
-                }
-                
-                _lobby.SendMessage("Starting match in 10 seconds, use !stop to abort!");
-            });
-        }
+        _startTimer = DateTime.Now.AddSeconds(length);
+        _shouldSendWarningMessage = length > 10;
+        _sentWarningMessage = false;
+        _startTimerActive = true;
 
         _lobby.SendMessage($"Queued to start match in {length} seconds! Use !stop to abort");
-
-        _startTimerActive = true;
     }
 
     private void AbortTimer()
     {
         _startTimerActive = false;
-        
-        try
-        { 
-            _startTimerCancellationToken?.Cancel(false);
-        }
-        catch (Exception)
+        _shouldSendWarningMessage = false;
+        _sentWarningMessage = false;
+    }
+
+    private async Task StartTimerTask()
+    {
+        while (_startTimerTaskActive)
         {
-            // ignored
+            await Task.Delay(100);
+
+            if (_startTimerActive)
+            {
+                if (_shouldSendWarningMessage && !_sentWarningMessage && (DateTime.Now.AddSeconds(10)) >= _startTimer)
+                {
+                    _sentWarningMessage = true;
+
+                    _lobby.SendMessage("Starting match in 10 seconds, use !stop to abort!");
+
+                    continue;
+                }
+
+                if (DateTime.Now < _startTimer)
+                {
+                    continue;
+                }
+
+                _startTimerActive = false;
+
+                _lobby.SendMessage("!mp start");
+            }
         }
     }
 }

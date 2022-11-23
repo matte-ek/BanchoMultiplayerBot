@@ -1,8 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BanchoMultiplayerBot", "BanchoMultiplayerBot\BanchoMultiplayerBot.csproj", "{839ECCE3-79C9-4274-B7F5-1D4FD02F42E9}"
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32929.385
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BanchoMultiplayerBot", "BanchoMultiplayerBot\BanchoMultiplayerBot.csproj", "{839ECCE3-79C9-4274-B7F5-1D4FD02F42E9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BanchoMultiplayerBot.Host.Console", "BanchoMultiplayerBot.Host.Console\BanchoMultiplayerBot.Host.Console.csproj", "{A5F33F67-C2D2-408A-9157-8A3C257E3044}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BanchoMultiplayerBot.Host.Console", "BanchoMultiplayerBot.Host.Console\BanchoMultiplayerBot.Host.Console.csproj", "{A5F33F67-C2D2-408A-9157-8A3C257E3044}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BanchoMultiplayerBot.Host.Web", "BanchoMultiplayerBot.Host.Web\BanchoMultiplayerBot.Host.Web.csproj", "{A152675A-71B1-4F4A-ACB2-79248EF39E78}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,5 +23,15 @@ Global
 		{A5F33F67-C2D2-408A-9157-8A3C257E3044}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A5F33F67-C2D2-408A-9157-8A3C257E3044}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A5F33F67-C2D2-408A-9157-8A3C257E3044}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A152675A-71B1-4F4A-ACB2-79248EF39E78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A152675A-71B1-4F4A-ACB2-79248EF39E78}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A152675A-71B1-4F4A-ACB2-79248EF39E78}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A152675A-71B1-4F4A-ACB2-79248EF39E78}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {41B4F4BE-99E5-4929-AA70-8EED8707CCB0}
 	EndGlobalSection
 EndGlobal

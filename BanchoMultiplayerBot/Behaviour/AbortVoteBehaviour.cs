@@ -2,6 +2,9 @@
 
 namespace BanchoMultiplayerBot.Behaviour;
 
+/// <summary>
+/// Nothing complicated, manages the '!abort' command
+/// </summary>
 public class AbortVoteBehaviour : IBotBehaviour
 {
     private Lobby _lobby = null!;

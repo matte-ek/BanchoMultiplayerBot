@@ -15,10 +15,14 @@ public class Lobby
 
     public List<IBotBehaviour> Behaviours { get; } = new();
 
+    public int GamesPlayed { get; private set; }
+
+    public bool IsRecovering { get; private set; }
+
     public event Action? OnLobbyChannelJoined;
     public event Action<IPrivateIrcMessage>? OnUserMessage;
     public event Action<IPrivateIrcMessage>? OnAdminMessage;
-
+    
     private readonly string _channelName;
     
     public Lobby(Bot bot, LobbyConfiguration configuration, string channel)
@@ -44,6 +48,7 @@ public class Lobby
         AddBehaviour(new MapManagerBehaviour());
         AddBehaviour(new AutoStartBehaviour());
         AddBehaviour(new AbortVoteBehaviour());
+        AddBehaviour(new AntiAfkBehaviour());
         
         // Add "custom" behaviours
         if (Configuration.Behaviours != null)
@@ -55,10 +60,27 @@ public class Lobby
             }   
         }
 
+        foreach (var behaviour in Behaviours)
+        {
+            behaviour.Setup(this);
+        }
+
+        MultiplayerLobby.OnMatchFinished += () =>
+        {
+            GamesPlayed++;
+        };
+
+        MultiplayerLobby.OnSettingsUpdated += () =>
+        {
+            IsRecovering = false;
+        };
+
         Bot.Client.OnPrivateMessageReceived += ClientOnPrivateMessageReceived;
 
         if (!joined)
         {
+            IsRecovering = true;
+
             Bot.Client.OnChannelJoined += channel =>
             {
                 if (channel.ChannelName != _channelName) return;
@@ -86,8 +108,6 @@ public class Lobby
     private void AddBehaviour(IBotBehaviour behaviour)
     {
         Behaviours.Add(behaviour);
-        
-        behaviour.Setup(this);
     }
     
     private void ClientOnPrivateMessageReceived(IPrivateIrcMessage message)
@@ -96,6 +116,11 @@ public class Lobby
             return;
         if (message.IsBanchoBotMessage)
             return;
+
+        if (message.Sender == Bot.Configuration.Username)
+        {
+            OnAdminMessage?.Invoke(message);
+        }
         
         OnUserMessage?.Invoke(message);
     }

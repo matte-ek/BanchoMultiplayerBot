@@ -1,0 +1,98 @@
+﻿@using System.Security.Claims
+@using BanchoMultiplayerBot.Host.Web.Auth
+@inherits LayoutComponentBase
+@inject IConfiguration Configuration
+
+<MudThemeProvider DefaultScrollbar="false" IsDarkMode="true" Theme="@_theme"/>
+<MudDialogProvider/>
+<MudSnackbarProvider/>
+
+<AuthorizeView>
+    <Authorized>
+    <MudLayout>
+        <MudAppBar Elevation="0">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())"/>
+        </MudAppBar>
+        <MudDrawer @bind-Open="_drawerOpen" Elevation="1">
+            <MudDrawerHeader>
+                <MudText Typo="Typo.h6">osu! Multiplayer Bot</MudText>
+            </MudDrawerHeader>
+            <NavMenu/>
+        </MudDrawer>
+        <MudMainContent>
+            <MudContainer MaxWidth="MaxWidth.Large" Class="my-16 pt-16">
+                @Body
+            </MudContainer>
+        </MudMainContent>
+    </MudLayout>
+    </Authorized>
+    <NotAuthorized>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="my-16 pt-16">
+            <MudText>Please login to continue.</MudText>
+            
+            <MudPaper Class="pa-4 mt-4">
+                <MudTextField @bind-Value="_username" T="string" Label="Username" Required="true" RequiredError="Username is required!" InputType="InputType.Text" Variant="Variant.Filled"/>
+                <MudTextField @bind-Value="_password" T="string" Label="Password" Required="true" RequiredError="Password is required!" InputType="InputType.Password" Variant="Variant.Filled"/>
+            </MudPaper>
+            
+            <MudPaper Class="pa-4 mt-4">
+                <MudButton Variant="Variant.Outlined" @onclick="OnLoginPressed">Login</MudButton>
+            </MudPaper>
+        </MudContainer>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    [CascadingParameter] public Task<AuthenticationState> AuthTask { get; set; }
+    [Inject] private AuthenticationStateProvider AuthState { get; set; }
+    
+    string _username = "";
+    string _password = "";
+    
+    bool _drawerOpen = true;
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+    
+    private MudTheme _theme = new MudTheme()
+    {
+        Typography = new Typography()
+        {
+            Default = new Default()
+            {
+                FontFamily = new[] { "Roboto", "Helvetica", "Arial", "sans-serif" }
+            }
+        }
+    };
+    
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthTask;
+    }
+
+    private async void OnLoginPressed()
+    {
+        try
+        {
+            var username = Configuration.GetValue<string>("Authentication:AdminUsername");
+            var password = Configuration.GetValue<string>("Authentication:AdminPassword");
+            
+            if (!(username.Any() || password.Any()))
+            {
+                return;
+            }
+
+            if (username == _username && password == _password)
+            {
+                await ((TemporaryAuthStateProvider)AuthState).Authenticate(username, "1", "Admin");
+            }
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
+    }
+
+}

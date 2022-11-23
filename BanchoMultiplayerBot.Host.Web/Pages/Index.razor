@@ -1,0 +1,160 @@
+﻿@implements IDisposable
+@inject BotService Bot
+@inject IHostApplicationLifetime ApplicationLifetime
+@page "/"
+@using BanchoMultiplayerBot
+@using BanchoMultiplayerBot.Config
+@using System.Threading
+
+<PageTitle>Dashboard</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">Dashboard</MudText>
+
+@if (_showConnectionStatus)
+{
+    <MudAlert Severity="@(_connectionStatusError ? Severity.Error : Severity.Success)" ShowCloseIcon="true" CloseIconClicked="(() => _showConnectionStatus = false)">@_connectionStatusText</MudAlert>
+}
+
+<MudGrid Justify="Justify.FlexStart" Class="mt-2">
+    <MudItem xs="12" sm="3">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.body2">Bancho Connection</MudText>
+                <MudText Typo="Typo.h4" Color="@(_isConnected ? Color.Default : Color.Error)">@(_isConnected ? "OK" : "Error")</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="3">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.body2">Lobbies</MudText>
+                <MudText Typo="Typo.h4">@_lobbyCount</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="3">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.body2">Players</MudText>
+                <MudText Typo="Typo.h4">@_playerCount</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="3">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.body2">Games Played</MudText>
+                <MudText Typo="Typo.h4">@_gamesPlayed</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+<MudPaper Class="pa-4 mt-4">
+    <MudButton Color="Color.Primary" Variant="Variant.Filled" @onclick="ConnectToBancho" Disabled="@(_isConnecting || !Bot.HasValidConfiguration() || _isConnected)">
+        @if (_isConnecting)
+        {
+            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+            <MudText Class="ms-2">Connecting</MudText>
+        }
+        else
+        {
+            <MudText>Connect</MudText>
+        }
+    </MudButton>
+
+    <MudButton Color="Color.Error" Variant="Variant.Outlined" @onclick="TerminateBot">Exit</MudButton>
+</MudPaper>
+
+
+@code {
+    // Stats that are displayed in the dashboard
+    private int _lobbyCount = 0;
+    private int _playerCount = 0;
+    private int _gamesPlayed = 0;
+    private bool _isConnected = false;
+
+    // Manages the connect button
+    private bool _isConnecting = false;
+
+    // If an alert should be shown at the top of the page
+    private bool _showConnectionStatus = false;
+    private bool _connectionStatusError = false;
+    private string _connectionStatusText = "";
+
+    // Runs the page's automatic update, every 5 seconds.
+    readonly PeriodicTimer _updateTimer = new(TimeSpan.FromSeconds(5));
+
+    private async void UpdateStatistics()
+    {
+        do
+        {
+            _lobbyCount = Bot.Lobbies.Count;
+            _playerCount = 0;
+            _gamesPlayed = 0;
+
+            Bot.Lobbies.ForEach(x => _playerCount += x.MultiplayerLobby.Players.Count);
+            Bot.Lobbies.ForEach(x => _gamesPlayed += x.GamesPlayed);
+
+            StateHasChanged();
+        }
+        while (await _updateTimer.WaitForNextTickAsync());
+    }
+
+    private async void UpdateBanchoConnection()
+    {
+        await InvokeAsync(() =>
+        { 
+            _isConnected = Bot.Client.IsConnected && Bot.Client.IsAuthenticated;
+
+            if (_isConnected)
+                _isConnecting = false;
+
+            StateHasChanged();
+        }).ConfigureAwait(false);
+    }
+
+    protected override void OnInitialized()
+    {
+        // Register callbacks
+        Bot.Client.OnConnected += UpdateBanchoConnection;
+        Bot.Client.OnAuthenticated += UpdateBanchoConnection;
+        Bot.Client.OnDisconnected += UpdateBanchoConnection;
+
+        // Fill out initial information
+        UpdateStatistics();
+        UpdateBanchoConnection();
+
+        // Make sure to warn the user about an incorrect configuration
+        if (Bot.HasValidConfiguration()) return;
+
+        _showConnectionStatus = true;
+        _connectionStatusError = true;
+        _connectionStatusText = "Configuration is invalid";
+    }
+
+    public void Dispose()
+    {
+        // Remove callbacks
+        Bot.Client.OnConnected -= UpdateBanchoConnection;
+        Bot.Client.OnAuthenticated -= UpdateBanchoConnection;
+        Bot.Client.OnDisconnected -= UpdateBanchoConnection;
+
+        // Stop the update timer
+        _updateTimer.Dispose();
+    }
+
+    private void ConnectToBancho()
+    {
+        _isConnecting = true;
+
+        Bot.Start();
+    }
+
+    private async void TerminateBot()
+    {
+        await Bot.DisconnectAsync();
+
+        ApplicationLifetime.StopApplication();
+    }
+}

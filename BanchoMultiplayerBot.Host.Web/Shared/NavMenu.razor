@@ -1,0 +1,43 @@
+﻿@implements IDisposable
+@inject BotService Bot
+
+<MudNavMenu Rounded="true" Margin="Margin.Normal" Color="Color.Tertiary" Class="pa-2">
+    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+
+    @{
+        int i = 0;
+        @foreach (var lobby in Bot.Lobbies)
+
+        {
+            <MudNavLink Href="@($"lobby/{i}")" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Tag">@lobby.Configuration.Name</MudNavLink>
+            
+            i++;
+        }
+    }
+
+
+    <MudNavLink Href="addlobby" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">Add new lobby</MudNavLink>
+    <MudNavLink Href="settings" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Settings">Settings</MudNavLink>
+</MudNavMenu>
+
+@code {
+
+    protected override void OnInitialized()
+    {
+        Bot.OnLobbiesUpdated += OnLobbiesUpdated;
+    }
+
+    public void Dispose()
+    {
+        Bot.OnLobbiesUpdated -= OnLobbiesUpdated;
+    }
+
+    public async void OnLobbiesUpdated()
+    {
+        await InvokeAsync(() =>
+        {
+            StateHasChanged();
+        });
+    }
+
+}

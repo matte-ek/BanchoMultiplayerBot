@@ -1,6 +1,10 @@
+.vs/
 bin/
 obj/
 /packages/
 riderModule.iml
 /_ReSharper.Caches/
 .idea/
+config.json
+appsettings.json
+deploy.bat

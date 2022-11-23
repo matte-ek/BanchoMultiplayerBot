@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using BanchoMultiplayerBot.OsuApi;
 using BanchoMultiplayerBot.OsuApi.Exceptions;
+using BanchoSharp;
 using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
 
@@ -13,32 +14,31 @@ namespace BanchoMultiplayerBot.Behaviour;
 /// </summary>
 public class MapManagerBehaviour : IBotBehaviour
 {
-    public event Action? OnNewAllowedMap; 
+    public event Action? OnNewAllowedMap;
+
+    public int CurrentBeatmapSetId { get; private set; }
+    public int CurrentBeatmapId { get; private set; }
+    public string CurrentBeatmapName { get; private set; } = string.Empty;
 
     private Lobby _lobby = null!;
     
     private bool _botAppliedBeatmap;
     private int _lastBotAppliedBeatmap;
     private int _beatmapFallbackId = 2116202;
-
-    private int _beatmapPickViolations;
     
     public void Setup(Lobby lobby)
     {
         _lobby = lobby;
 
-        _lobby.MultiplayerLobby.OnHostChanged += player =>
-        {
-            _beatmapPickViolations = 0;
-        };
-        
         _lobby.MultiplayerLobby.OnBeatmapChanged += OnBeatmapChanged;
         _lobby.OnUserMessage += OnUserMessage; 
     }
 
     private void OnUserMessage(IPrivateIrcMessage msg)
     {
-        if (msg.Content.StartsWith("!r") || msg.Content.StartsWith("!regulations"))
+        Logger.Trace("MapManagerBehaviour::OnUserMessage()");
+
+        if (msg.Content.EndsWith("!r") || msg.Content.StartsWith("!regulations"))
         {
             var timeSpan = TimeSpan.FromSeconds(_lobby.Configuration.MaximumMapLength);
             
@@ -48,6 +48,8 @@ public class MapManagerBehaviour : IBotBehaviour
 
     private async void OnBeatmapChanged(BeatmapShell beatmap)
     {
+        Logger.Trace("MapManagerBehaviour::OnBeatmapChanged()");
+
         // Ignore the beatmap change made by the bot.
         if (_botAppliedBeatmap && beatmap.Id == _lastBotAppliedBeatmap)
         {
@@ -93,6 +95,12 @@ public class MapManagerBehaviour : IBotBehaviour
             // within limits, so we don't have to reset to the osu!tutorial everytime.
             _beatmapFallbackId = id;
 
+            CurrentBeatmapName = $"{beatmap.Artist} - {beatmap.Title}";
+            CurrentBeatmapId = id;
+            
+            if (beatmap.BeatmapsetId != null)
+                CurrentBeatmapSetId = int.Parse(beatmap.BeatmapsetId);
+
             AnnounceNewBeatmap(beatmap, id);
             
             return;
@@ -108,8 +116,6 @@ public class MapManagerBehaviour : IBotBehaviour
         {
             _lobby.SendMessage($"The beatmap you've picked is out of the lobby star range, please pick another one. ({_lobby.Configuration.MinimumStarRating:.0#}* - {_lobby.Configuration.MaximumStarRating:.0#}*)");
         }
-
-        _beatmapPickViolations++;
     }
 
     private void SetBeatmap(int id)

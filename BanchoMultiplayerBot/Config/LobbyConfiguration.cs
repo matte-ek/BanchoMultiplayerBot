@@ -34,5 +34,9 @@ public class LobbyConfiguration
 
     public int MinimumMapLength { get; set; }
     public int MaximumMapLength { get; set; }
+
+    // Behaviour specific 
+
+    public string? PreviousQueue;
     
 }

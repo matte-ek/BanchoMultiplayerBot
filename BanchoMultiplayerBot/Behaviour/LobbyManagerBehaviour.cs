@@ -1,4 +1,6 @@
-﻿namespace BanchoMultiplayerBot.Behaviour;
+﻿using BanchoSharp;
+
+namespace BanchoMultiplayerBot.Behaviour;
 
 /// <summary>
 /// This behaviour will make sure the room name, size
@@ -16,26 +18,38 @@ public class LobbyManagerBehaviour : IBotBehaviour
         _lobby.MultiplayerLobby.OnMatchAborted += OnMatchFinishedOrAborted;
         _lobby.MultiplayerLobby.OnSettingsUpdated += OnRoomSettingsUpdated;
 
+        _lobby.OnAdminMessage += OnAdminMessage;
+
         _lobby.OnLobbyChannelJoined += () =>
         {
             _lobby.SendMessage("!mp settings");
         };
     }
 
+    private void OnAdminMessage(BanchoSharp.Interfaces.IPrivateIrcMessage message)
+    {
+
+    }
+
     private void OnMatchFinishedOrAborted()
     {
+        Logger.Trace("LobbyManagerBehaviour::OnMatchFinishedOrAborted()");
+
         // Run "!mp settings" to receive updated information from Bancho.
         _lobby.SendMessage("!mp settings");
     }
 
     private void OnRoomSettingsUpdated()
-    {   
+    {
+        Logger.Trace("LobbyManagerBehaviour::OnRoomSettingsUpdated()");
+
         // At this point we should have received updated information
         // from "!mp settings"
 
         EnsureRoomName();
         EnsureRoomSize();
         EnsureRoomPassword();
+        EnsureRoomMods();
     }
 
     private void EnsureRoomName()
@@ -50,6 +64,8 @@ public class LobbyManagerBehaviour : IBotBehaviour
     {
         if (_lobby.Configuration.Size == null)
             return;
+        if (_lobby.IsRecovering)
+            return;
             
         // We cannot verify anything here, so just update it all the time.
         
@@ -60,9 +76,24 @@ public class LobbyManagerBehaviour : IBotBehaviour
     {
         if (_lobby.Configuration.Password == null)
             return;
-        
+        if (_lobby.IsRecovering)
+            return;
+
         // We cannot verify anything here either.
-        
+
         _lobby.SendMessage($"!mp password {_lobby.Configuration.Password}");
+    }
+
+    private void EnsureRoomMods()
+    {
+        // TODO: Allow mods through configuration
+
+        // Currently, make sure only the freemod bit is set.
+        if (_lobby.MultiplayerLobby.Mods == BanchoSharp.Multiplayer.Mods.Freemod)
+        {
+            return;
+        }
+
+        _lobby.SendMessage($"!mp mods Freemod");
     }
 }
