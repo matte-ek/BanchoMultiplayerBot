@@ -14,6 +14,8 @@
         {
             if (IsRunning)
                 return;
+            if (!HasValidConfiguration())
+                return;
 
             _botRunTask = Task.Run(RunAsync);
         }

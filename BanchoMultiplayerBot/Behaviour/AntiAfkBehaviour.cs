@@ -90,6 +90,7 @@ public class AntiAfkBehaviour : IBotBehaviour
         StartTimer();
     }
 
+    // TODO: This needs to be updated, currently not stopping the timer after host change and whatnot.
     private void StartTimer()
     {
         if (_afkTimerActive)
@@ -106,19 +107,25 @@ public class AntiAfkBehaviour : IBotBehaviour
 
         _afkTimerTask = Task.Delay(1000 * 30, _afkTimerCancellationToken.Token).ContinueWith(x =>
         {
-            if (_afkTimerCancellationToken.IsCancellationRequested || !_afkTimerActive)
+            try
             {
-                return;
+                if (_afkTimerCancellationToken.IsCancellationRequested || !_afkTimerActive)
+                {
+                    return;
+                }
+
+                var name = _lobby.MultiplayerLobby.Host?.Name;
+
+                if (name == null)
+                {
+                    return;
+                }
+
+                _lobby.Bot.Client.SendPrivateMessageAsync("BanchoBot", $"!stat {name.Replace(' ', '_')}");
             }
-
-            var name = _lobby.MultiplayerLobby.Host?.Name;
-
-            if (name == null)
+            catch (Exception)
             {
-                return;
             }
-
-            _lobby.Bot.Client.SendPrivateMessageAsync("BanchoBot", $"!stat {name.Replace(' ', '_')}");
         });
         
         Console.WriteLine("Starting afk timer!");

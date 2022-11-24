@@ -1,4 +1,6 @@
-﻿namespace BanchoMultiplayerBot.Config;
+﻿using BanchoMultiplayerBot.Data;
+
+namespace BanchoMultiplayerBot.Config;
 
 public class BotConfiguration
 {
@@ -19,5 +21,7 @@ public class BotConfiguration
 
     public bool? EnableAutoStartTimer { get; set; }
     public int? AutoStartTimerTime { get; set; }
+
+    public Announcement[]? Announcements { get; set; }
     
 }

@@ -18,6 +18,11 @@ builder.Services.AddScoped<AuthenticationStateProvider, TemporaryAuthStateProvid
 var app = builder.Build();
 
 app.Services.GetService<BotService>()?.Start();
+app.Services.GetService<BotService>()?.AnnouncementManager.Announcements.Add(new BanchoMultiplayerBot.Data.Announcement()
+{
+    Message = "Test message",
+    Frequency = 120
+});
 
 app.UsePathBase("/osu-bot");
 

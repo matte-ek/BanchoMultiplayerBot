@@ -7,6 +7,7 @@ using BanchoSharp.Interfaces;
 using System.Collections.Concurrent;
 using BanchoSharp.Multiplayer;
 using BanchoMultiplayerBot.Behaviour;
+using BanchoMultiplayerBot.Data;
 
 namespace BanchoMultiplayerBot;
 
@@ -16,6 +17,7 @@ public class Bot
     public BanchoClient Client { get; private set;  }
     public OsuApiWrapper OsuApi { get; }
     public BotConfiguration Configuration { get; }
+    public AnnouncementManager AnnouncementManager { get; } = new();
 
     public List<Lobby> Lobbies { get; } = new();
 
@@ -44,6 +46,8 @@ public class Bot
         Configuration = config ?? throw new Exception("Failed to read configuration file.");
         Client = new BanchoClient(new BanchoClientConfig(new IrcCredentials(Configuration.Username, Configuration.Password), LogLevel.Trace));
         OsuApi = new OsuApiWrapper(config.ApiKey);
+
+        AnnouncementManager.Run(this);
     }
 
     public void SendMessage(string channel, string message)
@@ -62,7 +66,7 @@ public class Bot
         Client.OnDisconnected += ClientOnDisconnected;
         Client.OnChannelParted += ClientOnChannelParted;
         Client.BanchoBotEvents.OnTournamentLobbyCreated += OnTournamentLobbyCreated;
-        
+
         await Client.ConnectAsync();
     }
 
@@ -236,6 +240,8 @@ public class Bot
         {
             Configuration.LobbyConfigurations[i] = Lobbies[i].Configuration;
         }
+
+        AnnouncementManager.Save();
         
         File.WriteAllText("config.json", JsonSerializer.Serialize(Configuration));
     }
@@ -250,15 +256,15 @@ public class Bot
             {
                 Console.WriteLine("DETECTED CONNECTION ERROR!");
 
-                while (connectionAttempts <= 10 && !Client.IsConnected)
+                SaveBotState();
+
+                while (connectionAttempts <= 20 && !Client.IsConnected)
                 {
                     connectionAttempts++;
                     
-                    Console.WriteLine("Attempting to reconnect in 10 seconds");
+                    Console.WriteLine("Attempting to reconnect in 20 seconds");
 
                     await Task.Delay(10000);
-
-                    SaveBotState();
                 
                     Client.Dispose();
                     Lobbies.Clear();
@@ -280,7 +286,7 @@ public class Bot
         {
             Console.WriteLine(Client.IsConnected
                 ? "Successfully re-connected to Bancho!"
-                : "Failed to restart the bot after 10 attempts.");
+                : "Failed to restart the bot after 20 attempts.");
         }
     }
     
@@ -310,10 +316,17 @@ public class Bot
                 
                 message.Time = DateTime.Now;
 
-                Console.WriteLine($"Sending message '{message.Content}' from {message.Time} (current queue: {sentMessages.Count})"); 
+                Console.WriteLine($"Sending message '{message.Content}' from {message.Time} (current queue: {sentMessages.Count})");
                 
-                await Client.SendPrivateMessageAsync(message.Channel, message.Content);
-                
+                try
+                {
+                    await Client.SendPrivateMessageAsync(message.Channel, message.Content);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Error while sending message: {e.Message}");
+                }
+
                 sentMessages.Add(message);
             }
         }
