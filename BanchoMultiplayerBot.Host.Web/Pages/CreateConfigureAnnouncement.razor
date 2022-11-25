@@ -1,0 +1,33 @@
+﻿@using BanchoMultiplayerBot.Data
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            Configure
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="Announcement.Message" Label="Message" />
+        <MudNumericField @bind-Value="Announcement.Frequency" Label="Frequency (s)" Variant="Variant.Filled" Min="0" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="OkButtonPressed">OK</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public Announcement Announcement { get; set; } = null!;
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void OkButtonPressed()
+    {        
+        MudDialog.Close(DialogResult.Ok(Announcement));
+    }
+}

@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BanchoMultiplayerBot", "Ban
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BanchoMultiplayerBot.Host.Console", "BanchoMultiplayerBot.Host.Console\BanchoMultiplayerBot.Host.Console.csproj", "{A5F33F67-C2D2-408A-9157-8A3C257E3044}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BanchoMultiplayerBot.Host.Web", "BanchoMultiplayerBot.Host.Web\BanchoMultiplayerBot.Host.Web.csproj", "{A152675A-71B1-4F4A-ACB2-79248EF39E78}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BanchoMultiplayerBot.Host.Web", "BanchoMultiplayerBot.Host.Web\BanchoMultiplayerBot.Host.Web.csproj", "{A152675A-71B1-4F4A-ACB2-79248EF39E78}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

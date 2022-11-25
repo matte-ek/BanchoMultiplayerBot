@@ -1,8 +1,10 @@
 ﻿@implements IDisposable
 @inject BotService Bot
+@inject IDialogService DialogService
 @page "/settings"
 @using BanchoMultiplayerBot
 @using BanchoMultiplayerBot.Config
+@using BanchoMultiplayerBot.Data
 
 <PageTitle>Settings</PageTitle>
 
@@ -30,7 +32,12 @@
             </MudPaper>
             <MudPaper Class="pa-8 ma-2">
                 <MudText Typo="Typo.h6" GutterBottom="true">Announcements</MudText>
-                    <MudTable Items="@Bot.AnnouncementManager.Announcements" Hover="true" Breakpoint="Breakpoint.Sm">
+                <MudTable Class="pa-0 ma-2" Items="@Bot.AnnouncementManager.Announcements" Hover="true" Breakpoint="Breakpoint.Sm">
+                        <ColGroup>
+                            <col style="width: 50%;" />
+                            <col style="width: 40px;" />
+                            <col style="width: 120px;" />
+                        </ColGroup>
                         <HeaderContent>
                             <MudTh>Message</MudTh>
                             <MudTh>Frequency</MudTh>
@@ -39,10 +46,14 @@
                         <RowTemplate>
                             <MudTd DataLabel="Message">@context.Message</MudTd>
                             <MudTd DataLabel="Frquency">@context.Frequency</MudTd>
-                        <MudTd DataLabel="Options"><MudIcon Icon="@Icons.Material.Filled.Settings" Title="Configure" /><MudIcon Icon="@Icons.Material.Filled.Delete" Title="Remove" /></MudTd>
+                        <MudTd DataLabel="Options"><MudIconButton Icon="@Icons.Material.Filled.Settings" Title="Configure" OnClick="(() => OnConfigureAnnouncementPressed(context))" /><MudIconButton Icon="@Icons.Material.Filled.Delete" Title="Remove" OnClick="(() => OnRemoveAnnouncementPressed(context))" /></MudTd>
                         </RowTemplate>
                     </MudTable>
+                    <MudPaper Class="pa-0 ma-2" Elevation="0">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@OnAddAnnouncementPressed">Add New</MudButton>
+                    </MudPaper>
             </MudPaper>
+
         </MudItem>
     </MudGrid>
 </MudForm>
@@ -50,6 +61,48 @@
 @code {
     private MudForm? _form;
     private BotConfiguration _configuration = null!;
+
+    private async Task OnConfigureAnnouncementPressed(Announcement announcement)
+    {
+        var announcementCopy = new Announcement()
+        {
+            Message = announcement.Message,
+            Frequency = announcement.Frequency,
+        };
+
+        var parameters = new DialogParameters { ["Announcement"] = announcementCopy };
+
+        var dialog = DialogService.Show<CreateConfigureAnnouncement>("ConfigureAnnouncement", parameters);
+        var result = await dialog.Result;
+
+        if (result.Cancelled)
+            return;
+
+        announcement.Message = announcementCopy.Message;
+        announcement.Frequency = announcementCopy.Frequency;
+    }
+
+    private void OnRemoveAnnouncementPressed(Announcement announcement)
+    {
+        Bot.AnnouncementManager.Announcements.Remove(announcement);
+    }
+
+    private async Task OnAddAnnouncementPressed()
+    {
+        var newAnnouncement = new Announcement();
+
+        var parameters = new DialogParameters { ["Announcement"] = newAnnouncement };
+
+        var dialog = DialogService.Show<CreateConfigureAnnouncement>("NewAnnouncement", parameters);
+        var result = await dialog.Result;
+
+        if (result.Cancelled)
+            return;
+
+        newAnnouncement.LastSent = DateTime.Now;        
+
+        Bot.AnnouncementManager.Announcements.Add(newAnnouncement);
+    }
 
     protected override void OnInitialized()
     {
