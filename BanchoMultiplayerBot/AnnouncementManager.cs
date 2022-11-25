@@ -1,4 +1,5 @@
 ﻿using BanchoMultiplayerBot.Data;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -74,7 +75,7 @@ namespace BanchoMultiplayerBot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Error while sending announcement: {e.Message}");
+                Log.Error($"Error while sending announcement: {e.Message}");
             }
         }
     }

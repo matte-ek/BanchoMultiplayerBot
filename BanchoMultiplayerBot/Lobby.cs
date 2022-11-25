@@ -84,9 +84,7 @@ public class Lobby
             Bot.Client.OnChannelJoined += channel =>
             {
                 if (channel.ChannelName != _channelName) return;
-    
-                Console.WriteLine($"Joined: {channel.ChannelName} ({_channelName})");
-            
+                
                 OnLobbyChannelJoined?.Invoke();
             };
             

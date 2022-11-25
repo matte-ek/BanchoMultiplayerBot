@@ -5,6 +5,16 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http.Connections;
 using MudBlazor.Services;
+using Serilog;
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .WriteTo.Console()
+    .WriteTo.File("log.txt",
+        restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information,
+        rollingInterval: RollingInterval.Day,
+        rollOnFileSizeLimit: true)
+    .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
 

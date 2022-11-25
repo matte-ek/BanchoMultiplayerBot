@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using BanchoSharp.Multiplayer;
 using BanchoMultiplayerBot.Behaviour;
 using BanchoMultiplayerBot.Data;
+using Serilog;
 
 namespace BanchoMultiplayerBot;
 
@@ -67,6 +68,12 @@ public class Bot
         Client.OnChannelParted += ClientOnChannelParted;
         Client.BanchoBotEvents.OnTournamentLobbyCreated += OnTournamentLobbyCreated;
 
+        // Events for logging purposes
+        Client.OnPrivateMessageReceived += e => { Log.Information($"MSG: {e.Sender}: {e.Content}"); };
+        Client.OnPrivateMessageSent += e => { Log.Information($"MSG: {e.Sender}: {e.Content}"); };
+        Client.OnChannelJoined += e => { Log.Information($"Joined channel {e.ChannelName}"); };
+        Client.OnChannelParted += e => { Log.Information($"Parted channel {e.ChannelName}"); };
+
         await Client.ConnectAsync();
     }
 
@@ -77,6 +84,7 @@ public class Bot
         // Lobby probably wasn't made by the bot.
         if (config == null)
         {
+            Log.Warning($"Tournament lobby created without configuration");
             return;
         }
 
@@ -143,7 +151,7 @@ public class Bot
     {
         if (!File.Exists("lobby_states.json"))
             return false;
-        
+
         var reader = File.OpenRead("lobby_states.json");
         var lobbyStates = JsonSerializer.Deserialize<List<LobbyState>>(reader);
 
@@ -152,7 +160,9 @@ public class Bot
         
         if (lobbyStates == null)
             return false;
-        
+
+        Log.Information("Recovering existing lobbies...");
+
         Client.OnChannelJoinFailure += async name =>
         {
             // Attempt to create a new lobby instead.
@@ -164,7 +174,7 @@ public class Bot
                 return;
             }
             
-            Console.WriteLine($"Failed to find lobby by name {lobbyName?.Name}, creating new one instead.");
+            Log.Warning($"Failed to find lobby by name {lobbyName?.Name}, creating new one instead.");
 
             await CreateLobby(lobbyConfig);
         };
@@ -254,15 +264,15 @@ public class Bot
         {
             if (!Client.IsConnected)
             {
-                Console.WriteLine("DETECTED CONNECTION ERROR!");
+                Log.Error("DETECTED CONNECTION ERROR!");
 
                 SaveBotState();
 
                 while (connectionAttempts <= 20 && !Client.IsConnected)
                 {
                     connectionAttempts++;
-                    
-                    Console.WriteLine("Attempting to reconnect in 20 seconds");
+
+                    Log.Information("Attempting to reconnect in 10 seconds");
 
                     await Task.Delay(10000);
                 
@@ -284,7 +294,7 @@ public class Bot
 
         if (!_exitRequested)
         {
-            Console.WriteLine(Client.IsConnected
+            Log.Information(Client.IsConnected
                 ? "Successfully re-connected to Bancho!"
                 : "Failed to restart the bot after 20 attempts.");
         }
@@ -316,7 +326,7 @@ public class Bot
                 
                 message.Time = DateTime.Now;
 
-                Console.WriteLine($"Sending message '{message.Content}' from {message.Time} (current queue: {sentMessages.Count})");
+                Log.Verbose($"Sending message '{message.Content}' from {message.Time} (current queue: {sentMessages.Count})");
                 
                 try
                 {
@@ -324,7 +334,7 @@ public class Bot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"Error while sending message: {e.Message}");
+                    Log.Error($"Error while sending message: {e.Message}");
                 }
 
                 sentMessages.Add(message);
