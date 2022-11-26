@@ -103,6 +103,17 @@ public class Lobby
         Bot.SendMessage(_channelName, message);
     }
 
+    /// <summary>
+    /// Get what string to use when passing a player as a parameter in tournament commands.
+    /// This will make sure to prioritize player ID, or use player names if not available.
+    /// </summary>
+    internal string GetPlayerIdentifier(string playerName)
+    {
+        int? playerId = MultiplayerLobby.Players.FirstOrDefault(x => x.Name == playerName)?.Id;
+
+        return playerId == null ? playerName.Replace(' ', '_') : $"#{playerId}";
+    }
+
     private void AddBehaviour(IBotBehaviour behaviour)
     {
         Behaviours.Add(behaviour);

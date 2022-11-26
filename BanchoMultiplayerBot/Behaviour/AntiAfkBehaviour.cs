@@ -62,7 +62,7 @@ public class AntiAfkBehaviour : IBotBehaviour
             if (status == "Afk")
             {
                 Log.Information("Kicking host due to AFK.");
-                _lobby.SendMessage($"!mp kick {playerName.Replace(' ', '_')}");
+                _lobby.SendMessage($"!mp kick {_lobby.GetPlayerIdentifier(playerName)}");
             }
 
             //if (status == "Idle")

@@ -1,13 +1,11 @@
 ﻿using System.Text.Json;
 using BanchoMultiplayerBot.Config;
-using BanchoMultiplayerBot.Config;
 using BanchoMultiplayerBot.OsuApi;
 using BanchoSharp;
 using BanchoSharp.Interfaces;
 using System.Collections.Concurrent;
 using BanchoSharp.Multiplayer;
 using BanchoMultiplayerBot.Behaviour;
-using BanchoMultiplayerBot.Data;
 using Serilog;
 
 namespace BanchoMultiplayerBot;
@@ -29,7 +27,7 @@ public class Bot
 
     private bool _exitRequested = false;
 
-    private List<LobbyConfiguration> _lobbyCreationQueue = new();
+    private readonly List<LobbyConfiguration> _lobbyCreationQueue = new();
     
     public Bot(string configurationFile)
     {

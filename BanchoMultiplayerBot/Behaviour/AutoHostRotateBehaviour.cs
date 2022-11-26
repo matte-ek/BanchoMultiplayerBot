@@ -186,7 +186,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
         if (player.Name != Queue[0])
         {
-            _lobby.SendMessage($"!mp host {Queue[0]}");
+            SetHost(Queue[0]);
         }
     }
 
@@ -196,13 +196,13 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
         if (_lobby.MultiplayerLobby.Host is null)
         {
-            _lobby.SendMessage($"!mp host {Queue[0].Replace(' ', '_')}");
+            SetHost(Queue[0]);
             return;
         }
 
         if (_lobby.MultiplayerLobby.Host.Name != Queue[0])
         {
-            _lobby.SendMessage($"!mp host {Queue[0].Replace(' ', '_')}");
+            SetHost(Queue[0]);
         }
     }
 
@@ -244,5 +244,10 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
         _hasSkippedHost = false;
         _playerSkipVote.Reset();
+    }
+
+    private void SetHost(string playerName)
+    {
+        _lobby.SendMessage($"!mp host {_lobby.GetPlayerIdentifier(playerName)}");
     }
 }
