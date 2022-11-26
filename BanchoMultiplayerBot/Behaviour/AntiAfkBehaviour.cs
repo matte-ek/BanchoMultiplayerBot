@@ -63,21 +63,14 @@ public class AntiAfkBehaviour : IBotBehaviour
             {
                 Log.Information("Kicking host due to AFK.");
                 _lobby.SendMessage($"!mp kick {_lobby.GetPlayerIdentifier(playerName)}");
+                return;
             }
-
-            //if (status == "Idle")
-            //{
-            //    Console.WriteLine("Skipping host due to Idle");
-
-            //    var autoHostRotateBehaviour = _lobby.Behaviours.Find(x => x.GetType() == typeof(AutoHostRotateBehaviour));
-            //    if (autoHostRotateBehaviour != null)
-            //    {
-            //        ((AutoHostRotateBehaviour)autoHostRotateBehaviour).ForceSkipPlayer();
-            //    }
-            //}
+            
+            StartTimer(120);
         }
         catch (Exception)
         {
+            // ignored
         }
     }
 
@@ -91,8 +84,7 @@ public class AntiAfkBehaviour : IBotBehaviour
         StartTimer();
     }
 
-    // TODO: This needs to be updated, currently not stopping the timer after host change and whatnot.
-    private void StartTimer()
+    private void StartTimer(int timeoutTime = 30)
     {
         if (_afkTimerActive)
         {
@@ -106,7 +98,7 @@ public class AntiAfkBehaviour : IBotBehaviour
         _afkTimerCancellationToken?.Dispose();
         _afkTimerCancellationToken = new CancellationTokenSource();
 
-        _afkTimerTask = Task.Delay(1000 * 30, _afkTimerCancellationToken.Token).ContinueWith(x =>
+        _afkTimerTask = Task.Delay(1000 * timeoutTime, _afkTimerCancellationToken.Token).ContinueWith(x =>
         {
             try
             {
@@ -126,10 +118,9 @@ public class AntiAfkBehaviour : IBotBehaviour
             }
             catch (Exception)
             {
+                // ignored
             }
         });
-        
-        Log.Debug("Starting afk timer!");
         
         _afkTimerActive = true;
     }
