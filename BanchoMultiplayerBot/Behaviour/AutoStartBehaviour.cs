@@ -76,6 +76,14 @@ public class AutoStartBehaviour : IBotBehaviour
                 {
                     if (message.Sender == _lobby.MultiplayerLobby.Host.Name)
                     {
+                        // If the user ran '!start' without any arguments,
+                        // start the match immediately.
+                        if (message.Content.Equals("!start") || message.Content.Equals("!mp start"))
+                        {
+                            _lobby.SendMessage("!mp start");
+                            return;
+                        }
+                        
                         int requestedTime;
 
                         if (message.Content.StartsWith("!start"))
