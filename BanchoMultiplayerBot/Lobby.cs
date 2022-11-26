@@ -49,6 +49,7 @@ public class Lobby
         AddBehaviour(new AutoStartBehaviour());
         AddBehaviour(new AbortVoteBehaviour());
         AddBehaviour(new AntiAfkBehaviour());
+        AddBehaviour(new HelpBehaviour());
         
         // Add "custom" behaviours
         if (Configuration.Behaviours != null)
