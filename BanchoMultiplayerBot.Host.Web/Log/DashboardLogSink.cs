@@ -7,7 +7,7 @@ namespace BanchoMultiplayerBot.Host.Web.Log
     {
         private readonly IFormatProvider _formatProvider;
 
-        public static List<Tuple<string, LogEventLevel>> Logs = new(); 
+        public static readonly List<Tuple<string, LogEventLevel>> Logs = new(); 
 
         public DashboardLogSink(IFormatProvider formatProvider)
         {

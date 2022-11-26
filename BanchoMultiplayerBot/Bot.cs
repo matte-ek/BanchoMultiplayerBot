@@ -69,8 +69,8 @@ public class Bot
         Client.BanchoBotEvents.OnTournamentLobbyCreated += OnTournamentLobbyCreated;
 
         // Events for logging purposes
-        Client.OnPrivateMessageReceived += e => { Log.Information($"MSG: {e.Sender}: {e.Content}"); };
-        Client.OnPrivateMessageSent += e => { Log.Information($"MSG: {e.Sender}: {e.Content}"); };
+        Client.OnPrivateMessageReceived += e => { Log.Information($"[{e.Recipient}] {e.Sender}: {e.Content}"); };
+        Client.OnPrivateMessageSent += e => { Log.Information($"[{e.Recipient}] {e.Sender}: {e.Content}"); };
         Client.OnChannelJoined += e => { Log.Information($"Joined channel {e.ChannelName}"); };
         Client.OnChannelParted += e => { Log.Information($"Parted channel {e.ChannelName}"); };
 
@@ -205,7 +205,7 @@ public class Bot
     {
     }
 
-    private void SaveBotState()
+    public void SaveBotState()
     {
         SaveBotConfiguration();
 
@@ -240,6 +240,8 @@ public class Bot
         }
         
         File.WriteAllText("lobby_states.json", JsonSerializer.Serialize(lobbyStates));
+        
+        Log.Information($"Saved bot state successfully ({lobbyStates.Count} lobbies)");
     }
 
     private void SaveBotConfiguration()

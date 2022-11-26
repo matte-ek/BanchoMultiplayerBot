@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <Reference Include="BanchoSharp">
-      <HintPath>..\..\hburn7\BanchoSharp\BanchoSharp\bin\Release\net6.0\BanchoSharp.dll</HintPath>
+      <HintPath>..\..\BanchoSharp\BanchoSharp\bin\Release\net6.0\BanchoSharp.dll</HintPath>
     </Reference>
   </ItemGroup>
 

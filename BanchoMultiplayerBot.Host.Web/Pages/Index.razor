@@ -5,6 +5,7 @@
 @using BanchoMultiplayerBot
 @using BanchoMultiplayerBot.Config
 @using System.Threading
+@using BanchoMultiplayerBot.Host.Web.Log
 
 <PageTitle>Dashboard</PageTitle>
 
@@ -51,6 +52,19 @@
 </MudGrid>
 
 <MudPaper Class="pa-4 mt-4">
+    <MudPaper Height="440px" Elevation="0">
+            <MudPaper Class="pa-2 ma-0" MaxHeight="440px" Style="overflow: auto;display: flex;flex-direction: column-reverse;" Elevation="0">
+                @foreach (var log in DashboardLogSink.Logs)
+                {
+                    <MudPaper Class="d-flex flex-row flex-grow-1 gap-1" Elevation="0">
+                        <MudText Typo="Typo.body2">@log.Item1</MudText>
+                    </MudPaper>
+                }
+            </MudPaper>
+        </MudPaper>
+</MudPaper>
+
+<MudPaper Class="pa-4 mt-4">
     <MudButton Color="Color.Primary" Variant="Variant.Filled" @onclick="ConnectToBancho" Disabled="@(_isConnecting || !Bot.HasValidConfiguration() || _isConnected)">
         @if (_isConnecting)
         {
@@ -62,6 +76,8 @@
             <MudText>Connect</MudText>
         }
     </MudButton>
+
+    <MudButton Color="Color.Primary" Variant="Variant.Filled" @onclick="SaveConfig">Save Configuration</MudButton>
 
     <MudButton Color="Color.Error" Variant="Variant.Outlined" @onclick="TerminateBot">Exit</MudButton>
 </MudPaper>
@@ -156,5 +172,10 @@
         await Bot.DisconnectAsync();
 
         ApplicationLifetime.StopApplication();
+    }
+
+    private void SaveConfig()
+    {
+        Bot.SaveBotState();
     }
 }

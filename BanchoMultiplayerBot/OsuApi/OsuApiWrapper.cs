@@ -2,6 +2,7 @@
 using System.Text.Json;
 using BanchoMultiplayerBot.OsuApi.Exceptions;
 using BanchoSharp;
+using Serilog;
 
 namespace BanchoMultiplayerBot.OsuApi;
 
@@ -22,7 +23,7 @@ public class OsuApiWrapper
         
         if (!result.IsSuccessStatusCode)
         {
-            Console.WriteLine($"Error code {result.StatusCode} while getting beatmap details for id {beatmapId}!");
+            Log.Error($"Error code {result.StatusCode} while getting beatmap details for id {beatmapId}!");
 
             return result.StatusCode switch
             {
@@ -40,7 +41,7 @@ public class OsuApiWrapper
         }
         catch (Exception e)
         {
-            Console.WriteLine($"Error while parsing json from osu!api: {e.Message}, beatmap: {beatmapId}");
+            Log.Error($"Error while parsing json from osu!api: {e.Message}, beatmap: {beatmapId}");
 
             throw;
         }

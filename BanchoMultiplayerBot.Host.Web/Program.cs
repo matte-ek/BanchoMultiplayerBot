@@ -1,5 +1,6 @@
 using BanchoMultiplayerBot.Host.Web;
 using BanchoMultiplayerBot.Host.Web.Auth;
+using BanchoMultiplayerBot.Host.Web.Log;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -14,6 +15,7 @@ Log.Logger = new LoggerConfiguration()
         restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information,
         rollingInterval: RollingInterval.Day,
         rollOnFileSizeLimit: true)
+    .WriteTo.DashboardLogSink()
     .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);

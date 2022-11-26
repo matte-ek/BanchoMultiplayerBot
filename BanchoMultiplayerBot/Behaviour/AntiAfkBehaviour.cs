@@ -1,5 +1,6 @@
 ﻿using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
+using Serilog;
 
 namespace BanchoMultiplayerBot.Behaviour;
 
@@ -60,7 +61,7 @@ public class AntiAfkBehaviour : IBotBehaviour
 
             if (status == "Afk")
             {
-                Console.WriteLine("Kicking host due to AFK.");
+                Log.Information("Kicking host due to AFK.");
                 _lobby.SendMessage($"!mp kick {playerName.Replace(' ', '_')}");
             }
 
@@ -128,7 +129,7 @@ public class AntiAfkBehaviour : IBotBehaviour
             }
         });
         
-        Console.WriteLine("Starting afk timer!");
+        Log.Debug("Starting afk timer!");
         
         _afkTimerActive = true;
     }

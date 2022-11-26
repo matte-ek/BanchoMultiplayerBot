@@ -1,5 +1,6 @@
 ﻿using BanchoSharp;
 using BanchoSharp.Interfaces;
+using Serilog;
 
 namespace BanchoMultiplayerBot.Behaviour;
 
@@ -26,8 +27,6 @@ public class AutoStartBehaviour : IBotBehaviour
 
         _lobby.MultiplayerLobby.OnAllPlayersReady += () =>
         {
-            Logger.Trace("AutoStartBehaviour::OnAllPlayersReady()");
-
             if (_lobby.Bot.Configuration.AutoStartAllPlayersReady == null || !_lobby.Bot.Configuration.AutoStartAllPlayersReady.Value)
             {
                 return;
@@ -40,8 +39,6 @@ public class AutoStartBehaviour : IBotBehaviour
 
         _lobby.MultiplayerLobby.OnMatchStarted += () =>
         {
-            Logger.Trace("AutoStartBehaviour::OnMatchStarted()");
-
             AbortTimer();
 
             _playerStartVote.Reset();
@@ -58,8 +55,6 @@ public class AutoStartBehaviour : IBotBehaviour
 
     private void OnNewAllowedMap()
     {
-        Logger.Trace("AutoStartBehaviour::OnNewAllowedMap()");
-
         if (_lobby.Bot.Configuration.EnableAutoStartTimer == null ||
             !_lobby.Bot.Configuration.EnableAutoStartTimer.Value ||
             _lobby.Bot.Configuration.AutoStartTimerTime == null) 
@@ -70,8 +65,6 @@ public class AutoStartBehaviour : IBotBehaviour
 
     private void OnUserMessage(IPrivateIrcMessage message)
     {
-        Logger.Trace("AutoStartBehaviour::OnUserMessage()");
-
         // Kind of a stupid fix to prevent loop backs
         bool isPlayer = message.Sender != _lobby.Bot.Configuration.Username;
 
@@ -135,7 +128,7 @@ public class AutoStartBehaviour : IBotBehaviour
         if (length <= 1 || length >= 500)
             return;
         
-        Console.WriteLine("(Re)starting timer.");
+        Log.Information("(Re)starting timer.");
      
         // This was previously implemented with Task.Delay, and a cancellation token to cancel the delay
         // task if we had to abort the timer. This however for some reason didn't exactly work all the time,

@@ -28,21 +28,16 @@ public class LobbyManagerBehaviour : IBotBehaviour
 
     private void OnAdminMessage(BanchoSharp.Interfaces.IPrivateIrcMessage message)
     {
-
     }
 
     private void OnMatchFinishedOrAborted()
     {
-        Logger.Trace("LobbyManagerBehaviour::OnMatchFinishedOrAborted()");
-
         // Run "!mp settings" to receive updated information from Bancho.
         _lobby.SendMessage("!mp settings");
     }
 
     private void OnRoomSettingsUpdated()
     {
-        Logger.Trace("LobbyManagerBehaviour::OnRoomSettingsUpdated()");
-
         // At this point we should have received updated information
         // from "!mp settings"
 

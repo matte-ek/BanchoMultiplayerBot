@@ -1,6 +1,7 @@
 ﻿using BanchoSharp;
 using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
+using Serilog;
 
 namespace BanchoMultiplayerBot.Behaviour;
 
@@ -24,8 +25,6 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
         _lobby.MultiplayerLobby.OnPlayerJoined += player =>
         {
-            Logger.Trace("AutoHostRotateBehaviour::OnPlayerJoined()");
-
             if (!Queue.Contains(player.Name))
                 Queue.Add(player.Name);
 
@@ -39,8 +38,6 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
         _lobby.MultiplayerLobby.OnPlayerDisconnected += disconnectEventArgs =>
         {
-            Logger.Trace("AutoHostRotateBehaviour::OnPlayerDisconnected()");
-
             if (Queue.Contains(disconnectEventArgs.Player.Name))
             {
                 Queue.Remove(disconnectEventArgs.Player.Name);
@@ -104,8 +101,6 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
     private void OnUserMessage(IPrivateIrcMessage message)
     {
-        Logger.Trace("AutoHostRotateBehaviour::OnUserMessage()");
-
         // Allow the users to see the current queue
         if (message.Content.StartsWith("!q") || message.Content.StartsWith("!queue"))
         {
@@ -147,8 +142,6 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
     private void OnSettingsUpdated()
     {
-        Logger.Trace("AutoHostRotateBehaviour::OnSettingsUpdated()");
-
         // Attempt to reload the old queue if we're recovering a previous session.
         if (_lobby.IsRecovering && _lobby.Configuration.PreviousQueue != null)
         {
@@ -162,7 +155,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
                 }
             }
 
-            Console.WriteLine($"Recovered old queue: {string.Join(", ", Queue.Take(5))}");
+            Log.Information($"Recovered old queue: {string.Join(", ", Queue.Take(5))}");
         }
 
         foreach (var player in _lobby.MultiplayerLobby.Players)
@@ -186,8 +179,6 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
     private void OnHostChanged(MultiplayerPlayer player)
     {
-        Logger.Trace("AutoHostRotateBehaviour::OnHostChanged()");
-
         if (!Queue.Any()) return;
 
         if (_lobby.IsRecovering)
@@ -201,8 +192,6 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
     private void OnQueueUpdated()
     {
-        Logger.Trace("AutoHostRotateBehaviour::OnQueueUpdated()");
-
         if (!Queue.Any()) return;
 
         if (_lobby.MultiplayerLobby.Host is null)
@@ -244,8 +233,6 @@ public class AutoHostRotateBehaviour : IBotBehaviour
     /// </summary>
     private void SkipCurrentPlayer()
     {
-        Logger.Trace("AutoHostRotateBehaviour::SkipCurrentPlayer()");
-
         if (!Queue.Any()) return;
 
         var playerName = Queue[0];

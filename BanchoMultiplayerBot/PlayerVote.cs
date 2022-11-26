@@ -1,4 +1,5 @@
 ﻿using BanchoSharp.Multiplayer;
+using Serilog;
 
 namespace BanchoMultiplayerBot;
 
@@ -38,10 +39,12 @@ public class PlayerVote
         if (Votes.Count < requiredVotes) 
             return false;
 
+        Log.Information($"Passed vote {Question} with ({Votes.Count}/{requiredVotes})");
+
         Reset();
         
         OnVotePassed?.Invoke();
-            
+        
         return true;
     }
 

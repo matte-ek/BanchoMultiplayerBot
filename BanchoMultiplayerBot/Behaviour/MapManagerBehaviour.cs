@@ -36,8 +36,6 @@ public class MapManagerBehaviour : IBotBehaviour
 
     private void OnUserMessage(IPrivateIrcMessage msg)
     {
-        Logger.Trace("MapManagerBehaviour::OnUserMessage()");
-
         if (msg.Content.EndsWith("!r") || msg.Content.StartsWith("!regulations"))
         {
             var timeSpan = TimeSpan.FromSeconds(_lobby.Configuration.MaximumMapLength);
@@ -48,8 +46,6 @@ public class MapManagerBehaviour : IBotBehaviour
 
     private async void OnBeatmapChanged(BeatmapShell beatmap)
     {
-        Logger.Trace("MapManagerBehaviour::OnBeatmapChanged()");
-
         // Ignore the beatmap change made by the bot.
         if (_botAppliedBeatmap && beatmap.Id == _lastBotAppliedBeatmap)
         {
