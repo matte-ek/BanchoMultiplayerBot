@@ -46,10 +46,6 @@ public class Lobby
         // Add default behaviours
         AddBehaviour(new LobbyManagerBehaviour());
         AddBehaviour(new MapManagerBehaviour());
-        AddBehaviour(new AutoStartBehaviour());
-        AddBehaviour(new AbortVoteBehaviour());
-        AddBehaviour(new AntiAfkBehaviour());
-        AddBehaviour(new HelpBehaviour());
         
         // Add "custom" behaviours
         if (Configuration.Behaviours != null)
@@ -58,6 +54,14 @@ public class Lobby
             {
                 if (behaviourName == "AutoHostRotate")
                     AddBehaviour(new AutoHostRotateBehaviour());
+                if (behaviourName == "AntiAfk")
+                    AddBehaviour(new AntiAfkBehaviour());
+                if (behaviourName == "AutoStart")
+                    AddBehaviour(new AutoStartBehaviour());
+                if (behaviourName == "AbortVote")
+                    AddBehaviour(new AbortVoteBehaviour());
+                if (behaviourName == "Help")
+                    AddBehaviour(new HelpBehaviour());
             }   
         }
 

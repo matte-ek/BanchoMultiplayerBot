@@ -1,4 +1,6 @@
 ﻿using BanchoSharp;
+using BanchoSharp.Multiplayer;
+using Serilog;
 
 namespace BanchoMultiplayerBot.Behaviour;
 
@@ -81,14 +83,59 @@ public class LobbyManagerBehaviour : IBotBehaviour
 
     private void EnsureRoomMods()
     {
-        // TODO: Allow mods through configuration
-
-        // Currently, make sure only the freemod bit is set.
-        if (_lobby.MultiplayerLobby.Mods == BanchoSharp.Multiplayer.Mods.Freemod)
-        {
+        if (_lobby.Configuration.SelectedMods == null)
             return;
-        }
 
-        _lobby.SendMessage($"!mp mods Freemod");
+        try
+        {
+            Mods desiredMods = 0;
+
+            foreach (var modName in _lobby.Configuration.SelectedMods)
+            {
+                desiredMods |= (Mods)Enum.Parse(typeof(Mods), modName);
+            }
+
+            if (_lobby.MultiplayerLobby.Mods == desiredMods)
+            {
+                return;
+            }
+
+            var modsCommandNonSpacing = desiredMods.ToAbbreviatedForm(false);
+
+            if (modsCommandNonSpacing == "None")
+            {
+                if ((desiredMods & Mods.Freemod) != 0)
+                {
+                    _lobby.SendMessage($"!mp mods Freemod");
+                }
+
+                return;
+            }
+
+            // This has to be one of the stupidest things I've written in a while
+
+            var modsCommand = "";
+            bool newMod = false;
+
+            foreach (var c in modsCommandNonSpacing)
+            {
+                modsCommand += c;
+
+                if (newMod)
+                {
+                    modsCommand += ' ';
+                    newMod = false;
+                    continue;
+                }
+
+                newMod = true;
+            }
+
+            _lobby.SendMessage($"!mp mods {modsCommand}");
+        }
+        catch (Exception e)
+        {
+            Log.Error($"Error during EnsureRoomMods(): {e.Message}");
+        }
     }
 }

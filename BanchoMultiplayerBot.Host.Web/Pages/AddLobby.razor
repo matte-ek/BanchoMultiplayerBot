@@ -16,8 +16,12 @@
 
 <MudForm @ref="_form">
     <MudPaper Class="pa-4 ma-4">
-        <MudTextField @bind-Value="_name" T="string" Label="Name" Required="true" RequiredError="Name is required" Variant="Variant.Outlined"/>
-        <MudTextField @bind-Value="_channel" T="string" Label="Channel" Required="false" HelperText="If empty, a new lobby will be created." Variant="Variant.Outlined"/>
+        <MudTextField @bind-Value="_name" T="string" Label="Name" Required="true" RequiredError="Name is required" Variant="Variant.Filled"/>
+        <MudTextField @bind-Value="_channel" T="string" Label="Channel" Required="false" HelperText="If empty, a new lobby will be created." Variant="Variant.Filled" />
+        <MudSelect @bind-Value="_preset" T="string" Label="Create from preset" Variant="Variant.Filled" AnchorOrigin="Origin.BottomCenter">
+            <MudSelectItem Value="@("None")" />
+            <MudSelectItem Value="@("Auto Host Rotate")" />
+        </MudSelect>
     </MudPaper>
     <MudPaper Class="pa-4 ma-4">
         <MudButton Variant="Variant.Filled" Color="Color.Primary" DisableElevation="true" OnClick="OnOkPressed">OK</MudButton>
@@ -30,9 +34,11 @@
 
     private bool _showAlert;
     private string? _alertText;
-    
+
     private string? _name;
     private string? _channel;
+
+    private string? _preset;
 
     private async void OnOkPressed()
     {
@@ -42,19 +48,33 @@
             _alertText = "Bot is not connected to Bancho.";
             return;
         }
-        
+
         if (_name == null || !_name.Any())
         {
             _showAlert = true;
             _alertText = "Name may not be empty";
             return;
         }
-        
+
         var defaultConfig = new LobbyConfiguration
         {
-            Name = _name,
-            Behaviours = new []{ "AutoHostRotate" }
+            Name = _name
         };
+
+        if (_preset != null)
+        {
+            if (_preset == "Auto Host Rotate")
+            {
+                defaultConfig.Behaviours = new string[]
+                {
+                    "AutoHostRotate",
+                    "AntiAfk",
+                    "AutoStart",
+                    "AbortVote",
+                    "Help"
+                };
+            }
+        }
 
         if (_channel != null && _channel.Any())
         {

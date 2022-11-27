@@ -9,9 +9,9 @@ public class LobbyConfiguration
 
     public string Name { get; set; } = string.Empty;
 
-    public GameMode? Mode { get; set; }
+    public GameMode? Mode { get; set; } = GameMode.osu;
 
-    public string Mods { get; set; } = string.Empty;
+    public string[]? SelectedMods { get; set; }
 
     public int? Size { get; set; } = 16;
 

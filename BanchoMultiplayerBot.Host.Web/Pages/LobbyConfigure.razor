@@ -2,6 +2,7 @@
 @inject BotService Bot
 @page "/lobby/{IdStr}/configure"
 @using BanchoMultiplayerBot.Config
+@using BanchoSharp.Multiplayer
 
 <PageTitle>Configure Lobby</PageTitle>
 
@@ -15,27 +16,44 @@
                 <MudTextField @bind-Value="_configuration.Name" T="string" Label="Name" Required="true" RequiredError="Name is required!" Variant="Variant.Filled"/>
                 <MudNumericField @bind-Value="_configuration.Size" Label="Size" Variant="Variant.Filled" Min="1" Max="16" />
                 <MudTextField @bind-Value="_configuration.Password" T="string" Label="Password" Variant="Variant.Filled"/>
+                <MudSelect @bind-Value="_selectedMode" T="string" Label="Game mode" Variant="Variant.Filled" AnchorOrigin="Origin.BottomCenter">
+                    <MudSelectItem Value="@("osu!std")"/>
+                    <MudSelectItem Value="@("osu!mania")" />
+                    <MudSelectItem Value="@("osu!taiko")" />
+                    <MudSelectItem Value="@("osu!catch")" />
+                </MudSelect>
+                <MudSelect T="string" Label="Mods" MultiSelection="true" Variant="Variant.Filled" AnchorOrigin="Origin.BottomCenter" @bind-SelectedValues="_selectedMods">
+                    @foreach (var mod in Enum.GetNames(typeof(Mods)))
+                    {
+                        @if (mod == "None") continue;
+                        
+                        <MudSelectItem T="string" Value="@mod">@mod</MudSelectItem>
+                    }
+                </MudSelect>
             </MudPaper>
-            <MudPaper Class="pa-8 ma-2">
-                <MudText Typo="Typo.h6" GutterBottom="true">Map Regulations</MudText>
-                <MudSwitch @bind-Checked="_configuration!.LimitStarRating" Label="Limit star rating" Color="Color.Primary"/>
-                <MudNumericField @bind-Value="_configuration.MinimumStarRating" Label="Minimum star rating" Variant="Variant.Filled" Min="0" />
-                <MudNumericField @bind-Value="_configuration.MaximumStarRating" Label="Maximum star rating" Variant="Variant.Filled" Min="0" />
-                <MudNumericField @bind-Value="_configuration.StarRatingErrorMargin" Label="Star rating error margin" Variant="Variant.Filled" Min="0" Max="1" />
-                <MudSwitch @bind-Checked="_configuration!.LimitMapLength" Label="Limit map length" Color="Color.Primary"/>
-                <MudNumericField @bind-Value="_configuration.MinimumMapLength" Label="Minimum map length (s)" Variant="Variant.Filled" Min="0" />
-                <MudNumericField @bind-Value="_configuration.MaximumMapLength" Label="Maximum map length (s)" Variant="Variant.Filled" Min="0" />
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="6">
             <MudPaper Class="pa-8 ma-2">
                 <MudText Typo="Typo.h6" GutterBottom="true">Behaviours</MudText>
-                <MudSelect T="string" Label="Behaviours" MultiSelection="true" @bind-SelectedValues="_selectedBehaviours">
+                <MudSelect T="string" Label="Behaviours" MultiSelection="true" Variant="Variant.Filled" @bind-SelectedValues="_selectedBehaviours">
                     @foreach (var option in _behaviourOptions)
                     {
                         <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
                     }
                 </MudSelect>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6">
+            <MudPaper Class="pa-8 ma-2">
+                <MudText Typo="Typo.h6" GutterBottom="true">Star Rating</MudText>
+                <MudSwitch @bind-Checked="_configuration!.LimitStarRating" Label="Limit star rating" Color="Color.Primary" />
+                <MudNumericField @bind-Value="_configuration.MinimumStarRating" Label="Minimum star rating" Variant="Variant.Filled" Min="0" />
+                <MudNumericField @bind-Value="_configuration.MaximumStarRating" Label="Maximum star rating" Variant="Variant.Filled" Min="0" />
+                <MudNumericField @bind-Value="_configuration.StarRatingErrorMargin" Label="Star rating error margin" Variant="Variant.Filled" Min="0" Max="1" />
+            </MudPaper>
+            <MudPaper Class="pa-8 ma-2">
+                <MudText Typo="Typo.h6" GutterBottom="true">Map Length</MudText>
+                <MudSwitch @bind-Checked="_configuration!.LimitMapLength" Label="Limit map length" Color="Color.Primary" />
+                <MudNumericField @bind-Value="_configuration.MinimumMapLength" Label="Minimum map length (s)" Variant="Variant.Filled" Min="0" />
+                <MudNumericField @bind-Value="_configuration.MaximumMapLength" Label="Maximum map length (s)" Variant="Variant.Filled" Min="0" />
             </MudPaper>
         </MudItem>
     </MudGrid>
@@ -51,7 +69,10 @@
     private BanchoMultiplayerBot.Lobby? _lobby;
     private LobbyConfiguration? _configuration;
 
-    private IEnumerable<string> _selectedBehaviours = new HashSet<string>();
+    private IEnumerable<string>? _selectedBehaviours;
+    private IEnumerable<string>? _selectedMods;//new HashSet<string>();
+
+    private string? _selectedMode;
 
     protected override void OnInitialized()
     {
@@ -61,10 +82,43 @@
             return;
         
         _configuration = _lobby.Configuration;
+
+        if (_configuration.Mode != null)
+        {
+            _selectedMode = _configuration.Mode switch
+            {
+                GameMode.osu => "osu!std",
+                GameMode.osuMania => "osu!mania",
+                GameMode.osuTaiko => "osu!taiko",
+                GameMode.osuCatch => "osu!catch",
+                _ => _selectedMode
+            };
+        }
+        
+        _selectedMods = _configuration.SelectedMods != null ? new HashSet<string>(_configuration.SelectedMods) : new HashSet<string>();
+        _selectedBehaviours = _configuration.Behaviours != null ? new HashSet<string>(_configuration.Behaviours) : new HashSet<string>();
     }
 
     public void Dispose()
     {
+        if (_configuration == null)
+        {
+            return;
+        }
+        
+        _configuration.Mode = _selectedMode switch
+        {
+            "osu!std" => GameMode.osu,
+            "osu!mania" => GameMode.osuMania,
+            "osu!taiko" => GameMode.osuTaiko,
+            "osu!catch" => GameMode.osuCatch,
+            _ => _configuration.Mode
+        };
+
+        if (_selectedMods != null)
+            _configuration.SelectedMods = _selectedMods.ToArray();
+        if (_selectedBehaviours != null)
+            _configuration.Behaviours = _selectedBehaviours.ToArray();
     }
 
     private void ParseIdParameter()
@@ -79,6 +133,10 @@
     
     private readonly string[] _behaviourOptions =
     {
-        "AutoHostRotate"
+        "AutoHostRotate",
+        "AntiAfk",
+        "AutoStart",
+        "AbortVote",
+        "Help"
     };
 }
