@@ -46,6 +46,7 @@ public class Lobby
         // Add default behaviours
         AddBehaviour(new LobbyManagerBehaviour());
         AddBehaviour(new MapManagerBehaviour());
+        AddBehaviour(new BanBehaviour());
         
         // Add "custom" behaviours
         if (Configuration.Behaviours != null)
@@ -81,6 +82,7 @@ public class Lobby
         };
 
         Bot.Client.OnPrivateMessageReceived += ClientOnPrivateMessageReceived;
+        Bot.Client.OnPrivateMessageSent += ClientOnPrivateMessageSent;
 
         if (!joined)
         {
@@ -101,6 +103,11 @@ public class Lobby
         {
             OnLobbyChannelJoined?.Invoke();
         }
+    }
+
+    private void ClientOnPrivateMessageSent(IPrivateIrcMessage e)
+    {
+        OnAdminMessage?.Invoke(e);
     }
 
     public void SendMessage(string message)

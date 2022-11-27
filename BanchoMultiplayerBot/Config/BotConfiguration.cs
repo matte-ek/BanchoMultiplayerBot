@@ -24,4 +24,6 @@ public class BotConfiguration
 
     public Announcement[]? Announcements { get; set; }
     
+    public string[]? BannedPlayers { get; set; }
+    
 }
