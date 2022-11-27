@@ -51,3 +51,12 @@ Authentication is "temporary" and is subject to change in the future, as storing
 - [x] Auto host rotate
 - [x] Votes for skip/start/abort
 - [x] Detect and kick AFK players
+- [x] Web interface for management 
+- [x] Fully recover and pick up where it left off during bot restarts
+- [x] Detect and restart the bot during network connectivity issues
+- [x] Detect and restart the bot during osu!Bancho restarts (Currently untested)
+- [x] Announcements at specific intervals in all lobbies
+- [x] Add better logging with Serilog
+- [ ] Support  more options, such as osu! mode, mods
+- [ ] Behaviour customization directly within the web interface
+- [ ] Add "for fun" player ranking behaviour
