@@ -29,6 +29,12 @@ public class BanBehaviour : IBotBehaviour
                 }
                 else
                 {
+                    if (_lobby.Bot.Configuration.BannedPlayers.ToList().Contains(nameSplit))
+                    {
+                        // Player already exists.
+                        return;
+                    }
+
                     var banList = _lobby.Bot.Configuration.BannedPlayers.ToList();
                     
                     banList.Add(nameSplit);
