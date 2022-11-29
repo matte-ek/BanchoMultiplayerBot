@@ -4,6 +4,7 @@ using BanchoMultiplayerBot.OsuApi.Exceptions;
 using BanchoSharp;
 using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
+using Serilog;
 
 namespace BanchoMultiplayerBot.Behaviour;
 
@@ -85,7 +86,7 @@ public class MapManagerBehaviour : IBotBehaviour
 
     private void EnsureBeatmapLimits(BeatmapModel beatmap, int id)
     {
-        if (IsAllowedBeatmapLength(beatmap) && IsAllowedBeatmapStarRating(beatmap))
+        if (IsAllowedBeatmapLength(beatmap) && IsAllowedBeatmapStarRating(beatmap) && IsAllowedBeatmapGameMode(beatmap))
         {
             // Update the fallback id whenever someone picks a map that's 
             // within limits, so we don't have to reset to the osu!tutorial everytime.
@@ -101,10 +102,23 @@ public class MapManagerBehaviour : IBotBehaviour
             
             return;
         }
-
-        SetBeatmap(_beatmapFallbackId);
         
-        if (!IsAllowedBeatmapLength(beatmap))
+        SetBeatmap(_beatmapFallbackId);
+
+        if (!IsAllowedBeatmapGameMode(beatmap))
+        {
+            string modeName = _lobby.Configuration.Mode switch
+            {
+                GameMode.osu => "osu!std",
+                GameMode.osuCatch => "osu!catch",
+                GameMode.osuMania => "osu!mania",
+                GameMode.osuTaiko => "osu!taiko",
+                _ => "Error"
+            };
+
+            _lobby.SendMessage($"Please only pick beatmaps from the game mode {modeName}.");
+        }
+        else if (!IsAllowedBeatmapLength(beatmap))
         {
             _lobby.SendMessage($"The beatmap you've picked is too long, please pick another one.");
         }
@@ -173,5 +187,34 @@ public class MapManagerBehaviour : IBotBehaviour
         var mapLength = int.Parse(beatmap.TotalLength, CultureInfo.InvariantCulture);
         
         return _lobby.Configuration.MaximumMapLength >= mapLength && mapLength >= _lobby.Configuration.MinimumMapLength ;
+    }
+
+    private bool IsAllowedBeatmapGameMode(BeatmapModel beatmap)
+    {
+        if (_lobby.Configuration.Mode == null)
+            return true;
+        
+        // Game modes are defined in the API as:
+        // 0 - osu!standard
+        // 1 - osu!taiko
+        // 2 - osu!catch
+        // 3 - osu!mania
+        
+        string? beatmapMode = beatmap.Mode;
+
+        if (beatmapMode == null)
+        {
+            Log.Error($"No beatmap mode for map {beatmap.BeatmapId}");
+            return false;
+        }
+
+        return _lobby.Configuration.Mode switch
+        {
+            GameMode.osu => beatmapMode == "0",
+            GameMode.osuTaiko => beatmapMode == "1",
+            GameMode.osuCatch => beatmapMode == "2",
+            GameMode.osuMania => beatmapMode == "3",
+            _ => false
+        };
     }
 }
