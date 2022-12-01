@@ -60,6 +60,15 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         _lobby.MultiplayerLobby.OnHostChanged += OnHostChanged;
         _lobby.OnUserMessage += OnUserMessage;
         _lobby.OnAdminMessage += OnAdminMessage;
+        _lobby.OnBanchoMessage += OnBanchoMessage;
+    }
+
+    private void OnBanchoMessage(IPrivateIrcMessage msg)
+    {
+        if (msg.Content.Equals("User not found"))
+        {
+            Log.Warning("Bancho couldn't find a targeted user!");
+        }
     }
 
     /// <summary>
