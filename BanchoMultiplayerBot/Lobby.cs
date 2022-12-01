@@ -22,6 +22,7 @@ public class Lobby
     public event Action? OnLobbyChannelJoined;
     public event Action<IPrivateIrcMessage>? OnUserMessage;
     public event Action<IPrivateIrcMessage>? OnAdminMessage;
+    public event Action<IPrivateIrcMessage>? OnBanchoMessage;
     
     private readonly string _channelName;
     
@@ -135,8 +136,12 @@ public class Lobby
     {
         if (message.Recipient != _channelName)
             return;
+        
         if (message.IsBanchoBotMessage)
+        {
+            OnBanchoMessage?.Invoke(message);
             return;
+        }
 
         if (message.Sender == Bot.Configuration.Username)
         {

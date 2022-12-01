@@ -22,17 +22,12 @@ public class AntiAfkBehaviour : IBotBehaviour
         _lobby.MultiplayerLobby.OnHostChanged += OnHostChanged;
         _lobby.MultiplayerLobby.OnHostChangingMap += OnHostChangingMap;
         _lobby.MultiplayerLobby.OnMatchStarted += OnMatchStarted;
-        _lobby.Bot.Client.OnPrivateMessageReceived += OnPrivateMessageReceived;
+        _lobby.OnBanchoMessage += OnBanchoMessage;
     }
 
-    private void OnMatchStarted()
+    private void OnBanchoMessage(IPrivateIrcMessage msg)
     {
-        AbortTimer();
-    }
-
-    private void OnPrivateMessageReceived(IPrivateIrcMessage msg)
-    {
-        if (!(msg.IsDirect && msg.IsBanchoBotMessage))
+        if (!msg.IsDirect)
             return;
         if (!msg.Content.StartsWith("Stats for ("))
             return;
@@ -71,9 +66,14 @@ public class AntiAfkBehaviour : IBotBehaviour
         catch (Exception)
         {
             // ignored
-        }
+        }    
     }
 
+    private void OnMatchStarted()
+    {
+        AbortTimer();
+    }
+    
     private void OnHostChangingMap()
     {
         AbortTimer();
