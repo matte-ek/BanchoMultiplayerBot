@@ -14,7 +14,7 @@ public class BanBehaviour : IBotBehaviour
         _lobby.OnAdminMessage += OnAdminMessage;
         _lobby.MultiplayerLobby.OnPlayerJoined += OnPlayerJoined;
     }
-
+    
     private void OnAdminMessage(IPrivateIrcMessage e)
     {
         if (e.Content.StartsWith("!ban "))
@@ -61,7 +61,7 @@ public class BanBehaviour : IBotBehaviour
         {
             if (botConfiguration.BannedPlayers.ToList().Contains(name))
             {
-                _lobby.SendMessage($"!mp kick {name.Replace(' ','_')}");
+                _lobby.SendMessage($"!mp ban {name.Replace(' ','_')}");
             }
         }
         catch (Exception e)
