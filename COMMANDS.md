@@ -19,7 +19,7 @@ Allows the host to start a match start timer, or for the non-host players to vot
 
 `!stop`
 
-Stops any ongoing match start timer
+Allows the host to stop any ongoing match start timer.
 
 `!regulations`
 
