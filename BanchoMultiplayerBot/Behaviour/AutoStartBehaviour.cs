@@ -43,6 +43,13 @@ public class AutoStartBehaviour : IBotBehaviour
 
             _playerStartVote.Reset();
         };
+
+        _lobby.MultiplayerLobby.OnHostChanged += player =>
+        {
+            AbortTimer();
+            
+            _playerStartVote.Reset();
+        };
             
         _lobby.OnUserMessage += OnUserMessage;
 
