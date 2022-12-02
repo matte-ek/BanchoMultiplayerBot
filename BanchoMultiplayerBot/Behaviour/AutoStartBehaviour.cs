@@ -50,7 +50,8 @@ public class AutoStartBehaviour : IBotBehaviour
             
             _playerStartVote.Reset();
         };
-            
+
+        _lobby.MultiplayerLobby.OnHostChangingMap += AbortTimer;
         _lobby.OnUserMessage += OnUserMessage;
 
         var mapManagerBehaviour = _lobby.Behaviours.Find(x => x.GetType() == typeof(MapManagerBehaviour));
