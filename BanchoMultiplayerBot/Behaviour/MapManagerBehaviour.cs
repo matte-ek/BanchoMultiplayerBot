@@ -67,7 +67,7 @@ public class MapManagerBehaviour : IBotBehaviour
             if (beatmapInfo != null)
             {
                 // Make sure we're within limits
-                EnsureBeatmapLimits(beatmapInfo, beatmap.Id);
+                await EnsureBeatmapLimits(beatmapInfo, beatmap.Id);
             }
         }
         catch (BeatmapNotFoundException)
@@ -84,7 +84,7 @@ public class MapManagerBehaviour : IBotBehaviour
         }
     }
 
-    private void EnsureBeatmapLimits(BeatmapModel beatmap, int id)
+    private async Task EnsureBeatmapLimits(BeatmapModel beatmap, int id)
     {
         if (IsAllowedBeatmapLength(beatmap) && IsAllowedBeatmapStarRating(beatmap) && IsAllowedBeatmapGameMode(beatmap))
         {
@@ -98,7 +98,7 @@ public class MapManagerBehaviour : IBotBehaviour
             if (beatmap.BeatmapsetId != null)
                 CurrentBeatmapSetId = int.Parse(beatmap.BeatmapsetId);
 
-            AnnounceNewBeatmap(beatmap, id);
+            await AnnounceNewBeatmap(beatmap, id);
             
             return;
         }
@@ -136,7 +136,7 @@ public class MapManagerBehaviour : IBotBehaviour
         _lobby.SendMessage($"!mp map {id} 0");
     }
 
-    private void AnnounceNewBeatmap(BeatmapModel beatmapModel, int id)
+    private async Task AnnounceNewBeatmap(BeatmapModel beatmapModel, int id)
     {
         try
         {
@@ -144,7 +144,19 @@ public class MapManagerBehaviour : IBotBehaviour
             {
                 var timeSpan = TimeSpan.FromSeconds(int.Parse(beatmapModel.TotalLength));
 
-                _lobby.SendMessage($"[https://osu.ppy.sh/b/{id} {beatmapModel.Artist} - {beatmapModel.Title}] (BPM: {beatmapModel.Bpm} | Length: {timeSpan.ToString(@"mm\:ss")}) - ([https://beatconnect.io/b/{id} Mirror])");
+                _lobby.SendMessage($"[https://osu.ppy.sh/b/{id} {beatmapModel.Artist} - {beatmapModel.Title}] - ([https://beatconnect.io/b/{id} Mirror])");
+
+                try
+                {
+                    var ppInfo = await PerformanceCalculator.CalculatePerformancePoints(id);
+
+                    if (ppInfo != null)
+                        _lobby.SendMessage($"(BPM: {beatmapModel.Bpm} | Length: {timeSpan.ToString(@"mm\:ss")} | 100%: {ppInfo.Performance100}pp | 98%: {ppInfo.Performance98}pp | 95%: {ppInfo.Performance95}pp)");
+                }
+                catch (Exception e)
+                {
+                    // ignored
+                }
                 
                 OnNewAllowedMap?.Invoke();
             }
