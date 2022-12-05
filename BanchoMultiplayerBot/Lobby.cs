@@ -134,14 +134,14 @@ public class Lobby
     
     private void ClientOnPrivateMessageReceived(IPrivateIrcMessage message)
     {
-        if (message.Recipient != _channelName)
-            return;
-        
         if (message.IsBanchoBotMessage)
         {
             OnBanchoMessage?.Invoke(message);
             return;
         }
+        
+        if (message.Recipient != _channelName)
+            return;
 
         if (message.Sender == Bot.Configuration.Username)
         {
