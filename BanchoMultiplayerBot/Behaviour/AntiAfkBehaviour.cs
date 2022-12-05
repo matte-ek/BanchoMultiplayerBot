@@ -47,7 +47,7 @@ public class AntiAfkBehaviour : IBotBehaviour
             if (msg.Content.Contains("is Afk"))
                 status = "Afk";
 
-            Console.WriteLine($"Parsed status {status} for {playerName}");
+            Log.Information($"Parsed status {status} for {playerName}");
 
             if (playerName != _lobby.MultiplayerLobby.Host?.Name)
             {
@@ -114,7 +114,7 @@ public class AntiAfkBehaviour : IBotBehaviour
                     return;
                 }
 
-                _lobby.Bot.Client.SendPrivateMessageAsync("BanchoBot", $"!stat {name.Replace(' ', '_')}");
+                _lobby.Bot.SendMessage("BanchoBot", $"!stat {name.Replace(' ', '_')}");
             }
             catch (Exception)
             {
