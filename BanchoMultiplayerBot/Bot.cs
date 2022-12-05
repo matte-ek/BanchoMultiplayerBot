@@ -4,6 +4,7 @@ using BanchoMultiplayerBot.OsuApi;
 using BanchoSharp;
 using BanchoSharp.Interfaces;
 using System.Collections.Concurrent;
+using System.Net.Sockets;
 using BanchoSharp.Multiplayer;
 using BanchoMultiplayerBot.Behaviour;
 using Serilog;
@@ -28,6 +29,8 @@ public class Bot
     private bool _exitRequested = false;
 
     private readonly List<LobbyConfiguration> _lobbyCreationQueue = new();
+
+    private DateTime _lastBanchoTestMessageSent = DateTime.Now;
     
     public Bot(string configurationFile)
     {
@@ -262,6 +265,24 @@ public class Bot
         
         while (!_exitRequested)
         {
+            // Not relying on this until I can confirm that it doesn't cause any false positives.
+            if (!IsTcpConnectionAlive(Client.TcpClient))
+            {
+                await Task.Delay(5000);
+                
+                // If the connection is *actually* dead, sending a message will fail and Client.IsConnected will become
+                // false. So instead of relying IsTcpConnectionAlive, we use that as a hint for now.
+                
+                Log.Error("[!] IsTcpConnectionAlive returned false, testing connecting to Bancho by sending message.");
+
+                if (DateTime.Now > _lastBanchoTestMessageSent.AddMinutes(1))
+                {
+                    _lastBanchoTestMessageSent = DateTime.Now;
+                    
+                    SendMessage("BanchoBot", "!stats matte");
+                }
+            }
+            
             if (!Client.IsConnected)
             {
                 Log.Error("DETECTED CONNECTION ERROR!");
@@ -289,7 +310,7 @@ public class Bot
                 break;
             }
             
-            await Task.Delay(100);
+            await Task.Delay(1000);
         }
 
         if (!_exitRequested)
@@ -345,5 +366,29 @@ public class Bot
             // An InvalidOperationException means that Take() was called on a completed collection,
             // so we'll just exit out off this thread normally.
         }
+    }
+
+    // See https://stackoverflow.com/a/6993334
+    private bool IsTcpConnectionAlive(TcpClient? client)
+    {
+        try
+        {
+            if (client != null && client.Client.Connected)
+            {
+                // Detect if client disconnected
+                if (!client.Client.Poll(0, SelectMode.SelectRead)) 
+                    return true;
+                
+                byte[] buff = new byte[1];
+               
+                return client.Client.Receive(buff, SocketFlags.Peek) != 0;
+            }
+        }
+        catch
+        {
+            return false;
+        }
+
+        return false;
     }
 }
