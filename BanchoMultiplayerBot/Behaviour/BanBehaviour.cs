@@ -47,6 +47,37 @@ public class BanBehaviour : IBotBehaviour
                 // ignored.
             }
         }
+        
+        if (e.Content.StartsWith("!banmapset "))
+        {
+            try
+            {
+                var beatmapSetId = int.Parse(e.Content.Split("!banmapset ")[1]);
+
+                if (_lobby.Bot.Configuration.BannedBeatmaps == null)
+                {
+                    _lobby.Bot.Configuration.BannedBeatmaps = new int[] { beatmapSetId };
+                }
+                else
+                {
+                    if (_lobby.Bot.Configuration.BannedBeatmaps.ToList().Contains(beatmapSetId))
+                    {
+                        // Player already exists.
+                        return;
+                    }
+
+                    var banList = _lobby.Bot.Configuration.BannedBeatmaps.ToList();
+                    
+                    banList.Add(beatmapSetId);
+
+                    _lobby.Bot.Configuration.BannedBeatmaps = banList.ToArray();
+                }
+            }
+            catch (Exception exception)
+            {
+                // ignored.
+            }
+        }
     }
 
     private void OnPlayerJoined(MultiplayerPlayer player)

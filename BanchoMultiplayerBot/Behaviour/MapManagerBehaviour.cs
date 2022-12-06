@@ -86,7 +86,7 @@ public class MapManagerBehaviour : IBotBehaviour
 
     private async Task EnsureBeatmapLimits(BeatmapModel beatmap, int id)
     {
-        if (IsAllowedBeatmapLength(beatmap) && IsAllowedBeatmapStarRating(beatmap) && IsAllowedBeatmapGameMode(beatmap))
+        if (IsAllowedBeatmapLength(beatmap) && IsAllowedBeatmapStarRating(beatmap) && IsAllowedBeatmapGameMode(beatmap) && !IsBannedBeatmap(beatmap))
         {
             // Update the fallback id whenever someone picks a map that's 
             // within limits, so we don't have to reset to the osu!tutorial everytime.
@@ -105,7 +105,13 @@ public class MapManagerBehaviour : IBotBehaviour
         
         SetBeatmap(_beatmapFallbackId);
 
-        if (!IsAllowedBeatmapGameMode(beatmap))
+        if (IsBannedBeatmap(beatmap))
+        {
+            _lobby.SendMessage(beatmap.Title != null
+                ? $"This map set ({beatmap.Title}) has been blacklisted."
+                : "This map set has been blacklisted.");
+        }
+        else if (!IsAllowedBeatmapGameMode(beatmap))
         {
             string modeName = _lobby.Configuration.Mode switch
             {
@@ -236,5 +242,24 @@ public class MapManagerBehaviour : IBotBehaviour
             GameMode.osuMania => beatmapMode == "3",
             _ => false
         };
+    }
+
+    private bool IsBannedBeatmap(BeatmapModel beatmap)
+    {
+        var config = _lobby.Bot.Configuration;
+        
+        if (config.BannedBeatmaps == null)
+            return false;
+        if (beatmap.BeatmapsetId == null)
+            return false;
+
+        try
+        {
+            return int.TryParse(beatmap.BeatmapsetId, out int beatmapSetId) && config.BannedBeatmaps.ToList().Contains(beatmapSetId);
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
     }
 }
