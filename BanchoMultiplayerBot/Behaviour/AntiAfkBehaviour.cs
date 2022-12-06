@@ -40,19 +40,19 @@ public class AntiAfkBehaviour : IBotBehaviour
 
             var status = "Unknown";
 
-            if (msg.Content.Contains("is Multiplayer") || msg.Content.Contains("is Multiplayer"))
+            if (msg.Content.Contains("is Multiplaying") || msg.Content.Contains("is Multiplayer"))
                 status = "Multiplayer";
             if (msg.Content.Contains("is Idle"))
                 status = "Idle";
             if (msg.Content.Contains("is Afk"))
                 status = "Afk";
 
-            Log.Information($"Parsed status {status} for {playerName}");
-
             if (playerName != _lobby.MultiplayerLobby.Host?.Name)
             {
                 return;
             }
+            
+            Log.Information($"Parsed status {status} for {playerName}");
 
             if (status == "Afk")
             {
@@ -61,7 +61,7 @@ public class AntiAfkBehaviour : IBotBehaviour
                 return;
             }
             
-            StartTimer(120);
+            StartTimer(60);
         }
         catch (Exception)
         {
