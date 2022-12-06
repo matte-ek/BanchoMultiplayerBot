@@ -15,9 +15,10 @@ public class Bot
 {
 
     public BanchoClient Client { get; private set;  }
-    public OsuApiWrapper OsuApi { get; }
     public BotConfiguration Configuration { get; }
     public AnnouncementManager AnnouncementManager { get; } = new();
+    public OsuApiWrapper OsuApi { get; }
+    public PerformancePointCalculator? PerformancePointCalculator { get; }
 
     public List<Lobby> Lobbies { get; } = new();
 
@@ -48,6 +49,11 @@ public class Bot
         Configuration = config ?? throw new Exception("Failed to read configuration file.");
         Client = new BanchoClient(new BanchoClientConfig(new IrcCredentials(Configuration.Username, Configuration.Password), LogLevel.Trace));
         OsuApi = new OsuApiWrapper(config.ApiKey);
+
+        if (PerformancePointCalculator.IsAvailable)
+            PerformancePointCalculator = new PerformancePointCalculator();
+        else
+            Log.Warning($"Could not find '{PerformancePointCalculator.OsuToolsDirectory}', pp calculations unavailable.");
 
         AnnouncementManager.Run(this);
     }

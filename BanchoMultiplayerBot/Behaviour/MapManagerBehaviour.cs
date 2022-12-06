@@ -148,10 +148,18 @@ public class MapManagerBehaviour : IBotBehaviour
 
                 try
                 {
-                    var ppInfo = await PerformanceCalculator.CalculatePerformancePoints(id);
+                    if (_lobby.Bot.PerformancePointCalculator == null)
+                    {
+                        _lobby.SendMessage($"(BPM: {beatmapModel.Bpm} | Length: {timeSpan.ToString(@"mm\:ss")})");
+                    }
+                    else
+                    {
+                        var ppInfo = await _lobby.Bot.PerformancePointCalculator.CalculatePerformancePoints(id);
 
-                    if (ppInfo != null)
-                        _lobby.SendMessage($"(BPM: {beatmapModel.Bpm} | Length: {timeSpan.ToString(@"mm\:ss")} | 100%: {ppInfo.Performance100}pp | 98%: {ppInfo.Performance98}pp | 95%: {ppInfo.Performance95}pp)");
+                        _lobby.SendMessage(ppInfo != null
+                            ? $"(BPM: {beatmapModel.Bpm} | Length: {timeSpan.ToString(@"mm\:ss")} | 100%: {ppInfo.Performance100}pp | 98%: {ppInfo.Performance98}pp | 95%: {ppInfo.Performance95}pp)"
+                            : $"(BPM: {beatmapModel.Bpm} | Length: {timeSpan.ToString(@"mm\:ss")})");
+                    }
                 }
                 catch (Exception e)
                 {
