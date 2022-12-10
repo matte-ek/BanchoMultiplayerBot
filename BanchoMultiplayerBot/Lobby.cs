@@ -63,6 +63,16 @@ public class Lobby
         AddBehaviour(new MapManagerBehaviour());
         AddBehaviour(new BanBehaviour());
         
+        Configuration.Behaviours = new string[]
+        {
+            "AutoHostRotate",
+            "AntiAfk",
+            "AutoStart",
+            "AbortVote",
+            "Help",
+            "FunCommands"
+        };
+
         // Add "custom" behaviours
         if (Configuration.Behaviours != null)
         {
@@ -84,6 +94,9 @@ public class Lobby
                         break;
                     case "Help":
                         AddBehaviour(new HelpBehaviour());
+                        break;
+                    case "FunCommands":
+                        AddBehaviour(new FunCommandsBehaviour());
                         break;
                     default:
                         Log.Error($"Unknown behaviour: {behaviourName}");
