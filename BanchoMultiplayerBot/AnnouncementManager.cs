@@ -31,13 +31,7 @@ namespace BanchoMultiplayerBot
         {
             _bot.Configuration.Announcements = Announcements.ToArray();
         }
-
-        public void Exit()
-        {
-            Save();
-            _exitRequested = true;
-        }
-
+        
         private async Task AnnouncementSenderTask()
         {
             while (!_exitRequested)

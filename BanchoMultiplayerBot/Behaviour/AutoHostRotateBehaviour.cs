@@ -14,7 +14,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
     private Lobby _lobby = null!;
     private PlayerVote _playerSkipVote = null!;
 
-    private bool _hasSkippedHost = false;
+    private bool _hasSkippedHost;
 
     public List<string> Queue { get; } = new();
 
@@ -29,9 +29,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
                 Queue.Add(player.Name);
 
             if (_lobby.IsRecovering)
-            {
                 return;
-            }
 
             OnQueueUpdated();
         };
@@ -70,21 +68,13 @@ public class AutoHostRotateBehaviour : IBotBehaviour
             Log.Warning("Bancho couldn't find a targeted user!");
         }
     }
-
-    /// <summary>
-    /// Skips the current host and makes the next player in the queue host instead.
-    /// </summary>
-    public void ForceSkipPlayer()
-    {
-        SkipCurrentPlayer();
-        OnQueueUpdated();
-    }
-
+    
     private void OnAdminMessage(IPrivateIrcMessage message)
     {
         if (message.Content.StartsWith("!forceskip"))
         {
-            ForceSkipPlayer();
+            SkipCurrentPlayer();
+            OnQueueUpdated();
         }
 
         if (message.Content.StartsWith("!sethost "))
@@ -104,6 +94,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
             }
             catch (Exception)
             {
+                // ignored
             }
         }
     }

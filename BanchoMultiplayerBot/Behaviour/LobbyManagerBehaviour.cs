@@ -26,6 +26,25 @@ public class LobbyManagerBehaviour : IBotBehaviour
         {
             _lobby.SendMessage("!mp settings");
         };
+        
+        // Quick temporary fix for an issue within BanchoSharp, that causes players with more than 16 characters to have duplicates.
+        _lobby.MultiplayerLobby.OnPlayerDisconnected += player =>
+        {
+            var playerName = player.Player.Name;
+            
+            if (playerName.Length <= 16)
+                return;
+            
+            var playerNameShorted = playerName[..16];
+            var duplicatePlayer = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name == playerNameShorted);
+
+            if (duplicatePlayer is null)
+                return;
+
+            Log.Warning($"Duplicate player found {playerName} -> {duplicatePlayer.Name}, removing.");
+
+            _lobby.MultiplayerLobby.Players.Remove(duplicatePlayer);
+        };
     }
 
     private void OnAdminMessage(BanchoSharp.Interfaces.IPrivateIrcMessage message)

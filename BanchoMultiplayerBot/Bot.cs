@@ -13,26 +13,31 @@ namespace BanchoMultiplayerBot;
 
 public class Bot
 {
-
-    public BanchoClient Client { get; private set;  }
-    public BotConfiguration Configuration { get; }
-    public AnnouncementManager AnnouncementManager { get; } = new();
+    public BanchoClient Client { get; private set; }
     public OsuApiWrapper OsuApi { get; }
     public PerformancePointCalculator? PerformancePointCalculator { get; }
+
+    public BotConfiguration Configuration { get; }
+
+    public AnnouncementManager AnnouncementManager { get; } = new();
 
     public List<Lobby> Lobbies { get; } = new();
 
     public event Action? OnBotReady;
     public event Action? OnLobbiesUpdated;
-
-    private readonly BlockingCollection<QueuedMessage> _messageQueue = new(20);
-
-    private bool _exitRequested = false;
-
-    private readonly List<LobbyConfiguration> _lobbyCreationQueue = new();
-
-    private DateTime _lastBanchoTestMessageSent = DateTime.Now;
     
+    private readonly BlockingCollection<QueuedMessage> _messageQueue = new(20);
+    
+    private DateTime _lastBanchoTestMessageSent = DateTime.Now;
+
+    /// <summary>
+    /// All lobbies created through CreateLobby, awaiting Bancho to create the room. Gets processed by
+    /// OnTournamentLobbyCreated
+    /// </summary>
+    private readonly List<LobbyConfiguration> _lobbyCreationQueue = new();
+    
+    private bool _exitRequested;
+
     public Bot(string configurationFile)
     {
         if (!File.Exists(configurationFile))
@@ -69,6 +74,7 @@ public class Bot
 
     public async Task RunAsync()
     {
+        // Register events
         Client.OnAuthenticationFailed += () => throw new Exception($"Failed to authenticate with the username {Configuration.Username}");
         Client.OnAuthenticated += ClientOnAuthenticated;
         Client.OnDisconnected += ClientOnDisconnected;
@@ -82,28 +88,6 @@ public class Bot
         Client.OnChannelParted += e => { Log.Information($"Parted channel {e.ChannelName}"); };
 
         await Client.ConnectAsync();
-    }
-
-    private async void OnTournamentLobbyCreated(IMultiplayerLobby multiplayerLobby)
-    {
-        var config = _lobbyCreationQueue.Find(x => x.Name == multiplayerLobby.Name);
-
-        // Lobby probably wasn't made by the bot.
-        if (config == null)
-        {
-            Log.Warning($"Tournament lobby created without configuration");
-            return;
-        }
-
-        _lobbyCreationQueue.Remove(config);
-
-        var lobby = new Lobby(this, config, (MultiplayerLobby)multiplayerLobby);
-
-        Lobbies.Add(lobby);
-
-        await lobby.SetupAsync(true);
-
-        OnLobbiesUpdated?.Invoke();
     }
 
     public async Task DisconnectAsync()
@@ -135,11 +119,38 @@ public class Bot
 
     private void ClientOnChannelParted(IChatChannel channel)
     {
+        // TODO: Potentially warn the user somehow, and remove it from Lobbies.  
+        // Won't break anything for now.
+    }
+    
+    /// <summary>
+    /// Handle newly created lobbies that were created via the bot, other lobbies are ignored.
+    /// </summary>
+    private async void OnTournamentLobbyCreated(IMultiplayerLobby multiplayerLobby)
+    {
+        var config = _lobbyCreationQueue.Find(x => x.Name == multiplayerLobby.Name);
+
+        // Lobby probably wasn't made by the bot.
+        if (config == null)
+        {
+            Log.Warning($"Tournament lobby created without configuration");
+            return;
+        }
+
+        _lobbyCreationQueue.Remove(config);
+
+        var lobby = new Lobby(this, config, (MultiplayerLobby)multiplayerLobby);
+
+        Lobbies.Add(lobby);
+
+        await lobby.SetupAsync(true);
+
+        OnLobbiesUpdated?.Invoke();
     }
     
     private void ClientOnDisconnected()
     {
-        Console.WriteLine("Bot has been disconnected from Bancho!");
+        Log.Error("Bot has been disconnected from Bancho!");
     }
 
     private void ClientOnAuthenticated()
@@ -154,11 +165,18 @@ public class Bot
         Task.Run(RunConnectionWatchdog);
     }
 
+    /// <summary>
+    /// Attempts to rejoin lobbies that were previously created. Allows the bot to fully recover from
+    /// restarts, network issues, bancho restarts and whatnot. If the previous lobbies were not found, 
+    /// they will be created.
+    /// </summary>
     private bool AutoRecoverExistingLobbies()
     {
+        // All previous lobby information is stored in lobby_states.json
         if (!File.Exists("lobby_states.json"))
             return false;
 
+        // Load and parse the JSON file
         var reader = File.OpenRead("lobby_states.json");
         var lobbyStates = JsonSerializer.Deserialize<List<LobbyState>>(reader);
 
@@ -189,17 +207,20 @@ public class Bot
         int lobbyIndex = 0;
         foreach (var lobby in lobbyStates)
         {
-            // Attempt to find the correct configuration
+            // Attempt to find the correct configuration within our lobby configurations.
             var config = Configuration.LobbyConfigurations?.FirstOrDefault(x => x.Name == lobby.Name);
 
             if (config == null)
             {
-                // Not sure how I want the bot to behave in this case yet.
+                // Not sure how I want the bot to behave in this case yet, return is intentional. 
+                Log.Error($"Failed to find configuration for lobby during recovery.");
+                
                 return false;
             }
 
             config.PreviousQueue = lobby.Queue;
 
+            // Wait 4 seconds between each lobby, caused issues otherwise.
             Task.Delay(1 + (lobbyIndex * 4000)).ContinueWith(async task => { await AddLobbyAsync(lobby.Channel, config); });
 
             lobbyIndex++;
@@ -210,8 +231,13 @@ public class Bot
 
     private void CreateLobbiesFromConfiguration()
     {
+        // TODO: Actually implement this
     }
 
+    /// <summary>
+    /// Saves all the current lobbies and their configuration. When everything is saved, the bot may pick up
+    /// where it left via AutoRecoverExistingLobbies()
+    /// </summary>
     public void SaveBotState()
     {
         SaveBotConfiguration();
@@ -227,7 +253,8 @@ public class Bot
 
             try
             {
-
+                // Special case for AutoHostRotateBehaviour, this should be done differently if any more of these cases come up.
+                // This will save the queue, so that also gets recovered successfully.
                 var autoHostRotateBehaviour = lobby.Behaviours.Find(x => x.GetType() == typeof(AutoHostRotateBehaviour));
                 if (autoHostRotateBehaviour != null)
                 {
@@ -236,6 +263,7 @@ public class Bot
             }
             catch (Exception)
             {
+                // ignored
             }
 
             lobbyStates.Add(new LobbyState()
@@ -327,8 +355,17 @@ public class Bot
         }
     }
     
+    /// <summary>
+    /// Task to send all messages within the queue, and handle rate limits for the messages.
+    /// Currently hardcoded to send messages within the "Personal Account" limits for bancho, with small margins.
+    /// See, https://osu.ppy.sh/wiki/en/Bot_account#benefits-of-bot-accounts
+    /// </summary>
     private async Task RunMessagePump()
     {
+        // For bot accounts this may be set to 300/60 instead of 10/5
+        const int messageBurstCount = 10;
+        const int messageAge = 5;
+        
         List<QueuedMessage> sentMessages = new();
         
         try
@@ -341,10 +378,10 @@ public class Bot
 
                 do
                 {
-                    shouldThrottle = sentMessages.Count >= 8;
+                    shouldThrottle = sentMessages.Count >= messageBurstCount - 2;
                     
                     // Remove old messages that are more than 5 seconds old
-                    sentMessages.RemoveAll(x => (DateTime.Now - x.Time).Seconds > 5);
+                    sentMessages.RemoveAll(x => (DateTime.Now - x.Time).Seconds > messageAge);
 
                     if (!shouldThrottle) continue;
                     

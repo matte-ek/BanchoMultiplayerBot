@@ -82,7 +82,7 @@ public class PerformancePointCalculator
     }
 
     /// <summary>
-    /// Calculates the pp for beatmap with the specified accuracy, has a 3 second timeout.  
+    /// Calculates the pp for beatmap with the specified accuracy, has a 5 second timeout.  
     /// </summary>
     private async Task<int?> CalculateBeatmapPerformancePoints(int beatmapId, int acc)
     {
@@ -90,7 +90,7 @@ public class PerformancePointCalculator
 
         try
         {
-            string output = await performanceCalcProcess.WaitAsync(TimeSpan.FromSeconds(3));
+            string output = await performanceCalcProcess.WaitAsync(TimeSpan.FromSeconds(5));
 
             // Quick check to make sure we're actually throwing in JSON into DeserializeObject later on.
             if (!(output.StartsWith("{") && output.EndsWith("}")))

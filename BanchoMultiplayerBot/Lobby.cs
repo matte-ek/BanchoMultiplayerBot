@@ -3,20 +3,34 @@ using BanchoMultiplayerBot.Config;
 using BanchoSharp;
 using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
+using Serilog;
 
 namespace BanchoMultiplayerBot;
 
 public class Lobby
 {
-    
+    /// <summary>
+    /// Parent bot instance this lobby is running in
+    /// </summary>
     public Bot Bot { get; }
-    public MultiplayerLobby MultiplayerLobby { get; }
-    public LobbyConfiguration Configuration { get; }
 
+    /// <summary>
+    /// The BanchoSharp MultiplayerLobby instance running this lobby
+    /// </summary>
+    public MultiplayerLobby MultiplayerLobby { get; }
+
+    /// <summary>
+    /// Reference to the lobby configuration within Bot.Configuration.LobbyConfigurations
+    /// </summary>
+    public LobbyConfiguration Configuration { get; }
+    
     public List<IBotBehaviour> Behaviours { get; } = new();
 
     public int GamesPlayed { get; private set; }
 
+    /// <summary>
+    /// If the lobby is recovering existing lobbies, after for example a restart or network connection issue.
+    /// </summary>
     public bool IsRecovering { get; private set; }
 
     public event Action? OnLobbyChannelJoined;
@@ -54,24 +68,32 @@ public class Lobby
         {
             foreach (var behaviourName in Configuration.Behaviours)
             {
-                if (behaviourName == "AutoHostRotate")
-                    AddBehaviour(new AutoHostRotateBehaviour());
-                if (behaviourName == "AntiAfk")
-                    AddBehaviour(new AntiAfkBehaviour());
-                if (behaviourName == "AutoStart")
-                    AddBehaviour(new AutoStartBehaviour());
-                if (behaviourName == "AbortVote")
-                    AddBehaviour(new AbortVoteBehaviour());
-                if (behaviourName == "Help")
-                    AddBehaviour(new HelpBehaviour());
+                switch (behaviourName)
+                {
+                    case "AutoHostRotate":
+                        AddBehaviour(new AutoHostRotateBehaviour());
+                        break;
+                    case "AntiAfk":
+                        AddBehaviour(new AntiAfkBehaviour());
+                        break;
+                    case "AutoStart":
+                        AddBehaviour(new AutoStartBehaviour());
+                        break;
+                    case "AbortVote":
+                        AddBehaviour(new AbortVoteBehaviour());
+                        break;
+                    case "Help":
+                        AddBehaviour(new HelpBehaviour());
+                        break;
+                    default:
+                        Log.Error($"Unknown behaviour: {behaviourName}");
+                        break;
+                }
             }   
         }
 
-        foreach (var behaviour in Behaviours)
-        {
-            behaviour.Setup(this);
-        }
-
+        Behaviours.ForEach(x => x.Setup(this));
+        
         MultiplayerLobby.OnMatchFinished += () =>
         {
             GamesPlayed++;
@@ -79,6 +101,7 @@ public class Lobby
 
         MultiplayerLobby.OnSettingsUpdated += () =>
         {
+            // At this point, all behaviours should have done their "recover" stuff, and we may reset the recover status. 
             IsRecovering = false;
         };
 
@@ -96,8 +119,8 @@ public class Lobby
                 OnLobbyChannelJoined?.Invoke();
             };
             
-            // "Temporary" fix for the fact that JoinChannelAsync calls 
-            // OnChannelJoined
+            // "Temporary" (permanent) fix for the fact that Bot.Client.JoinChannelAsync calls 
+            // OnChannelJoined, so we'll send JOIN manually.
             await Bot.Client.SendAsync($"JOIN {_channelName}");
         }
         else
@@ -105,12 +128,11 @@ public class Lobby
             OnLobbyChannelJoined?.Invoke();
         }
     }
-
-    private void ClientOnPrivateMessageSent(IPrivateIrcMessage e)
-    {
-        OnAdminMessage?.Invoke(e);
-    }
-
+    
+    /// <summary>
+    /// Always prefer to send a message to the lobby via this method, as it will make sure everything gets
+    /// sent to the rate limiter. You could always call Bot.SendMessage yourself, though.
+    /// </summary>
     public void SendMessage(string message)
     {
         Bot.SendMessage(_channelName, message);
@@ -150,5 +172,9 @@ public class Lobby
         
         OnUserMessage?.Invoke(message);
     }
-
+    
+    private void ClientOnPrivateMessageSent(IPrivateIrcMessage e)
+    {
+        OnAdminMessage?.Invoke(e);
+    }
 }
