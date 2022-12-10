@@ -29,6 +29,10 @@ Displays the current map regulations, such as star rating and/or map length.
 
 Aborts the current match, may only be used by match host.
 
+`!playtime`
+
+Shows the time you've been in the lobby since you joined.
+
 *Notice:* Some commands, such as `!regulations` and `!queue` have shortened versions, like `!r` and `!q` respectively.
 
 ### Admin Commands
