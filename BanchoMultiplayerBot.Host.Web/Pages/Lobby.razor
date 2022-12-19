@@ -202,7 +202,7 @@
         var channel = Bot.Client.GetChannel(_lobby.MultiplayerLobby.ChannelName);
         if (channel?.MessageHistory != null)
         {
-            foreach (var msg in channel.MessageHistory)
+            foreach (var msg in channel.MessageHistory.Skip(Math.Max(0, channel.MessageHistory.Count - 256)))
             {
                 if (msg is IPrivateIrcMessage privateIrcMessage)
                 {
