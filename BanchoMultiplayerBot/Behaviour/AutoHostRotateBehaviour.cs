@@ -123,6 +123,8 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
                     OnQueueUpdated();
 
+                    _playerSkipVote.Reset();
+
                     return;
                 }
             }
