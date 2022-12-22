@@ -378,7 +378,7 @@ public class Bot
 
                 do
                 {
-                    shouldThrottle = sentMessages.Count >= messageBurstCount - 2;
+                    shouldThrottle = sentMessages.Count >= messageBurstCount - 3;
                     
                     // Remove old messages that are more than 5 seconds old
                     sentMessages.RemoveAll(x => (DateTime.Now - x.Time).Seconds > messageAge);
