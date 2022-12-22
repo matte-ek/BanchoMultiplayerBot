@@ -16,6 +16,8 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
     private bool _hasSkippedHost;
 
+    private bool _matchInProgress;
+
     public List<string> Queue { get; } = new();
 
     public void Setup(Lobby lobby)
@@ -42,7 +44,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
                 OnQueueUpdated();
 
-                if (_lobby.MultiplayerLobby.Host is not null && _lobby.MultiplayerLobby.Host.Name == disconnectEventArgs.Player.Name && _lobby.MultiplayerLobby.MatchInProgress)
+                if (_lobby.MultiplayerLobby.Host is not null && _lobby.MultiplayerLobby.Host.Name == disconnectEventArgs.Player.Name && _matchInProgress)
                 {
                     _hasSkippedHost = true;
                 }
@@ -52,6 +54,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         _lobby.MultiplayerLobby.OnMatchStarted += () =>
         {
             _hasSkippedHost = false;
+            _matchInProgress = true;
         };
 
         _lobby.MultiplayerLobby.OnSettingsUpdated += OnSettingsUpdated;
@@ -187,6 +190,8 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
         OnQueueUpdated();
         SendCurrentQueue();
+
+        _matchInProgress = false;
     }
 
     private void OnHostChanged(MultiplayerPlayer player)
