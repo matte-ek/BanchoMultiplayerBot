@@ -43,6 +43,11 @@ public class MapManagerBehaviour : IBotBehaviour
             
             _lobby.SendMessage($"Star rating: {_lobby.Configuration.MinimumStarRating:.0#}* - {_lobby.Configuration.MaximumStarRating:.0#}* | Max length: {timeSpan.ToString(@"mm\:ss")}");
         }
+
+        if (msg.Content.Equals("!mirror"))
+        {
+            _lobby.SendMessage($"[https://beatconnect.io/b/{CurrentBeatmapId} Mirror Download]");
+        }
     }
 
     private async void OnBeatmapChanged(BeatmapShell beatmap)
