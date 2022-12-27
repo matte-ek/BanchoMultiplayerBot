@@ -33,6 +33,11 @@ public class Lobby
     /// </summary>
     public bool IsRecovering { get; private set; }
 
+    /// <summary>
+    /// List of the 300 recent messages in the lobby 
+    /// </summary>
+    public List<IPrivateIrcMessage> RecentMessages { get; private set; } = new();
+
     public event Action? OnLobbyChannelJoined;
     public event Action<IPrivateIrcMessage>? OnUserMessage;
     public event Action<IPrivateIrcMessage>? OnAdminMessage;
@@ -172,6 +177,8 @@ public class Lobby
         if (message.IsBanchoBotMessage)
         {
             OnBanchoMessage?.Invoke(message);
+            AddMessageToHistory(message);
+            
             return;
         }
         
@@ -184,10 +191,22 @@ public class Lobby
         }
         
         OnUserMessage?.Invoke(message);
+        
+        AddMessageToHistory(message);
     }
     
     private void ClientOnPrivateMessageSent(IPrivateIrcMessage e)
     {
+        AddMessageToHistory(e);
+        
         OnAdminMessage?.Invoke(e);
+    }
+
+    private void AddMessageToHistory(IPrivateIrcMessage message)
+    {
+        if (RecentMessages.Count >= 300)
+            RecentMessages.RemoveAt(RecentMessages.Count - 1);
+        
+        RecentMessages.Insert(0, message);
     }
 }
