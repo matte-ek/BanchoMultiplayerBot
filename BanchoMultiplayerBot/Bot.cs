@@ -52,7 +52,7 @@ public class Bot
         reader.Dispose();
 
         Configuration = config ?? throw new Exception("Failed to read configuration file.");
-        Client = new BanchoClient(new BanchoClientConfig(new IrcCredentials(Configuration.Username, Configuration.Password), LogLevel.Trace));
+        Client = new BanchoClient(new BanchoClientConfig(new IrcCredentials(Configuration.Username, Configuration.Password), LogLevel.Trace, false));
         OsuApi = new OsuApiWrapper(config.ApiKey);
 
         if (PerformancePointCalculator.IsAvailable)
