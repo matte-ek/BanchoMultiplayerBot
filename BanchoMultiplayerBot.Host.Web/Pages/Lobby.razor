@@ -199,16 +199,9 @@
         }
 
         // Fill out any previous messages
-        var channel = Bot.Client.GetChannel(_lobby.MultiplayerLobby.ChannelName);
-        if (channel?.MessageHistory != null)
+        foreach (var msg in _lobby.RecentMessages)
         {
-            foreach (var msg in channel.MessageHistory.Skip(Math.Max(0, channel.MessageHistory.Count - 256)))
-            {
-                if (msg is IPrivateIrcMessage privateIrcMessage)
-                {
-                    AddChatMessage(privateIrcMessage);
-                }
-            }
+            AddChatMessage(msg);
         }
 
         _mapManager = (MapManagerBehaviour)_lobby.Behaviours.Find(x => x.GetType() == typeof(MapManagerBehaviour))!;
