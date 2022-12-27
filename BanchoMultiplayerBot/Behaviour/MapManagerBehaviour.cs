@@ -159,17 +159,20 @@ public class MapManagerBehaviour : IBotBehaviour
 
                 try
                 {
-                    if (_lobby.Bot.PerformancePointCalculator == null)
+                    if (float.TryParse(beatmapModel.DifficultyRating, out float starRating))
                     {
-                        _lobby.SendMessage($"(BPM: {beatmapModel.Bpm} | Length: {timeSpan.ToString(@"mm\:ss")})");
-                    }
-                    else
-                    {
-                        var ppInfo = await _lobby.Bot.PerformancePointCalculator.CalculatePerformancePoints(id);
+                        if (_lobby.Bot.PerformancePointCalculator == null)
+                        {
+                            _lobby.SendMessage($"(Star Rating: {starRating:.0#} | BPM: {beatmapModel.Bpm} | Length: {timeSpan.ToString(@"mm\:ss")})");
+                        }
+                        else
+                        {
+                            var ppInfo = await _lobby.Bot.PerformancePointCalculator.CalculatePerformancePoints(id);
 
-                        _lobby.SendMessage(ppInfo != null
-                            ? $"(BPM: {beatmapModel.Bpm} | Length: {timeSpan.ToString(@"mm\:ss")} | 100%: {ppInfo.Performance100}pp | 98%: {ppInfo.Performance98}pp | 95%: {ppInfo.Performance95}pp)"
-                            : $"(BPM: {beatmapModel.Bpm} | Length: {timeSpan.ToString(@"mm\:ss")})");
+                            _lobby.SendMessage(ppInfo != null
+                                ? $"(Star Rating: {starRating:.0#} | BPM: {beatmapModel.Bpm} | Length: {timeSpan.ToString(@"mm\:ss")} | 100%: {ppInfo.Performance100}pp | 98%: {ppInfo.Performance98}pp | 95%: {ppInfo.Performance95}pp)"
+                                : $"(Star Rating: {starRating:.0#} | BPM: {beatmapModel.Bpm} | Length: {timeSpan.ToString(@"mm\:ss")})");
+                        }
                     }
                 }
                 catch (Exception e)
