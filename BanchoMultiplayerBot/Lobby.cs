@@ -174,10 +174,14 @@ public class Lobby
     
     private void ClientOnPrivateMessageReceived(IPrivateIrcMessage message)
     {
+        if (message.Recipient == _channelName)
+        {
+            AddMessageToHistory(message);
+        }
+
         if (message.IsBanchoBotMessage)
         {
             OnBanchoMessage?.Invoke(message);
-            AddMessageToHistory(message);
             
             return;
         }
@@ -191,13 +195,14 @@ public class Lobby
         }
         
         OnUserMessage?.Invoke(message);
-        
-        AddMessageToHistory(message);
     }
     
     private void ClientOnPrivateMessageSent(IPrivateIrcMessage e)
     {
-        AddMessageToHistory(e);
+        if (e.Recipient == _channelName)
+        {
+            AddMessageToHistory(e);
+        }
         
         OnAdminMessage?.Invoke(e);
     }
@@ -205,8 +210,8 @@ public class Lobby
     private void AddMessageToHistory(IPrivateIrcMessage message)
     {
         if (RecentMessages.Count >= 300)
-            RecentMessages.RemoveAt(RecentMessages.Count - 1);
+            RecentMessages.RemoveAt(0);
         
-        RecentMessages.Insert(0, message);
+        RecentMessages.Add( message);
     }
 }
