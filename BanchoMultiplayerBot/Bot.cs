@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 using System.Net.Sockets;
 using BanchoSharp.Multiplayer;
 using BanchoMultiplayerBot.Behaviour;
+using BanchoMultiplayerBot.Database;
 using Serilog;
 
 namespace BanchoMultiplayerBot;
@@ -16,7 +17,8 @@ public class Bot
     public BanchoClient Client { get; private set; }
     public OsuApiWrapper OsuApi { get; }
     public PerformancePointCalculator? PerformancePointCalculator { get; }
-
+    public DatabaseContext? Database { get; private set; }
+    
     public BotConfiguration Configuration { get; }
 
     public AnnouncementManager AnnouncementManager { get; } = new();
@@ -38,7 +40,7 @@ public class Bot
     
     private bool _exitRequested;
 
-    public Bot(string configurationFile)
+    public Bot(string configurationFile, DatabaseContext? databaseContext = null)
     {
         if (!File.Exists(configurationFile))
         {
@@ -60,6 +62,8 @@ public class Bot
         else
             Log.Warning($"Could not find '{PerformancePointCalculator.OsuToolsDirectory}', pp calculations unavailable.");
 
+        Database = databaseContext;
+        
         AnnouncementManager.Run(this);
     }
 
