@@ -33,6 +33,10 @@ Aborts the current match, may only be used by match host.
 
 Shows the time you've been in the lobby since you joined.
 
+`!mirror`
+
+Sends a download link to the map from a mirror.
+
 *Notice:* Some commands, such as `!regulations` and `!queue` have shortened versions, like `!r` and `!q` respectively.
 
 ### Admin Commands
@@ -44,3 +48,11 @@ Will skip the current host, without any vote.
 `!sethost <name>`
 
 Sets a new host for the round.
+
+`!ban <name>`
+
+Ban a user, will run `!mp ban` and also save the username and automatically ban in future lobbies.
+
+`!banmapset <id>`
+
+Ban a mapset by id
