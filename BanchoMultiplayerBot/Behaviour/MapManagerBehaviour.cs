@@ -103,6 +103,13 @@ public class MapManagerBehaviour : IBotBehaviour
             if (beatmap.BeatmapsetId != null)
                 CurrentBeatmapSetId = int.Parse(beatmap.BeatmapsetId);
 
+            _botAppliedBeatmap = true;
+            _lastBotAppliedBeatmap = CurrentBeatmapId;
+            
+            // By "setting" the map ourself directly after the host picked it, 
+            // it will automatically be set to the newest version, even if the host's one is outdated.
+            _lobby.SendMessage($"!mp map {CurrentBeatmapId} 0");
+
             await AnnounceNewBeatmap(beatmap, id);
             
             return;
