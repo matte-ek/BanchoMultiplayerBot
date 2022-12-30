@@ -28,8 +28,6 @@ public class Bot
     
     private readonly BlockingCollection<QueuedMessage> _messageQueue = new(20);
     
-    private DateTime _lastBanchoTestMessageSent = DateTime.Now;
-
     /// <summary>
     /// All lobbies created through CreateLobby, awaiting Bancho to create the room. Gets processed by
     /// OnTournamentLobbyCreated
@@ -299,27 +297,9 @@ public class Bot
         
         while (!_exitRequested)
         {
-            // Not relying on this until I can confirm that it doesn't cause any false positives.
             if (!IsTcpConnectionAlive(Client.TcpClient))
             {
-                await Task.Delay(5000);
-                
-                // If the connection is *actually* dead, sending a message will fail and Client.IsConnected will become
-                // false. So instead of relying IsTcpConnectionAlive, we use that as a hint for now.
-                
-                Log.Error("[!] IsTcpConnectionAlive returned false, testing connecting to Bancho by sending message.");
-
-                if (DateTime.Now > _lastBanchoTestMessageSent.AddMinutes(1))
-                {
-                    _lastBanchoTestMessageSent = DateTime.Now;
-                    
-                    SendMessage("BanchoBot", "!stats matte");
-                }
-            }
-            
-            if (!Client.IsConnected)
-            {
-                Log.Error("DETECTED CONNECTION ERROR!");
+                Log.Error("[!] DETECTED CONNECTION ERROR!");
 
                 SaveBotState();
 
