@@ -12,6 +12,8 @@ public class LobbyManagerBehaviour : IBotBehaviour
 {
     private Lobby _lobby = null!;
     
+    private DateTime _lastSettingsUpdateReceivedTime;
+    
     public void Setup(Lobby lobby)
     {
         _lobby = lobby;
@@ -22,10 +24,7 @@ public class LobbyManagerBehaviour : IBotBehaviour
 
         _lobby.OnAdminMessage += OnAdminMessage;
 
-        _lobby.OnLobbyChannelJoined += () =>
-        {
-            _lobby.SendMessage("!mp settings");
-        };
+        _lobby.OnLobbyChannelJoined += RunSettingsCommand;
         
         // Quick temporary fix for an issue within BanchoSharp, that causes players with more than 16 characters to have duplicates.
         _lobby.MultiplayerLobby.OnPlayerDisconnected += player =>
@@ -54,13 +53,14 @@ public class LobbyManagerBehaviour : IBotBehaviour
     private void OnMatchFinishedOrAborted()
     {
         // Run "!mp settings" to receive updated information from Bancho.
-        _lobby.SendMessage("!mp settings");
+        RunSettingsCommand();
     }
 
     private void OnRoomSettingsUpdated()
     {
         // At this point we should have received updated information
         // from "!mp settings"
+        _lastSettingsUpdateReceivedTime = DateTime.Now;
 
         EnsureRoomName();
         EnsureRoomSize();
@@ -155,6 +155,25 @@ public class LobbyManagerBehaviour : IBotBehaviour
         catch (Exception e)
         {
             Log.Error($"Error during EnsureRoomMods(): {e.Message}");
+        }
+    }
+
+    private void RunSettingsCommand()
+    {
+        _lobby.SendMessage("!mp settings");
+
+        Task.Run(EnsureSettingsSent);
+    }
+
+    // This is rather stupid but it'll ensure that the "!mp settings" command does in-fact get executed
+    // which it for some reasons just don't want to sometimes.
+    private async Task EnsureSettingsSent()
+    {
+        await Task.Delay(5000);
+
+        if (DateTime.Now - _lastSettingsUpdateReceivedTime > TimeSpan.FromSeconds(15000))
+        {
+            _lobby.SendMessage("!mp settings");
         }
     }
 }
