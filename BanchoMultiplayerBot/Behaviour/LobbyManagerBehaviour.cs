@@ -171,7 +171,7 @@ public class LobbyManagerBehaviour : IBotBehaviour
     {
         await Task.Delay(5000);
 
-        if (DateTime.Now - _lastSettingsUpdateReceivedTime > TimeSpan.FromSeconds(15000))
+        if (DateTime.Now - _lastSettingsUpdateReceivedTime > TimeSpan.FromSeconds(15))
         {
             _lobby.SendMessage("!mp settings");
         }
