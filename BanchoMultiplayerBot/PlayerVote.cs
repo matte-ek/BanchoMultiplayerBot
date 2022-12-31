@@ -3,15 +3,16 @@ using Serilog;
 
 namespace BanchoMultiplayerBot;
 
+/// <summary>
+/// Utility to easily create a player vote
+/// </summary>
 public class PlayerVote
 {
+    public string Question { get; }
+    public Lobby Lobby { get; }
     
-    public string Question { get; private set; }
-    public Lobby Lobby { get; private set; }
-    public List<MultiplayerPlayer> Votes { get; private set; } = new();
-
-    public event Action? OnVotePassed; 
-
+    public List<MultiplayerPlayer> Votes { get; } = new();
+    
     public PlayerVote(Lobby lobby, string question)
     {
         Lobby = lobby;
@@ -42,8 +43,6 @@ public class PlayerVote
         Log.Information($"Passed vote {Question} with ({Votes.Count}/{requiredVotes})");
 
         Reset();
-        
-        OnVotePassed?.Invoke();
         
         return true;
     }

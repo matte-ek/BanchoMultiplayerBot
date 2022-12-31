@@ -25,18 +25,18 @@ public class Lobby
     public LobbyConfiguration Configuration { get; }
     
     public List<IBotBehaviour> Behaviours { get; } = new();
-
-    public int GamesPlayed { get; private set; }
-
+    
     /// <summary>
     /// If the lobby is recovering existing lobbies, after for example a restart or network connection issue.
     /// </summary>
     public bool IsRecovering { get; private set; }
 
     /// <summary>
-    /// List of the 300 recent messages in the lobby 
+    /// List of the 300 recent messages in the lobby, primarily used within the WebUI
     /// </summary>
-    public List<IPrivateIrcMessage> RecentMessages { get; private set; } = new();
+    public List<IPrivateIrcMessage> RecentMessages { get; } = new();
+    
+    public int GamesPlayed { get; private set; }
 
     public event Action? OnLobbyChannelJoined;
     public event Action<IPrivateIrcMessage>? OnUserMessage;
@@ -61,24 +61,14 @@ public class Lobby
         _channelName = lobby.ChannelName;
     }
 
-    public async Task SetupAsync(bool joined = false)
+    public async Task SetupAsync(bool joinedChannel = false)
     {
         // Add default behaviours
         AddBehaviour(new LobbyManagerBehaviour());
         AddBehaviour(new MapManagerBehaviour());
         AddBehaviour(new BanBehaviour());
-        
-        Configuration.Behaviours = new string[]
-        {
-            "AutoHostRotate",
-            "AntiAfk",
-            "AutoStart",
-            "AbortVote",
-            "Help",
-            "FunCommands"
-        };
 
-        // Add "custom" behaviours
+        // Add user specified behaviours
         if (Configuration.Behaviours != null)
         {
             foreach (var behaviourName in Configuration.Behaviours)
@@ -126,7 +116,7 @@ public class Lobby
         Bot.Client.OnPrivateMessageReceived += ClientOnPrivateMessageReceived;
         Bot.Client.OnPrivateMessageSent += ClientOnPrivateMessageSent;
 
-        if (!joined)
+        if (!joinedChannel)
         {
             IsRecovering = true;
 
@@ -137,8 +127,9 @@ public class Lobby
                 OnLobbyChannelJoined?.Invoke();
             };
             
-            // "Temporary" (permanent) fix for the fact that Bot.Client.JoinChannelAsync calls 
-            // OnChannelJoined, so we'll send JOIN manually.
+            // "Temporary" (permanent) fix for the fact that BanchoSharp's JoinChannelAsync calls 
+            // OnChannelJoined before Bancho acknowledges that we have joined, so we'll send JOIN manually.
+            // And as a result, OnChannelJoined will only get invoked when we've actually joined.
             await Bot.Client.SendAsync($"JOIN {_channelName}");
         }
         else
@@ -166,11 +157,6 @@ public class Lobby
 
         return playerId == null ? playerName.Replace(' ', '_') : $"#{playerId}";
     }
-
-    private void AddBehaviour(IBotBehaviour behaviour)
-    {
-        Behaviours.Add(behaviour);
-    }
     
     private void ClientOnPrivateMessageReceived(IPrivateIrcMessage message)
     {
@@ -179,16 +165,22 @@ public class Lobby
             AddMessageToHistory(message);
         }
 
+        // Some behaviours may require Bancho messages sent directly to us, so bypass the
+        // channel check.
         if (message.IsBanchoBotMessage)
         {
             OnBanchoMessage?.Invoke(message);
             
             return;
         }
-        
-        if (message.Recipient != _channelName)
-            return;
 
+        if (message.Recipient != _channelName)
+        {
+            return;
+        }
+
+        // The bot should probably also allow multiple admins
+        // maybe get all referees?
         if (message.Sender == Bot.Configuration.Username)
         {
             OnAdminMessage?.Invoke(message);
@@ -204,6 +196,9 @@ public class Lobby
             AddMessageToHistory(e);
         }
         
+        // We do this so messages sent from example the WebUI are
+        // also processed.
+        OnUserMessage?.Invoke(e);
         OnAdminMessage?.Invoke(e);
     }
 
@@ -212,6 +207,8 @@ public class Lobby
         if (RecentMessages.Count >= 300)
             RecentMessages.RemoveAt(0);
         
-        RecentMessages.Add( message);
+        RecentMessages.Add(message);
     }
+    
+    private void AddBehaviour(IBotBehaviour behaviour) => Behaviours.Add(behaviour);
 }

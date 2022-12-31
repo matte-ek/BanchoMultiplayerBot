@@ -1,15 +1,16 @@
 ﻿using System.Net;
 using System.Text.Json;
 using BanchoMultiplayerBot.OsuApi.Exceptions;
-using BanchoSharp;
 using Serilog;
 
 namespace BanchoMultiplayerBot.OsuApi;
 
+/// <summary>
+/// Utility wrapper for the osu!api v1, requires an API key to be setup.
+/// </summary>
 public class OsuApiWrapper
 {
     private static readonly HttpClient Client = new();
-
     private readonly string _osuApiKey;
 
     public OsuApiWrapper(string osuApiKey)

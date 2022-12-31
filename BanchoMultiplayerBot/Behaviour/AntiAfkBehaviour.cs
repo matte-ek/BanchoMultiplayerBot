@@ -38,8 +38,15 @@ public class AntiAfkBehaviour : IBotBehaviour
             var playerNameEnd = msg.Content.IndexOf(')');
             var playerName = msg.Content[playerNameBegin..playerNameEnd];
 
+            if (playerName != _lobby.MultiplayerLobby.Host?.Name)
+            {
+                return;
+            }
+            
             var status = "Unknown";
 
+            // No clue why Bancho both reports "Multiplaying" and "Multiplayer", possibly if the user is in the
+            // multiplayer lobbies screen?
             if (msg.Content.Contains("is Multiplaying") || msg.Content.Contains("is Multiplayer"))
                 status = "Multiplayer";
             if (msg.Content.Contains("is Idle"))
@@ -47,11 +54,6 @@ public class AntiAfkBehaviour : IBotBehaviour
             if (msg.Content.Contains("is Afk"))
                 status = "Afk";
 
-            if (playerName != _lobby.MultiplayerLobby.Host?.Name)
-            {
-                return;
-            }
-            
             Log.Information($"Parsed status {status} for {playerName}");
 
             if (status == "Afk")

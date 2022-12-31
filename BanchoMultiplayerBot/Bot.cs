@@ -14,18 +14,26 @@ namespace BanchoMultiplayerBot;
 public class Bot
 {
     public BanchoClient Client { get; private set; }
+    
     public OsuApiWrapper OsuApi { get; }
+    
+    /// <summary>
+    /// May or may not be available depending on PerformancePointCalculator.IsAvailable
+    /// </summary>
     public PerformancePointCalculator? PerformancePointCalculator { get; }
-
-    public BotConfiguration Configuration { get; }
 
     public AnnouncementManager AnnouncementManager { get; } = new();
 
+    public BotConfiguration Configuration { get; }
+    
     public List<Lobby> Lobbies { get; } = new();
 
     public event Action? OnBotReady;
     public event Action? OnLobbiesUpdated;
     
+    /// <summary>
+    /// Message queue which is part of the message rate limiting system.
+    /// </summary>
     private readonly BlockingCollection<QueuedMessage> _messageQueue = new(20);
     
     /// <summary>
@@ -61,6 +69,9 @@ public class Bot
         AnnouncementManager.Run(this);
     }
 
+    /// <summary>
+    /// Sends a message to the channel (may also be username), will also include rate limiting.
+    /// </summary>
     public void SendMessage(string channel, string message)
     {
         _messageQueue.Add(new QueuedMessage()
@@ -117,8 +128,7 @@ public class Bot
 
     private void ClientOnChannelParted(IChatChannel channel)
     {
-        // TODO: Potentially warn the user somehow, and remove it from Lobbies.  
-        // Won't break anything for now.
+        Log.Warning($"Channel {channel.ChannelName} was parted.");
     }
     
     /// <summary>
@@ -291,6 +301,10 @@ public class Bot
         File.WriteAllText("config.json", JsonSerializer.Serialize(Configuration));
     }
 
+    /// <summary>
+    /// Task to continuously monitor the TCP connection to Bancho, and in case of an network issue
+    /// automatically attempt to reconnect to Bancho and restore the bot.
+    /// </summary>
     private async Task RunConnectionWatchdog()
     {
         int connectionAttempts = 0;

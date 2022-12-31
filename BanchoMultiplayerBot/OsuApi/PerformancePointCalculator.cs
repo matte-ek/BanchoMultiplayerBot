@@ -1,11 +1,14 @@
 ﻿using System.Diagnostics;
-using System.Net;
 using BanchoMultiplayerBot.Data;
 using Serilog;
-using System.Text.Json;
 
 namespace BanchoMultiplayerBot.OsuApi;
 
+/// <summary>
+/// Utility class to interface with osu-tools and calculate performance points of beatmaps.
+/// This is not rather efficient since it will literally run osu-tools processes on your system each time.
+/// However the alternatives weren't too appealing anyway, and this will work just fine for this purpose. 
+/// </summary>
 public class PerformancePointCalculator
 {
     public const string OsuToolsDirectory = "../osu-pp-tools";
@@ -15,23 +18,23 @@ public class PerformancePointCalculator
 
     /// <summary>
     /// Calculates the pp values for 100%, 98% and 95% with NM for the specified beatmap.
-    /// Requires osu-tools to be set up.
     /// </summary>
     public async Task<BeatmapPerformanceInfo?> CalculatePerformancePoints(int beatmapId)
     {
         const string cacheDir = $"{OsuToolsDirectory}/cache";
         var beatmapFilePath = $"{cacheDir}/{beatmapId}.osu";
         
+        // This should never be the case but better safe than sorry.
         if (!Directory.Exists(OsuToolsDirectory))
         {
             Log.Error("Failed to find osu tools directory.");
             return null;
         }
-
+        
         if (!Directory.Exists(cacheDir))
             Directory.CreateDirectory(cacheDir);
      
-        // Download beatmap (if necessary)
+        // Download the beatmap (if necessary), this will only download the beatmap itself (.osu), without any additional media.
         if (!File.Exists(beatmapFilePath))
         {
             try
@@ -63,7 +66,7 @@ public class PerformancePointCalculator
                 ppResults98 == null ||
                 ppResults95 == null)
             {
-                // If any of these are null, we should have logged  a reason earlier (hopefully).
+                // If any of these are null, we should have logged a reason earlier (hopefully).
                 return null;
             }
             
@@ -76,7 +79,7 @@ public class PerformancePointCalculator
         }
         catch (Exception e)
         {
-            Log.Error($"Error while calculating pp for map (stage 0) for beatmap {beatmapId} ({e.Message})");
+            Log.Error($"Error while calculating pp for map for beatmap {beatmapId} ({e.Message})");
             return null;
         }
     }
@@ -86,6 +89,7 @@ public class PerformancePointCalculator
     /// </summary>
     private async Task<int?> CalculateBeatmapPerformancePoints(int beatmapId, int acc)
     {
+        // osu-tools will be ran with "-j", which will cause it to output the data in JSON format.
         var performanceCalcProcess = RunProcessAsync($"dotnet", $"../osu-pp-tools/PerformanceCalculator.dll simulate osu -a {acc} -j ../osu-pp-tools/cache/{beatmapId}.osu");
 
         try
@@ -95,21 +99,20 @@ public class PerformancePointCalculator
             // Quick check to make sure we're actually throwing in JSON into DeserializeObject later on.
             if (!(output.StartsWith("{") && output.EndsWith("}")))
             {
-                Log.Error(
-                    $"Error while calculating pp for map, PerformanceCalculator probably threw an exception. Id: {beatmapId}");
+                Log.Error($"Error while calculating pp for map, PerformanceCalculator probably threw an exception. Id: {beatmapId}");
                 return null;
             }
 
-            // The code below is prone to failure, but it's mostly fine for this use case.
+            // The code below is prone to failure, but it's fine for this use case.
             dynamic performanceData = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(output)!;
 
             double pp = performanceData.performance_attributes.pp;
 
             return Convert.ToInt32(Math.Round(pp));
         }
-        catch (TimeoutException e)
+        catch (TimeoutException)
         {
-            Log.Error($"Error while calculating pp for beatmap {beatmapId}, reached 3 second timeout.");
+            Log.Error($"Error while calculating pp for beatmap {beatmapId}, reached 5 second timeout.");
         }
         catch (Exception e)
         {
