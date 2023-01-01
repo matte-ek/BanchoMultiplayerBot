@@ -1,0 +1,131 @@
+﻿@page "/"
+
+<PageTitle>Status</PageTitle>
+
+@if (!_dataReady)
+{
+    <MudText Typo="Typo.h5" GutterBottom="true">Loading data, please wait...</MudText>
+    <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+}
+else
+{
+    <MudText Typo="Typo.h4" GutterBottom="true">Bancho Multiplayer Bot - Status</MudText>
+    <MudGrid>
+        <MudItem xs="6" sm="6">
+            <MudGrid>
+                <MudItem xs="12" sm="12">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudText Typo="Typo.body2">Status</MudText>
+                            <MudText Typo="Typo.h4" Color="Color.Success">OK</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="6" sm="6">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudText Typo="Typo.body2">Bot Uptime</MudText>
+                            <MudText Typo="Typo.h4">1d 5h 11m</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="6" sm="6">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudText Typo="Typo.body2">Server Uptime</MudText>
+                            <MudText Typo="Typo.h4">31d 13h 45m</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="6" sm="6">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudText Typo="Typo.body2">Last bancho connection issue</MudText>
+                            <MudText Typo="Typo.h4">4d ago</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="6" sm="6">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudText Typo="Typo.body2">Warnings (past 24h)</MudText>
+                            <MudText Typo="Typo.h4" Color="Color.Warning">4</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="6" sm="6">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudText Typo="Typo.body2">Players</MudText>
+                            <MudText Typo="Typo.h4">48/48</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="6" sm="6">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudText Typo="Typo.body2">Average Players (past 24h)</MudText>
+                            <MudText Typo="Typo.h4">25.6</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" sm="12">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudText Typo="Typo.body2">Games Played (past 24h)</MudText>
+                            <MudText Typo="Typo.h4">576</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+        </MudItem>
+        <MudItem xs="6" sm="6">
+            <MudGrid>
+                
+                <MudItem xs="12" sm="12">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudItem xs="12" sm="12" Class="mb-1">
+                                <MudText Typo="Typo.h5" GutterBottom="true">0.00* - 3.50* | Auto Host Rotate</MudText>
+                                <MudCard>
+                                    <MudCardContent Style="@($"background-image: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%,rgba(0,0,0,0.6) 100%), url(https://assets.ppy.sh/beatmaps/id/covers/cover.jpg);background-position: center;")">
+                                        <MudText Typo="Typo.body2">Beatmap</MudText>
+                                        <MudLink Href="@($"https://osu.ppy.sh/b/id")" Typo="Typo.h5" Color="Color.Default">beatmap name</MudLink>
+                                    </MudCardContent>
+                                </MudCard>
+                            </MudItem>
+                            <MudGrid>
+                                <MudItem xs="6" sm="6">
+                                    <MudCard Elevation="0">
+                                        <MudCardContent>
+                                            <MudText Typo="Typo.body2">Players</MudText>
+                                            <MudText Typo="Typo.h5">15/16</MudText>
+                                        </MudCardContent>
+                                    </MudCard>
+                                </MudItem>
+                                <MudItem xs="6" sm="6">
+                                    <MudCard Elevation="0">
+                                        <MudCardContent>
+                                            <MudText Typo="Typo.body2">Games Played (since bot uptime)</MudText>
+                                            <MudText Typo="Typo.h5">340</MudText>
+                                        </MudCardContent>
+                                    </MudCard>
+                                </MudItem>
+                            </MudGrid>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+
+            </MudGrid>
+        </MudItem>
+    </MudGrid>
+}
+
+@code
+{
+    private bool _dataReady = true;
+    
+    
+    
+}
+

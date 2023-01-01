@@ -1,0 +1,27 @@
+﻿@inherits LayoutComponentBase
+@inject IConfiguration Configuration
+
+<MudThemeProvider DefaultScrollbar="false" IsDarkMode="true" Theme="@_theme"/>
+<MudDialogProvider/>
+<MudSnackbarProvider/>
+
+<MudLayout>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="my-4 pt-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private MudTheme _theme = new MudTheme()
+    {
+        Typography = new Typography()
+        {
+            Default = new Default()
+            {
+                FontFamily = new[] { "Roboto", "Helvetica", "Arial", "sans-serif" }
+            }
+        }
+    };
+}
