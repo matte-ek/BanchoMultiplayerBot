@@ -192,10 +192,12 @@ public class Lobby
     
     private void ClientOnPrivateMessageSent(IPrivateIrcMessage e)
     {
-        if (e.Recipient == _channelName)
+        if (e.Recipient != _channelName)
         {
-            AddMessageToHistory(e);
+            return;
         }
+        
+        AddMessageToHistory(e);
         
         // We do this so messages sent from example the WebUI are
         // also processed.
