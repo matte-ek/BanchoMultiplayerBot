@@ -9,6 +9,10 @@ An osu! multiplayer bot that will maintain a queue and pass the host around ever
 
 Displays the current auto host rotate queue.
 
+`!queuepos`
+
+Displays your current position in the queue.
+
 `!skip`
 
 Allows you to skip your turn as host, or initiate a vote skip for the current host as a non-host player.
