@@ -112,6 +112,35 @@ public class AutoHostRotateBehaviour : IBotBehaviour
             return;
         }
 
+        try
+        {
+            if (message.Content.StartsWith("!queuepos"))
+            {
+                var targetName = message.Sender;
+                
+                if (message.Content.StartsWith("!queuepos ")) 
+                    targetName = message.Content.Split("!queuepos ")[1];
+                
+                if (!Queue.Contains(targetName))
+                {
+                    // Don't really wanna echo back user input, so don't include the player name here.
+                    _lobby.SendMessage("Couldn't find player in queue.");
+                }
+                else
+                {
+                    var queuePosition = (Queue.FindIndex(x => x.Equals(targetName)) + 1).ToString();
+
+                    _lobby.SendMessage($"Queue position for {targetName}: #{queuePosition}");
+                }
+
+                return;
+            }
+        }
+        catch (Exception e)
+        {
+            // ignored
+        }
+
         if (message.Content.StartsWith("!skip"))
         {
             // If the host is sending the message, just skip.
