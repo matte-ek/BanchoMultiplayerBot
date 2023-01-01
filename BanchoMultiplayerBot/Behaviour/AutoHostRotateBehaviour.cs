@@ -105,7 +105,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
     private void OnUserMessage(IPrivateIrcMessage message)
     {
         // Allow the users to see the current queue
-        if (message.Content.StartsWith("!q") || message.Content.StartsWith("!queue"))
+        if (message.Content.Equals("!q") || message.Content.Equals("!queue"))
         {
             SendCurrentQueue();
 

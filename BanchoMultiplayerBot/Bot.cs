@@ -27,6 +27,11 @@ public class Bot
     public BotConfiguration Configuration { get; }
     
     public List<Lobby> Lobbies { get; } = new();
+    
+    public DateTime StartTime { get; set; }
+    
+    public bool HadNetworkConnectionIssue { get; set; }
+    public DateTime LastConnectionIssueTime { get; set; }
 
     public event Action? OnBotReady;
     public event Action? OnLobbiesUpdated;
@@ -95,6 +100,8 @@ public class Bot
         Client.OnPrivateMessageSent += e => { Log.Information($"[{e.Recipient}] {e.Sender}: {e.Content}"); };
         Client.OnChannelJoined += e => { Log.Information($"Joined channel {e.ChannelName}"); };
         Client.OnChannelParted += e => { Log.Information($"Parted channel {e.ChannelName}"); };
+
+        StartTime = DateTime.Now;
 
         await Client.ConnectAsync();
     }
@@ -314,6 +321,9 @@ public class Bot
             if (!IsTcpConnectionAlive(Client.TcpClient))
             {
                 Log.Error("[!] DETECTED CONNECTION ERROR!");
+
+                HadNetworkConnectionIssue = true;
+                LastConnectionIssueTime = DateTime.Now;
 
                 SaveBotState();
 
