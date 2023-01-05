@@ -30,6 +30,8 @@
                         <MudSelectItem T="string" Value="@mod">@mod</MudSelectItem>
                     }
                 </MudSelect>
+                <MudSwitch @bind-Checked="_configuration!.AutomaticallySkipAfterViolations" Label="Auto skip after violations" Color="Color.Primary" />
+                <MudNumericField @bind-Value="_configuration.ViolationSkipCount" Label="Violation Count" Variant="Variant.Filled" Min="1" Max="10" />
             </MudPaper>
             <MudPaper Class="pa-8 ma-2">
                 <MudText Typo="Typo.h6" GutterBottom="true">Behaviours</MudText>
