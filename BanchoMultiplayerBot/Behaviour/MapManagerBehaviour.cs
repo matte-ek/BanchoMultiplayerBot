@@ -134,8 +134,8 @@ public class MapManagerBehaviour : IBotBehaviour
         if (IsBannedBeatmap(beatmap))
         {
             _lobby.SendMessage(beatmap.Title != null
-                ? $"This map set ({beatmap.Title}) has been blacklisted."
-                : "This map set has been blacklisted.");
+                ? $"This map set ({beatmap.Title}) has been banned."
+                : "This map set has been banned.");
         }
         else if (!IsAllowedBeatmapGameMode(beatmap))
         {
