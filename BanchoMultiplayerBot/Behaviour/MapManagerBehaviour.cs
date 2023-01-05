@@ -91,6 +91,8 @@ public class MapManagerBehaviour : IBotBehaviour
         }
         catch (BeatmapNotFoundException)
         {
+            SetBeatmap(_beatmapFallbackId);
+            
             _lobby.SendMessage($"Only submitted beat maps are allowed.");
         }
         catch (ApiKeyInvalidException)
