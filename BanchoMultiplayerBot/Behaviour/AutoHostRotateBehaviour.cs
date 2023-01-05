@@ -64,6 +64,12 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         _lobby.OnBanchoMessage += OnBanchoMessage;
     }
 
+    public void SkipCurrentHost()
+    {
+        SkipCurrentPlayer();
+        OnQueueUpdated();
+    }
+    
     private void OnBanchoMessage(IPrivateIrcMessage msg)
     {
         if (msg.Content.Equals("User not found"))
@@ -149,7 +155,6 @@ public class AutoHostRotateBehaviour : IBotBehaviour
                 if (message.Sender == _lobby.MultiplayerLobby.Host.Name)
                 {
                     SkipCurrentPlayer();
-
                     OnQueueUpdated();
 
                     _playerSkipVote.Reset();

@@ -22,17 +22,31 @@ public class MapManagerBehaviour : IBotBehaviour
     public string CurrentBeatmapName { get; private set; } = string.Empty;
 
     private Lobby _lobby = null!;
-    
+    private AutoHostRotateBehaviour? _autoHostRotateBehaviour;
+
     private bool _botAppliedBeatmap;
     private int _lastBotAppliedBeatmap;
     private int _beatmapFallbackId = 2116202; // use the osu! tutorial as default
-    
+
+    private int _hostViolationCount = 0;
+
     public void Setup(Lobby lobby)
     {
         _lobby = lobby;
 
         _lobby.MultiplayerLobby.OnBeatmapChanged += OnBeatmapChanged;
-        _lobby.OnUserMessage += OnUserMessage; 
+        _lobby.OnUserMessage += OnUserMessage;
+
+        _lobby.MultiplayerLobby.OnHostChanged += player =>
+        {
+            _hostViolationCount = 0;
+        };
+        
+        var autoHostRotateBehaviour = _lobby.Behaviours.Find(x => x.GetType() == typeof(AutoHostRotateBehaviour));
+        if (autoHostRotateBehaviour != null)
+        {
+            _autoHostRotateBehaviour = (AutoHostRotateBehaviour)autoHostRotateBehaviour;
+        }
     }
 
     private void OnUserMessage(IPrivateIrcMessage msg)
@@ -116,7 +130,7 @@ public class MapManagerBehaviour : IBotBehaviour
         }
         
         SetBeatmap(_beatmapFallbackId);
-
+        
         if (IsBannedBeatmap(beatmap))
         {
             _lobby.SendMessage(beatmap.Title != null
@@ -144,6 +158,8 @@ public class MapManagerBehaviour : IBotBehaviour
         {
             _lobby.SendMessage($"The beatmap you've picked is out of the lobby star range, please make sure to use the online star rating. ({_lobby.Configuration.MinimumStarRating:.0#}* - {_lobby.Configuration.MaximumStarRating:.0#}*)");
         }
+        
+        RunViolationAutoSkip();
     }
 
     private void SetBeatmap(int id)
@@ -275,6 +291,29 @@ public class MapManagerBehaviour : IBotBehaviour
         catch (Exception e)
         {
             return false;
+        }
+    }
+    
+    private void RunViolationAutoSkip()
+    {
+        if (_lobby.Configuration.AutomaticallySkipAfterViolations == null ||
+            _lobby.Configuration.ViolationSkipCount == null ||
+            _autoHostRotateBehaviour == null)
+            return;
+
+        if (!_lobby.Configuration.AutomaticallySkipAfterViolations.Value)
+            return;
+        
+        _hostViolationCount++;
+        
+        int skipViolationCount = _lobby.Configuration.ViolationSkipCount.Value;
+        if (_hostViolationCount >= skipViolationCount)
+        {
+            _hostViolationCount = 0;
+
+            _lobby.SendMessage($"Skipping host automatically due to {skipViolationCount} violations.");
+            
+            _autoHostRotateBehaviour.SkipCurrentHost();
         }
     }
 }

@@ -16,6 +16,9 @@ public class LobbyConfiguration
     public int? Size { get; set; } = 16;
 
     public string? Password { get; set; } = string.Empty;
+
+    public bool? AutomaticallySkipAfterViolations { get; set; } = false;
+    public int? ViolationSkipCount { get; set; } = 3;
     
     // Bot specific configuration
 
