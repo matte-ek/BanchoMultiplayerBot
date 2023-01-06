@@ -327,7 +327,7 @@ public class Bot
 
                 SaveBotState();
 
-                while (connectionAttempts <= 20 && !Client.IsConnected)
+                while (connectionAttempts <= 20 && !IsTcpConnectionAlive(Client.TcpClient))
                 {
                     connectionAttempts++;
 
