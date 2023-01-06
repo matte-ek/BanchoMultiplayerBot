@@ -331,9 +331,9 @@ public class Bot
                 {
                     connectionAttempts++;
 
-                    Log.Information("Attempting to reconnect in 10 seconds");
+                    Log.Information("Attempting to reconnect in 60 seconds");
 
-                    await Task.Delay(10000);
+                    await Task.Delay(60000);
                 
                     Client.Dispose();
                     Lobbies.Clear();
