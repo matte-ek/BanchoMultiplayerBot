@@ -23,7 +23,7 @@
         <MudText Typo="Typo.button">@(_lobby != null && _lobby.MultiplayerLobby.MatchInProgress ? "IN PROGRESS" : "")</MudText>
     </div>
 </MudPaper>
-<MudGrid Class="mt-2">
+<MudGrid Class="mt-0">
     <MudItem xs="12" sm="6">
         <MudCard>
             <MudCardContent Style="@($"background-image: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%,rgba(0,0,0,0.6) 100%), url(https://assets.ppy.sh/beatmaps/{_mapManager?.CurrentBeatmapSetId}/covers/cover.jpg);background-position: center;")">
@@ -36,7 +36,7 @@
         <MudCard>
             <MudCardContent>
                 <MudText Typo="Typo.body2">Players</MudText>
-                <MudText Typo="Typo.h5">@_lobby?.MultiplayerLobby.Players.Count</MudText>
+                <MudText Typo="Typo.h5">@_lobby?.MultiplayerLobby.Players.Count/@_lobby?.Configuration.Size</MudText>
             </MudCardContent>
         </MudCard>
     </MudItem>
@@ -56,7 +56,7 @@
                 @foreach (var message in _chatMessages)
                 {
                     <MudPaper Class="d-flex flex-row flex-grow-1 gap-1" Elevation="0">
-                        <MudText Typo="Typo.body2" Style="color: #919191;white-space: nowrap;">@message.Time.ToString("HH:mm")</MudText>
+                        <MudText Typo="Typo.body2" Style="color: #919191;white-space: nowrap;">@message.Time.AddHours(1).ToString("HH:mm:ss")</MudText>
                         <MudText Typo="Typo.body2" Style="white-space: nowrap;" Color="@message.Color"><b>@message.Author</b></MudText>
                         <MudText Typo="Typo.body2">@message.Content</MudText>
                     </MudPaper>
@@ -65,7 +65,7 @@
         </MudPaper>
         <MudPaper>
             <EditForm Model="@_sendMessageModel" OnValidSubmit="OnValidSubmit">
-                <MudTextField T="string" Label="Send message..." Variant="Variant.Outlined" @bind-Value="_sendMessageModel.Message" TextUpdateSuppression="false" />
+                <MudTextField T="string" Label="Send message..." Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Send"  Variant="Variant.Outlined" @bind-Value="_sendMessageModel.Message" TextUpdateSuppression="false" />
             </EditForm>
 
         </MudPaper>
