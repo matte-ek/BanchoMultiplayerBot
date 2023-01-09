@@ -1,6 +1,7 @@
 ﻿@implements IDisposable
 @inject BotService Bot
 @inject NavigationManager NavManager
+@inject IDialogService DialogService
 @page "/lobby/{IdStr}"
 @using BanchoMultiplayerBot
 @using BanchoMultiplayerBot.Behaviour
@@ -141,9 +142,17 @@
         NavManager.NavigateTo($"/osu-bot/lobby/{IdStr}/configure");
     }
 
-    private void OnExitLobbyButtonClicked()
+    private async void OnExitLobbyButtonClicked()
     {
-        NavManager.NavigateTo($"/osu-bot");
+        var parameters = new DialogParameters { ["Message"] = "Are you sure you want to exit the lobby?" };
+
+        var dialog = DialogService.Show<ConfirmDialog>("ConfirmDialog", parameters);
+        var result = await dialog.Result;
+
+        if (result.Cancelled)
+            return;
+        
+        NavManager.NavigateTo($"/");
 
         if (_lobby != null)
             Bot.Lobbies.Remove(_lobby);

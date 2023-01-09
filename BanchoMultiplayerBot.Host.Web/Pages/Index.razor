@@ -1,11 +1,14 @@
 ﻿@implements IDisposable
 @inject BotService Bot
 @inject IHostApplicationLifetime ApplicationLifetime
+@inject IDialogService DialogService
 @page "/"
 @using BanchoMultiplayerBot
 @using BanchoMultiplayerBot.Config
 @using System.Threading
 @using BanchoMultiplayerBot.Host.Web.Log
+@using MudBlazor.Utilities
+@using Serilog.Events
 
 <PageTitle>Dashboard</PageTitle>
 
@@ -21,7 +24,7 @@
         <MudCard>
             <MudCardContent>
                 <MudText Typo="Typo.body2">Bancho Connection</MudText>
-                <MudText Typo="Typo.h4" Color="@(_isConnected ? Color.Default : Color.Error)">@(_isConnected ? "OK" : "Error")</MudText>
+                <MudText Typo="Typo.h4" Color="@(_isConnected ? Color.Success : Color.Error)">@(_isConnected ? "OK" : "Error")</MudText>
             </MudCardContent>
         </MudCard>
     </MudItem>
@@ -57,7 +60,7 @@
                 @foreach (var log in DashboardLogSink.Logs)
                 {
                     <MudPaper Class="d-flex flex-row flex-grow-1 gap-1" Elevation="0">
-                        <MudText Typo="Typo.body2">@log.Item1</MudText>
+                        <MudText Typo="Typo.body2" Color="GetLogTextColor(log.Item2)">@log.Item1</MudText>
                     </MudPaper>
                 }
             </MudPaper>
@@ -100,6 +103,19 @@
 
     // Runs the page's automatic update, every 5 seconds.
     readonly PeriodicTimer _updateTimer = new(TimeSpan.FromSeconds(5));
+
+    private Color GetLogTextColor(LogEventLevel level)
+    {
+        return level switch
+        {
+            LogEventLevel.Debug => Color.Dark,
+            LogEventLevel.Verbose => Color.Dark,
+            LogEventLevel.Information => Color.Default,
+            LogEventLevel.Warning => Color.Warning,
+            LogEventLevel.Error => Color.Error,
+            _ => Color.Default
+        };
+    }
 
     private async void UpdateStatistics()
     {
@@ -169,6 +185,14 @@
 
     private async void TerminateBot()
     {
+        var parameters = new DialogParameters { ["Message"] = "Are you sure you want to exit the bot?" };
+
+        var dialog = DialogService.Show<ConfirmDialog>("ConfirmDialog", parameters);
+        var result = await dialog.Result;
+
+        if (result.Cancelled)
+            return;
+        
         await Bot.DisconnectAsync();
 
         ApplicationLifetime.StopApplication();

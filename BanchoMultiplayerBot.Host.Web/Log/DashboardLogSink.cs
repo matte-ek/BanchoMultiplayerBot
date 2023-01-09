@@ -1,22 +1,27 @@
 ﻿using Serilog.Core;
 using Serilog.Events;
+using Serilog.Formatting;
 
 namespace BanchoMultiplayerBot.Host.Web.Log
 {
     public class DashboardLogSink : ILogEventSink
     {
-        private readonly IFormatProvider _formatProvider;
+        private readonly ITextFormatter _textFormatter;
 
         public static readonly List<Tuple<string, LogEventLevel>> Logs = new(); 
 
-        public DashboardLogSink(IFormatProvider formatProvider)
+        public DashboardLogSink(ITextFormatter textFormatter)
         {
-            _formatProvider = formatProvider;
+            _textFormatter = textFormatter;
         }
 
         public void Emit(LogEvent logEvent)
         {
-            var message = logEvent.RenderMessage(_formatProvider);
+            using var writer = new StringWriter();
+            
+            _textFormatter.Format(logEvent, writer);
+
+            var message = writer.ToString();
 
             if (Logs.Count > 512)
                 Logs.RemoveAt(Logs.Count - 1);
