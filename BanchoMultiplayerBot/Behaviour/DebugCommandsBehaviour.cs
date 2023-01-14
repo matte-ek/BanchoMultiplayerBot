@@ -29,7 +29,7 @@ public class DebugCommandsBehaviour : IBotBehaviour
             {
                 var time = DateTime.Now - _lobby.Bot.StartTime;
                 
-                _lobby.SendMessage($"{msg.Sender}, current uptime: {time:h' hours 'm' minutes 's' seconds'}");
+                _lobby.SendMessage($"{msg.Sender}, current uptime: {time:d' days 'h' hours 'm' minutes 's' seconds'}");
             }
             
             if (msg.Content.Equals("!issuetime"))
@@ -42,7 +42,7 @@ public class DebugCommandsBehaviour : IBotBehaviour
                 {
                     var time = DateTime.Now - _lobby.Bot.LastConnectionIssueTime;
 
-                    _lobby.SendMessage($"{msg.Sender}, last connection issue: {time:h' hours 'm' minutes 's' seconds'}");   
+                    _lobby.SendMessage($"{msg.Sender}, last connection issue: {time:d' days 'h' hours 'm' minutes 's' seconds'}");   
                 }
             }
         }
