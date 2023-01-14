@@ -1,4 +1,5 @@
-﻿using BanchoSharp.Interfaces;
+﻿using BanchoMultiplayerBot.Extensions;
+using BanchoSharp.Interfaces;
 
 namespace BanchoMultiplayerBot.Behaviour;
 
@@ -32,7 +33,7 @@ public class AbortVoteBehaviour : IBotBehaviour
     {
         if (message.Content.StartsWith("!abort"))
         {
-            var player = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name == message.Sender);
+            var player = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name.ToIrcNameFormat() == message.Sender);
             if (player is not null)
             {
                 if (_playerAbortVote.Vote(player))

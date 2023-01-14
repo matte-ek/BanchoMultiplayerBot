@@ -1,4 +1,5 @@
-﻿using BanchoSharp.Interfaces;
+﻿using BanchoMultiplayerBot.Extensions;
+using BanchoSharp.Interfaces;
 
 namespace BanchoMultiplayerBot.Behaviour;
 
@@ -17,7 +18,7 @@ public class FunCommandsBehaviour : IBotBehaviour
     {
         try
         {
-            var player = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name == e.Sender);
+            var player = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name.ToIrcNameFormat() == e.Sender);
 
             if (player is null)
             {

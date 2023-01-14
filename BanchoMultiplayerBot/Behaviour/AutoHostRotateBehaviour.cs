@@ -1,4 +1,5 @@
-﻿using BanchoSharp;
+﻿using BanchoMultiplayerBot.Extensions;
+using BanchoSharp;
 using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
 using Serilog;
@@ -127,17 +128,11 @@ public class AutoHostRotateBehaviour : IBotBehaviour
                 if (message.Content.StartsWith("!queuepos ")) 
                     targetName = message.Content.Split("!queuepos ")[1];
                 
-                if (!Queue.Contains(targetName))
-                {
-                    // Don't really wanna echo back user input, so don't include the player name here.
-                    _lobby.SendMessage("Couldn't find player in queue.");
-                }
-                else
-                {
-                    var queuePosition = (Queue.FindIndex(x => x.Equals(targetName)) + 1).ToString();
+                var queuePosition = Queue.FindIndex(x => x.ToIrcNameFormat().Equals(targetName));
 
-                    _lobby.SendMessage($"Queue position for {targetName}: #{queuePosition}");
-                }
+                _lobby.SendMessage(queuePosition == -1
+                    ? "Couldn't find player in queue." // Don't really wanna echo back user input, so don't include the player name here.
+                    : $"Queue position for {targetName}: #{(queuePosition + 1).ToString()}");
 
                 return;
             }
@@ -152,7 +147,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
             // If the host is sending the message, just skip.
             if (_lobby.MultiplayerLobby.Host is not null)
             {
-                if (message.Sender == _lobby.MultiplayerLobby.Host.Name)
+                if (message.Sender == _lobby.MultiplayerLobby.Host.Name.ToIrcNameFormat())
                 {
                     SkipCurrentPlayer();
                     OnQueueUpdated();
@@ -164,7 +159,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
             }
 
             // If the player isn't host, start a vote.
-            var player = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name == message.Sender);
+            var player = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name.ToIrcNameFormat() == message.Sender);
             if (player is not null)
             {
                 if (_playerSkipVote.Vote(player))

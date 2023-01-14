@@ -1,4 +1,5 @@
-﻿using BanchoSharp;
+﻿using BanchoMultiplayerBot.Extensions;
+using BanchoSharp;
 using BanchoSharp.Interfaces;
 using Serilog;
 
@@ -82,7 +83,7 @@ public class AutoStartBehaviour : IBotBehaviour
             {
                 if (_lobby.MultiplayerLobby.Host is not null)
                 {
-                    if (message.Sender == _lobby.MultiplayerLobby.Host.Name)
+                    if (message.Sender == _lobby.MultiplayerLobby.Host.Name.ToIrcNameFormat())
                     {
                         // If the user ran '!start' without any arguments,
                         // start the match immediately.
@@ -105,7 +106,7 @@ public class AutoStartBehaviour : IBotBehaviour
                     }
                 }
 
-                var player = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name == message.Sender);
+                var player = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name.ToIrcNameFormat() == message.Sender);
                 if (player is not null)
                 {
                     if (_playerStartVote.Vote(player))
@@ -126,7 +127,7 @@ public class AutoStartBehaviour : IBotBehaviour
         {
             if (_lobby.MultiplayerLobby.Host is not null)
             {
-                if (message.Sender == _lobby.MultiplayerLobby.Host.Name)
+                if (message.Sender == _lobby.MultiplayerLobby.Host.Name.ToIrcNameFormat())
                 {
                     AbortTimer();
                 }
