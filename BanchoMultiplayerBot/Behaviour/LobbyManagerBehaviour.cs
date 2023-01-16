@@ -13,6 +13,9 @@ public class LobbyManagerBehaviour : IBotBehaviour
     private Lobby _lobby = null!;
     
     private DateTime _lastSettingsUpdateReceivedTime;
+
+    // I really, really hate this but whatever.
+    private int _mpSettingsAttempts = 0;
     
     public void Setup(Lobby lobby)
     {
@@ -61,6 +64,7 @@ public class LobbyManagerBehaviour : IBotBehaviour
         // At this point we should have received updated information
         // from "!mp settings"
         _lastSettingsUpdateReceivedTime = DateTime.Now;
+        _mpSettingsAttempts = 0;
 
         EnsureRoomName();
         EnsureRoomSize();
@@ -174,6 +178,16 @@ public class LobbyManagerBehaviour : IBotBehaviour
         if (DateTime.Now - _lastSettingsUpdateReceivedTime > TimeSpan.FromSeconds(15))
         {
             _lobby.SendMessage("!mp settings");
+
+            // If we still have some attempts left, then check if it got ran successfully again
+            // I hate the fact that I even have to do this but I have no clue as to why it doesn't get ran
+            // in the first place. Seems to only be happening with `!mp settings` so I am assuming something Bancho related?
+            if (_mpSettingsAttempts < 10)
+            {
+                _mpSettingsAttempts++;
+
+                _ = Task.Run(EnsureSettingsSent);
+            }
         }
     }
 }
