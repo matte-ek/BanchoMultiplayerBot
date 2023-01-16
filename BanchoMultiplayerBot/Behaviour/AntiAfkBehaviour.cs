@@ -11,14 +11,22 @@ public class AntiAfkBehaviour : IBotBehaviour
 {
     private Lobby _lobby = null!;
 
+    private bool _afkTimerTaskActive = true;
+
     private bool _afkTimerActive;
-    private Task? _afkTimerTask;
-    private CancellationTokenSource? _afkTimerCancellationToken;
-    
+    private DateTime _afkTimerTime;
+
+    ~AntiAfkBehaviour()
+    {
+        _afkTimerTaskActive = false;
+    }
+
     public void Setup(Lobby lobby)
     {
         _lobby = lobby;
-        
+
+         Task.Run(AfkTimerTask);
+
         _lobby.MultiplayerLobby.OnHostChanged += OnHostChanged;
         _lobby.MultiplayerLobby.OnHostChangingMap += OnHostChangingMap;
         _lobby.MultiplayerLobby.OnMatchStarted += OnMatchStarted;
@@ -90,24 +98,27 @@ public class AntiAfkBehaviour : IBotBehaviour
     {
         if (_afkTimerActive)
         {
-            _afkTimerActive = false;
-            
             AbortTimer();
         }
 
-        _afkTimerTask?.Wait(100);
-        
-        _afkTimerCancellationToken?.Dispose();
-        _afkTimerCancellationToken = new CancellationTokenSource();
+        _afkTimerTime = DateTime.Now.AddSeconds(timeoutTime);
+        _afkTimerActive = true;
+    }
+    
+    private void AbortTimer()
+    {
+        _afkTimerActive = false;
+    }
 
-        _afkTimerTask = Task.Delay(1000 * timeoutTime, _afkTimerCancellationToken.Token).ContinueWith(x =>
+    private async Task AfkTimerTask()
+    {
+        while (_afkTimerTaskActive)
         {
-            try
+            await Task.Delay(100);
+
+            if (_afkTimerActive && DateTime.Now >= _afkTimerTime)
             {
-                if (_afkTimerCancellationToken.IsCancellationRequested || !_afkTimerActive)
-                {
-                    return;
-                }
+                _afkTimerActive = false;
 
                 var name = _lobby.MultiplayerLobby.Host?.Name;
 
@@ -118,26 +129,6 @@ public class AntiAfkBehaviour : IBotBehaviour
 
                 _lobby.Bot.SendMessage("BanchoBot", $"!stat {name.Replace(' ', '_')}");
             }
-            catch (Exception)
-            {
-                // ignored
-            }
-        });
-        
-        _afkTimerActive = true;
-    }
-    
-    private void AbortTimer()
-    {
-        _afkTimerActive = false;
-        
-        try
-        { 
-            _afkTimerCancellationToken?.Cancel(false);
-        }
-        catch (Exception)
-        {
-            // ignored
         }
     }
 }
