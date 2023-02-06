@@ -16,7 +16,6 @@
 <MudText Typo="Typo.h4" GutterBottom="true">@_lobby?.Configuration.Name</MudText>
 
 <MudPaper Class="pa-4 mt-2 d-flex align-content-center flex-grow-1 gap-2">
-    <MudButton Variant="Variant.Text" Color="Color.Primary" DisableElevation="true" OnClick="OnUpdateButtonClicked">Update</MudButton>
     <MudButton Variant="Variant.Text" Color="Color.Primary" DisableElevation="true" OnClick="OnConfigureButtonClicked">Configure</MudButton>
     <MudButton Variant="Variant.Text" Color="Color.Error" DisableElevation="true" OnClick="OnExitLobbyButtonClicked">Leave Lobby</MudButton>
 
@@ -130,11 +129,6 @@
 
             StateHasChanged();
         }
-    }
-
-    private void OnUpdateButtonClicked()
-    {
-        _lobby?.SendMessage("!mp settings");
     }
 
     private void OnConfigureButtonClicked()
