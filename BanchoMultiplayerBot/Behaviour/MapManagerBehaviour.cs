@@ -60,7 +60,7 @@ public class MapManagerBehaviour : IBotBehaviour
 
         if (msg.Content.Equals("!mirror"))
         {
-            _lobby.SendMessage($"[https://beatconnect.io/b/{CurrentBeatmapId} Mirror Download]");
+            _lobby.SendMessage($"[https://beatconnect.io/b/{CurrentBeatmapSetId} Mirror Download]");
         }
     }
 
@@ -180,7 +180,7 @@ public class MapManagerBehaviour : IBotBehaviour
             {
                 var timeSpan = TimeSpan.FromSeconds(int.Parse(beatmapModel.TotalLength));
 
-                _lobby.SendMessage($"[https://osu.ppy.sh/b/{id} {beatmapModel.Artist} - {beatmapModel.Title}] - ([https://beatconnect.io/b/{id} Mirror])");
+                _lobby.SendMessage($"[https://osu.ppy.sh/b/{id} {beatmapModel.Artist} - {beatmapModel.Title}] - ([https://beatconnect.io/b/{CurrentBeatmapSetId} Mirror])");
 
                 try
                 {
