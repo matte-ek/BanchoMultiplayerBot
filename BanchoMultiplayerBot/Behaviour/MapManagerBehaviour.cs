@@ -184,8 +184,10 @@ public class MapManagerBehaviour : IBotBehaviour
 
                 try
                 {
-                    if (float.TryParse(beatmapModel.DifficultyRating, out float starRating))
+                    if (beatmapModel.DifficultyRating != null)
                     {
+                        float starRating = float.Parse(beatmapModel.DifficultyRating, CultureInfo.InvariantCulture);
+
                         if (_lobby.Bot.PerformancePointCalculator == null)
                         {
                             _lobby.SendMessage($"(Star Rating: {starRating:.0#} | BPM: {beatmapModel.Bpm} | Length: {timeSpan.ToString(@"mm\:ss")})");
@@ -200,6 +202,7 @@ public class MapManagerBehaviour : IBotBehaviour
                         }
                     }
                 }
+
                 catch (Exception e)
                 {
                     // ignored
