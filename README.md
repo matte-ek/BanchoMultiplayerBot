@@ -22,7 +22,7 @@ Currently work in progress and in early testing/development stages. Depends on [
 ### **WARNING!** I cannot guarantee any security, as I haven't written any Blazor applications before, and the "authentication" system right now was quickly implemented. Hosting on a local/trusted network advised. Use at your own risk. Traffic is unencrypted unless a reverse proxy is used (and properly configured), see https://learn.microsoft.com/en-us/aspnet/core/blazor/host-and-deploy/server?view=aspnetcore-7.0#linux-with-nginx for more information. 
 
 
-Download the latest release of the [releases page](https://github.com/matte-ek/BanchoMultiplayerBot/releases).
+Download the latest release of the [releases page](https://github.com/matte-ek/BanchoMultiplayerBot/releases). Also make sure you have the [.NET Framework 6.0 SDK](https://dotnet.microsoft.com/en-us/download) installed!
 
 Then modify `appsettings.json` and fill out a username and a password as shown below. This is not for the osu! IRC credentials, but the admin panel of the bot itself. 
 ```
