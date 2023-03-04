@@ -21,38 +21,29 @@ Currently work in progress and in early testing/development stages. Depends on [
 ## Setup
 ### **WARNING!** I cannot guarantee any security, as I haven't written any Blazor applications before, and the "authentication" system right now was quickly implemented. Hosting on a local/trusted network advised. Use at your own risk. Traffic is unencrypted unless a reverse proxy is used (and properly configured), see https://learn.microsoft.com/en-us/aspnet/core/blazor/host-and-deploy/server?view=aspnetcore-7.0#linux-with-nginx for more information. 
 
-The setup process is currently kind of complicated, and the application itself is very designed/implemented for my needs as of right now.
 
-Build `BanchoMultiplayerBot.Host.Web` and create and fill out `config.json` and `appsettings.json` as follows:
+Download the latest release of the [releases page](https://github.com/matte-ek/BanchoMultiplayerBot/releases).
 
-`config.json`
+Then modify `appsettings.json` and fill out a username and a password as shown below. This is not for the osu! IRC credentials, but the admin panel of the bot itself. 
 ```
 {
-  "Username": "",
-  "Password": "",
-  "ApiKey": ""
-}
-```
-*These fields may be left out empty as they can be entered later on in the web interface*
-
-`appsettings.json`
-```
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
+  ...
   "Authentication": {
     "AdminUsername": "<fill out a username>",
     "AdminPassword": "<fill out a password>"
-  },
-  "AllowedHosts": "*"
+  }
+  ...
 }
 ```
 
-Authentication is "temporary" and is subject to change in the future, as storing credentials there is not ideal. By default, the application will only listen at `http://localhost:5000/osu-bot`.
+Then run the bot itself, for example on Windows you may run the `BanchoMultiplayerBot.Host.Web.exe` file. Now while the bot application is running you may visit
+[http://localhost:5000/osu-bot](http://localhost:5000/osu-bot) where you should be greeted by a login page. Here you can login with the username and password that you picked earlier.
+
+At this point you should open up the settings page and fill out the osu! IRC credentials which you can get from [here](https://osu.ppy.sh/p/irc). You also need an osu!api v1 key which you can get from [here](https://osu.ppy.sh/p/api/). (You can use localhost for the app URL). You also have some other global configuration stuff on this page.
+
+After this is done you may go back to the Dashboard page and hit the "Save Configuration" button, due to a bug in the bot as of now the connect button doesn't work if the IRC username/password is just updated, so after hitting the "Save Configuration" button, please restart the bot by just closing and reopening the application. 
+
+When you re-login afterwards the Bancho Connection label should say OK, if not check the console output for any errors. At this point you may start creating lobbies, with the "Add new lobby" page to the left. Use the Auto Host Rotate preset to create an AHR lobby. The lobby should then be created and you should be able to click on it on the menu to the left, where you can configure it to your liking and see the current players and chat.
 
 ## Roadmap
 - [x] Manage lobbies via configurations
