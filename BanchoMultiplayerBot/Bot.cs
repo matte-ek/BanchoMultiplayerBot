@@ -15,16 +15,16 @@ public class Bot
 {
     public BanchoClient Client { get; private set; }
     
-    public OsuApiWrapper OsuApi { get; }
+    public OsuApiWrapper OsuApi { get; private set; }
     
     /// <summary>
     /// May or may not be available depending on PerformancePointCalculator.IsAvailable
     /// </summary>
-    public PerformancePointCalculator? PerformancePointCalculator { get; }
+    public PerformancePointCalculator? PerformancePointCalculator { get; private set; }
 
     public AnnouncementManager AnnouncementManager { get; } = new();
 
-    public BotConfiguration Configuration { get; }
+    public BotConfiguration Configuration { get; private set; }
     
     public List<Lobby> Lobbies { get; } = new();
     
@@ -51,20 +51,7 @@ public class Bot
 
     public Bot(string configurationFile)
     {
-        if (!File.Exists(configurationFile))
-        {
-            throw new Exception($"Failed to find configuration file");
-        }
-
-        var reader = File.OpenRead(configurationFile);
-        var config = JsonSerializer.Deserialize<BotConfiguration>(reader);
-        
-        reader.Close();
-        reader.Dispose();
-
-        Configuration = config ?? throw new Exception("Failed to read configuration file.");
-        Client = new BanchoClient(new BanchoClientConfig(new IrcCredentials(Configuration.Username, Configuration.Password), LogLevel.Trace, false));
-        OsuApi = new OsuApiWrapper(config.ApiKey);
+        LoadConfiguration(configurationFile);
 
         if (PerformancePointCalculator.IsAvailable)
             PerformancePointCalculator = new PerformancePointCalculator();
@@ -72,6 +59,41 @@ public class Bot
             Log.Warning($"Could not find '{PerformancePointCalculator.OsuToolsDirectory}', pp calculations unavailable.");
 
         AnnouncementManager.Run(this);
+
+        if (Client == null || Configuration == null || OsuApi == null)
+            throw new Exception("Failed to read configuration file.");
+    }
+
+    public void SaveConfiguration()
+    {
+        Configuration.LobbyConfigurations = new LobbyConfiguration[Lobbies.Count];
+
+        for (int i = 0; i < Lobbies.Count; i++)
+        {
+            Configuration.LobbyConfigurations[i] = Lobbies[i].Configuration;
+        }
+
+        AnnouncementManager.Save();
+
+        File.WriteAllText("config.json", JsonSerializer.Serialize(Configuration));
+    }
+
+    public void LoadConfiguration(string configurationFile)
+    {
+        if (!File.Exists(configurationFile))
+        {
+            throw new Exception($"Failed to find configuration file");
+        }
+
+        var reader = File.OpenRead(configurationFile);
+        var config = JsonSerializer.Deserialize<BotConfiguration>(reader);
+
+        reader.Close();
+        reader.Dispose();
+
+        Configuration = config ?? throw new Exception("Failed to read configuration file.");
+        Client = new BanchoClient(new BanchoClientConfig(new IrcCredentials(Configuration.Username, Configuration.Password), LogLevel.Trace, false));
+        OsuApi = new OsuApiWrapper(Configuration.ApiKey);
     }
 
     /// <summary>
@@ -255,7 +277,7 @@ public class Bot
     /// </summary>
     public void SaveBotState()
     {
-        SaveBotConfiguration();
+        SaveConfiguration();
 
         if (!Lobbies.Any())
             return;
@@ -292,20 +314,6 @@ public class Bot
         File.WriteAllText("lobby_states.json", JsonSerializer.Serialize(lobbyStates));
         
         Log.Information($"Saved bot state successfully ({lobbyStates.Count} lobbies)");
-    }
-
-    private void SaveBotConfiguration()
-    {
-        Configuration.LobbyConfigurations = new LobbyConfiguration[Lobbies.Count];
-
-        for (int i = 0; i < Lobbies.Count; i++)
-        {
-            Configuration.LobbyConfigurations[i] = Lobbies[i].Configuration;
-        }
-
-        AnnouncementManager.Save();
-        
-        File.WriteAllText("config.json", JsonSerializer.Serialize(Configuration));
     }
 
     /// <summary>

@@ -17,6 +17,8 @@
             if (!HasValidConfiguration())
                 return;
 
+            LoadConfiguration("config.json");
+
             _botRunTask = Task.Run(RunAsync);
         }
 

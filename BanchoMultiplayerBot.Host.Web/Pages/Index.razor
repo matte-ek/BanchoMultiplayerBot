@@ -128,6 +128,8 @@
             Bot.Lobbies.ForEach(x => _playerCount += x.MultiplayerLobby.Players.Count);
             Bot.Lobbies.ForEach(x => _gamesPlayed += x.GamesPlayed);
 
+            UpdateBanchoConnection();
+
             StateHasChanged();
         }
         while (await _updateTimer.WaitForNextTickAsync());
@@ -180,6 +182,7 @@
     {
         _isConnecting = true;
 
+        Bot.SaveConfiguration();
         Bot.Start();
     }
 
