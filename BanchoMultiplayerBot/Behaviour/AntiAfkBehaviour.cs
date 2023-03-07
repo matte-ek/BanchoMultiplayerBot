@@ -120,6 +120,11 @@ public class AntiAfkBehaviour : IBotBehaviour
             {
                 _afkTimerActive = false;
 
+                if (_lobby.MultiplayerLobby.Players.Count == 0)
+                {
+                    return;
+                }
+
                 var name = _lobby.MultiplayerLobby.Host?.Name;
 
                 if (name == null)
