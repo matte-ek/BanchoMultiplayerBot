@@ -145,11 +145,13 @@
 
         if (result.Cancelled)
             return;
-        
-        NavManager.NavigateTo($"/");
+
+        NavManager.NavigateTo($"");
 
         if (_lobby != null)
-            Bot.Lobbies.Remove(_lobby);
+            Bot.RemoveLobby(_lobby);
+
+        UpdatePage();
     }
 
     private async void UpdatePage()

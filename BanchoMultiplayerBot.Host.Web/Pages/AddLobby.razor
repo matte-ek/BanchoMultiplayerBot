@@ -17,7 +17,7 @@
 <MudForm @ref="_form">
     <MudPaper Class="pa-4 ma-4">
         <MudTextField @bind-Value="_name" T="string" Label="Name" Required="true" RequiredError="Name is required" Variant="Variant.Filled"/>
-        <MudTextField @bind-Value="_channel" T="string" Label="Channel" Required="false" HelperText="If empty, a new lobby will be created." Variant="Variant.Filled" />
+        <MudTextField @bind-Value="_channel" T="string" Label="Channel" Required="false" HelperText="If empty, a new lobby will be created. Format: #mp_<id>" Variant="Variant.Filled" />
         <MudSelect @bind-Value="_preset" T="string" Label="Create from preset" Variant="Variant.Filled" AnchorOrigin="Origin.BottomCenter">
             <MudSelectItem Value="@("None")" />
             <MudSelectItem Value="@("Auto Host Rotate")" />

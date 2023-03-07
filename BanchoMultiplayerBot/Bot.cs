@@ -155,6 +155,12 @@ public class Bot
         OnLobbiesUpdated?.Invoke();
     }
 
+    public void RemoveLobby(Lobby lobby)
+    {
+        Lobbies.Remove(lobby);
+        OnLobbiesUpdated?.Invoke();
+    }
+
     private void ClientOnChannelParted(IChatChannel channel)
     {
         Log.Warning($"Channel {channel.ChannelName} was parted.");
