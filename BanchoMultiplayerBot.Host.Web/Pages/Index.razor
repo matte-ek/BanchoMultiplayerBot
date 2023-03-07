@@ -32,7 +32,7 @@
         <MudCard>
             <MudCardContent>
                 <MudText Typo="Typo.body2">Lobbies</MudText>
-                <MudText Typo="Typo.h4">@_lobbyCount</MudText>
+                <MudText Typo="Typo.h4">@_lobbyCount@(Bot.Configuration.IsBotAccount == true ? "" : "/4")</MudText>
             </MudCardContent>
         </MudCard>
     </MudItem>
@@ -40,7 +40,7 @@
         <MudCard>
             <MudCardContent>
                 <MudText Typo="Typo.body2">Players</MudText>
-                <MudText Typo="Typo.h4">@_playerCount</MudText>
+                <MudText Typo="Typo.h4">@_playerCount/@_maxPlayerCount</MudText>
             </MudCardContent>
         </MudCard>
     </MudItem>
@@ -90,6 +90,7 @@
     // Stats that are displayed in the dashboard
     private int _lobbyCount = 0;
     private int _playerCount = 0;
+    private int _maxPlayerCount = 0;
     private int _gamesPlayed = 0;
     private bool _isConnected = false;
 
@@ -123,9 +124,11 @@
         {
             _lobbyCount = Bot.Lobbies.Count;
             _playerCount = 0;
+            _maxPlayerCount = 0;
             _gamesPlayed = 0;
 
             Bot.Lobbies.ForEach(x => _playerCount += x.MultiplayerLobby.Players.Count);
+            Bot.Lobbies.ForEach(x => _maxPlayerCount += (x.Configuration.Size.HasValue == true ? x.Configuration.Size.Value : 0));
             Bot.Lobbies.ForEach(x => _gamesPlayed += x.GamesPlayed);
 
             UpdateBanchoConnection();

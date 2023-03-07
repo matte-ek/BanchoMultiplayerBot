@@ -380,9 +380,8 @@ public class Bot
     /// </summary>
     private async Task RunMessagePump()
     {
-        // For bot accounts this may be set to 300/60 instead of 10/5
-        const int messageBurstCount = 10;
-        const int messageAge = 5;
+        int messageBurstCount = Configuration.IsBotAccount == true ? 300 : 10;
+        int messageAge = Configuration.IsBotAccount == true ? 60 : 5;
         
         List<QueuedMessage> sentMessages = new();
         

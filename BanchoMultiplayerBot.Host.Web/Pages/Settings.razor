@@ -17,6 +17,9 @@
                 <MudText Typo="Typo.h6" GutterBottom="true">IRC Authentication</MudText>
                 <MudTextField @bind-Value="_configuration.Username" T="string" Label="Username" Required="true" RequiredError="Username is required!" Variant="Variant.Filled"/>
                 <MudTextField @bind-Value="_configuration.Password" T="string" Label="Password" Required="true" RequiredError="Password is required!" InputType="InputType.Password" Variant="Variant.Filled"/>
+                <MudTooltip Text="If unsure, leave unchecked.">
+                    <MudSwitch @bind-Checked="_configuration.IsBotAccount" Label="Is bot account" Color="Color.Primary" />
+                </MudTooltip>
             </MudPaper>
             <MudPaper Class="pa-8 ma-2">
                 <MudText Typo="Typo.h6" GutterBottom="true">osu! API</MudText>
