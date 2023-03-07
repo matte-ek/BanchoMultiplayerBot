@@ -45,8 +45,13 @@ public class DebugCommandsBehaviour : IBotBehaviour
                     _lobby.SendMessage($"{msg.Sender}, last connection issue: {time:d' days 'h' hours 'm' minutes 's' seconds'}");   
                 }
             }
+
+            if (msg.Content.Equals("!version"))
+            {
+                _lobby.SendMessage($"{msg.Sender}, current version: {Bot.Version}");
+            }
         }
-        catch (Exception e)
+        catch (Exception)
         {
             // ignored
         }

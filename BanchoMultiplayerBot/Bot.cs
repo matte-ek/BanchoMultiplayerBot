@@ -13,6 +13,8 @@ namespace BanchoMultiplayerBot;
 
 public class Bot
 {
+    public static string Version => "1.1.0";
+
     public BanchoClient Client { get; private set; }
     
     public OsuApiWrapper OsuApi { get; private set; }
