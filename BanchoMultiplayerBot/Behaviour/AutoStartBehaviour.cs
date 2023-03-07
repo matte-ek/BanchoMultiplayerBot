@@ -178,7 +178,7 @@ public class AutoStartBehaviour : IBotBehaviour
                 {
                     _sentWarningMessage = true;
 
-                    _lobby.SendMessage("Starting match in 10 seconds, use !stop to abort!");
+                    _lobby.SendMessage("Starting match in 10 seconds, use !stop to abort");
 
                     continue;
                 }
