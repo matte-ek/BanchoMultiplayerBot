@@ -188,6 +188,12 @@ public class AutoStartBehaviour : IBotBehaviour
                     continue;
                 }
 
+                if (_lobby.MultiplayerLobby.Players.Count == 0)
+                {
+                    _startTimerActive = false;
+                    continue;
+                }
+
                 _startTimerActive = false;
 
                 _lobby.SendMessage("!mp start");

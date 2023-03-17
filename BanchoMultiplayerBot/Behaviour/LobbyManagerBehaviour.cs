@@ -20,7 +20,8 @@ public class LobbyManagerBehaviour : IBotBehaviour
     public void Setup(Lobby lobby)
     {
         _lobby = lobby;
-        
+
+        _lobby.MultiplayerLobby.OnMatchStarted += OnMatchStarted;
         _lobby.MultiplayerLobby.OnMatchFinished += OnMatchFinishedOrAborted;
         _lobby.MultiplayerLobby.OnMatchAborted += OnMatchFinishedOrAborted;
         _lobby.MultiplayerLobby.OnSettingsUpdated += OnRoomSettingsUpdated;
@@ -51,6 +52,16 @@ public class LobbyManagerBehaviour : IBotBehaviour
 
     private void OnAdminMessage(BanchoSharp.Interfaces.IPrivateIrcMessage message)
     {
+    }
+
+    private void OnMatchStarted()
+    {
+        // Automatically abort the match if it's started with 0 players, can happen if a player leaves between readying up
+        // and the bot auto starting the match.
+        if (_lobby.MultiplayerLobby.Players.Count == 0 && !_lobby.IsRecovering)
+        {
+            _lobby.SendMessage("!mp abort");
+        }
     }
 
     private void OnMatchFinishedOrAborted()
