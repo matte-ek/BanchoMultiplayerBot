@@ -32,7 +32,7 @@ public class FunCommandsBehaviour : IBotBehaviour
                 _lobby.SendMessage($"{e.Sender} has been here for {time:h' hours 'm' minutes 's' seconds'}");
             }
         }
-        catch (Exception exception)
+        catch (Exception)
         {
             // ignored
         }

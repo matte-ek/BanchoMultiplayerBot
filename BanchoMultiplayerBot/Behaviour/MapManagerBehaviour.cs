@@ -203,7 +203,7 @@ public class MapManagerBehaviour : IBotBehaviour
                     }
                 }
 
-                catch (Exception e)
+                catch (Exception)
                 {
                     // ignored
                 }
@@ -293,7 +293,7 @@ public class MapManagerBehaviour : IBotBehaviour
         {
             return int.TryParse(beatmap.BeatmapsetId, out int beatmapSetId) && config.BannedBeatmaps.ToList().Contains(beatmapSetId);
         }
-        catch (Exception e)
+        catch (Exception)
         {
             return false;
         }

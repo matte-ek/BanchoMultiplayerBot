@@ -153,7 +153,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
                 return;
             }
         }
-        catch (Exception e)
+        catch (Exception)
         {
             // ignored
         }

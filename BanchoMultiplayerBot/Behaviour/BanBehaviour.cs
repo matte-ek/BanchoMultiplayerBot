@@ -42,7 +42,7 @@ public class BanBehaviour : IBotBehaviour
                     _lobby.Bot.Configuration.BannedPlayers = banList.ToArray();
                 }
             }
-            catch (Exception exception)
+            catch (Exception)
             {
                 // ignored.
             }
@@ -73,7 +73,7 @@ public class BanBehaviour : IBotBehaviour
                     _lobby.Bot.Configuration.BannedBeatmaps = banList.ToArray();
                 }
             }
-            catch (Exception exception)
+            catch (Exception)
             {
                 // ignored.
             }
@@ -95,7 +95,7 @@ public class BanBehaviour : IBotBehaviour
                 _lobby.SendMessage($"!mp ban {name.Replace(' ','_')}");
             }
         }
-        catch (Exception e)
+        catch (Exception)
         {
             // ignored.
         }
