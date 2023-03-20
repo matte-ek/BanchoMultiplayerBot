@@ -117,14 +117,14 @@ public class LobbyManagerBehaviour : IBotBehaviour
 
     private void EnsureRoomMods()
     {
-        if (_lobby.Configuration.SelectedMods == null)
+        if (_lobby.Configuration.Mods == null)
             return;
 
         try
         {
             Mods desiredMods = 0;
 
-            foreach (var modName in _lobby.Configuration.SelectedMods)
+            foreach (var modName in _lobby.Configuration.Mods)
             {
                 desiredMods |= (Mods)Enum.Parse(typeof(Mods), modName);
             }

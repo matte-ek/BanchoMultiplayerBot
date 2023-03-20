@@ -115,7 +115,7 @@
         _selectedTeamMode = _configuration.TeamMode ?? LobbyFormat.HeadToHead;
         _selectedScoreMode = _configuration.ScoreMode ?? WinCondition.Score;
 
-        _selectedMods = _configuration.SelectedMods != null ? new HashSet<string>(_configuration.SelectedMods) : new HashSet<string>();
+        _selectedMods = _configuration.Mods != null ? new HashSet<string>(_configuration.Mods) : new HashSet<string>();
         _selectedBehaviours = _configuration.Behaviours != null ? new HashSet<string>(_configuration.Behaviours) : new HashSet<string>();
     }
 
@@ -139,7 +139,7 @@
         _configuration.ScoreMode = _selectedScoreMode;
 
         if (_selectedMods != null)
-            _configuration.SelectedMods = _selectedMods.ToArray();
+            _configuration.Mods = _selectedMods.ToArray();
         if (_selectedBehaviours != null)
             _configuration.Behaviours = _selectedBehaviours.ToArray();
     }

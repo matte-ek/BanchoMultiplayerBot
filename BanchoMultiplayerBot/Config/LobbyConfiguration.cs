@@ -15,7 +15,7 @@ public class LobbyConfiguration
 
     public WinCondition? ScoreMode { get; set; } = WinCondition.Score;
 
-    public string[]? SelectedMods { get; set; }
+    public string[]? Mods { get; set; }
 
     public int? Size { get; set; } = 16;
 
