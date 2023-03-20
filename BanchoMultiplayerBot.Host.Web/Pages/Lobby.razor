@@ -6,6 +6,7 @@
 @using BanchoMultiplayerBot
 @using BanchoMultiplayerBot.Behaviour
 @using BanchoMultiplayerBot.Config
+@using BanchoMultiplayerBot.Extensions;
 @using BanchoSharp.EventArgs
 @using BanchoSharp.Interfaces
 @using BanchoSharp.Multiplayer
@@ -93,9 +94,9 @@
                             }
 
                             <MudMenu Icon="@Icons.Material.Filled.MoreVert">
-                                <MudMenuItem>Transfer Host</MudMenuItem>
-                                <MudMenuItem Style="color: #f64e62ff;">Kick</MudMenuItem>
-                                <MudMenuItem Style="color: #f64e62ff;">Ban</MudMenuItem>
+                                <MudMenuItem OnClick="(() => OnTransferHostButtonPressed(player))">Transfer Host</MudMenuItem>
+                                <MudMenuItem OnClick="(() => OnKickPlayerButtonPressed(player))" Style="color: #f64e62ff;">Kick</MudMenuItem>
+                                <MudMenuItem OnClick="(() => OnBanPlayerButtonPressed(player))" Style="color: #f64e62ff;">Ban</MudMenuItem>
                             </MudMenu>
                         </div>
                         </MudPaper>
@@ -152,6 +153,28 @@
             Bot.RemoveLobby(_lobby);
 
         UpdatePage();
+    }
+
+    private void OnTransferHostButtonPressed(MultiplayerPlayer player)
+    {
+        var autoHostRotateBehaviour = (AutoHostRotateBehaviour?)_lobby?.Behaviours.Find(x => x.GetType() == typeof(AutoHostRotateBehaviour));
+
+        if (autoHostRotateBehaviour == null)
+        {
+            return;
+        }
+
+        autoHostRotateBehaviour.SetNewHost(player);
+    }
+
+    private void OnKickPlayerButtonPressed(MultiplayerPlayer player)
+    {
+        _lobby?.SendMessage($"!mp kick {player.Name.ToIrcNameFormat()}");
+    }
+
+    private void OnBanPlayerButtonPressed(MultiplayerPlayer player)
+    {
+        // I kind of want to implement some sort of confirmation here before banning someone.
     }
 
     private async void UpdatePage()

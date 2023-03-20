@@ -3,6 +3,7 @@ using BanchoSharp;
 using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
 using Serilog;
+using System.Xml.Linq;
 
 namespace BanchoMultiplayerBot.Behaviour;
 
@@ -70,6 +71,20 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         SkipCurrentPlayer();
         OnQueueUpdated();
     }
+
+    public void SetNewHost(MultiplayerPlayer player)
+    {
+        var name = player.Name;
+
+        if (Queue.Contains(name))
+        {
+            Queue.Remove(name);
+        }
+
+        Queue.Insert(0, name);
+
+        OnQueueUpdated();
+    }
     
     private void OnBanchoMessage(IPrivateIrcMessage msg)
     {
@@ -92,15 +107,16 @@ public class AutoHostRotateBehaviour : IBotBehaviour
             try
             {
                 var name = message.Content.Split("!sethost ")[1];
+                var player = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name.ToIrcNameFormat().ToLower() == name.ToLower());
 
-                if (Queue.Contains(name))
+                if (player is null)
                 {
-                    Queue.Remove(name);
+                    _lobby.SendMessage("Failed to find player.");
                 }
-
-                Queue.Insert(0, name);
-
-                OnQueueUpdated();
+                else
+                {
+                    SetNewHost(player);
+                }
             }
             catch (Exception)
             {
