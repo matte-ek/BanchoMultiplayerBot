@@ -100,7 +100,7 @@ public class LobbyManagerBehaviour : IBotBehaviour
             
         // We cannot verify anything here, so just update it all the time.
         
-        _lobby.SendMessage($"!mp set 0 0 {_lobby.Configuration.Size}");
+        _lobby.SendMessage($"!mp set {(int)(_lobby.Configuration.TeamMode ?? LobbyFormat.HeadToHead)} {(int)(_lobby.Configuration.ScoreMode ?? WinCondition.Score)} {_lobby.Configuration.Size}");
     }
 
     private void EnsureRoomPassword()

@@ -22,6 +22,18 @@
                     <MudSelectItem Value="@("osu!taiko")" />
                     <MudSelectItem Value="@("osu!catch")" />
                 </MudSelect>
+                    <MudSelect @bind-Value="_selectedTeamMode" T="LobbyFormat" Label="Team Mode" Variant="Variant.Filled" AnchorOrigin="Origin.BottomCenter">
+                    <MudSelectItem T="LobbyFormat" Value="LobbyFormat.HeadToHead">Head to head</MudSelectItem>
+                    <MudSelectItem T="LobbyFormat" Value="LobbyFormat.TagCoop">Tag co-op</MudSelectItem>
+                    <MudSelectItem T="LobbyFormat" Value="LobbyFormat.TeamVs">Team Vs</MudSelectItem>
+                    <MudSelectItem T="LobbyFormat" Value="LobbyFormat.TagTeamVs">Tag Team Vs</MudSelectItem>
+                </MudSelect>
+                <MudSelect @bind-Value="_selectedScoreMode" T="WinCondition" Label="Win Condition" Variant="Variant.Filled" AnchorOrigin="Origin.BottomCenter">
+                    <MudSelectItem T="WinCondition" Value="WinCondition.Score">Score</MudSelectItem>
+                    <MudSelectItem T="WinCondition" Value="WinCondition.Accuracy">Accuracy</MudSelectItem>
+                    <MudSelectItem T="WinCondition" Value="WinCondition.Combo">Combo</MudSelectItem>
+                    <MudSelectItem T="WinCondition" Value="WinCondition.ScoreV2">ScoreV2</MudSelectItem>
+                </MudSelect>
                 <MudSelect T="string" Label="Mods" MultiSelection="true" Variant="Variant.Filled" AnchorOrigin="Origin.BottomCenter" @bind-SelectedValues="_selectedMods">
                     @foreach (var mod in Enum.GetNames(typeof(Mods)))
                     {
@@ -65,9 +77,9 @@
 {
     [Parameter]
     public string? IdStr { get; set; }
-    
+
     private MudForm? _form;
-    
+
     private BanchoMultiplayerBot.Lobby? _lobby;
     private LobbyConfiguration? _configuration;
 
@@ -76,13 +88,16 @@
 
     private string? _selectedMode;
 
+    private LobbyFormat _selectedTeamMode;
+    private WinCondition _selectedScoreMode;
+
     protected override void OnInitialized()
     {
         ParseIdParameter();
 
         if (_lobby == null)
             return;
-        
+
         _configuration = _lobby.Configuration;
 
         if (_configuration.Mode != null)
@@ -96,7 +111,10 @@
                 _ => _selectedMode
             };
         }
-        
+
+        _selectedTeamMode = _configuration.TeamMode ?? LobbyFormat.HeadToHead;
+        _selectedScoreMode = _configuration.ScoreMode ?? WinCondition.Score;
+
         _selectedMods = _configuration.SelectedMods != null ? new HashSet<string>(_configuration.SelectedMods) : new HashSet<string>();
         _selectedBehaviours = _configuration.Behaviours != null ? new HashSet<string>(_configuration.Behaviours) : new HashSet<string>();
     }
@@ -107,7 +125,7 @@
         {
             return;
         }
-        
+
         _configuration.Mode = _selectedMode switch
         {
             "osu!std" => GameMode.osu,
@@ -116,6 +134,9 @@
             "osu!catch" => GameMode.osuCatch,
             _ => _configuration.Mode
         };
+
+        _configuration.TeamMode = _selectedTeamMode;
+        _configuration.ScoreMode = _selectedScoreMode;
 
         if (_selectedMods != null)
             _configuration.SelectedMods = _selectedMods.ToArray();

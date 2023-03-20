@@ -11,6 +11,10 @@ public class LobbyConfiguration
 
     public GameMode? Mode { get; set; } = GameMode.osu;
 
+    public LobbyFormat? TeamMode { get; set; } = LobbyFormat.HeadToHead;
+
+    public WinCondition? ScoreMode { get; set; } = WinCondition.Score;
+
     public string[]? SelectedMods { get; set; }
 
     public int? Size { get; set; } = 16;
