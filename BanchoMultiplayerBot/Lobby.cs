@@ -68,6 +68,7 @@ public class Lobby
         AddBehaviour(new MapManagerBehaviour());
         AddBehaviour(new BanBehaviour());
         AddBehaviour(new DebugCommandsBehaviour());
+        AddBehaviour(new ConfigBehaviour());
 
         // Add user specified behaviours
         if (Configuration.Behaviours != null)
