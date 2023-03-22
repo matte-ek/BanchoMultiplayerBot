@@ -1,7 +1,7 @@
 ## Bancho Multiplayer Bot
 
 ### Overview
-An osu! multiplayer bot that will maintain a queue and pass the host around every match automatically.
+An osu! multiplayer bot that will maintain a queue and pass the host around every match automatically. You are automatically added to the queue upon joining the match. 
 
 ### Player Commands
 

@@ -17,7 +17,7 @@ public class HelpBehaviour : IBotBehaviour
     {
         if (msg.Content.Equals("!help") || msg.Content.Equals("!info"))
         {
-            _lobby.SendMessage("osu! multiplayer bot [https://github.com/matte-ek/BanchoMultiplayerBot/blob/master/COMMANDS.md#player-commands Commands]");
+            _lobby.SendMessage("osu! multiplayer bot [https://github.com/matte-ek/BanchoMultiplayerBot/blob/master/COMMANDS.md Help & Commands]");
         }
     }
 }
