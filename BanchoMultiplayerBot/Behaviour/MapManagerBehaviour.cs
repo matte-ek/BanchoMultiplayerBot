@@ -172,7 +172,7 @@ public class MapManagerBehaviour : IBotBehaviour
         }
         else
         {
-            _lobby.SendMessage($"The beatmap you've picked is out of the lobby star range, please make sure to use the online star rating. ({_lobby.Configuration.MinimumStarRating:.0#}* - {_lobby.Configuration.MaximumStarRating:.0#}*)");
+            _lobby.SendMessage($"The beatmap you've picked is out of the lobby star range ({_lobby.Configuration.MinimumStarRating:.0#}* - {_lobby.Configuration.MaximumStarRating:.0#}*), please make sure to use the online star rating.");
         }
         
         RunViolationAutoSkip();
