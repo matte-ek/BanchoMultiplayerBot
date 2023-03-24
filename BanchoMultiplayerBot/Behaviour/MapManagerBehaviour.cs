@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using BanchoMultiplayerBot.Extensions;
 using BanchoMultiplayerBot.OsuApi;
 using BanchoMultiplayerBot.OsuApi.Exceptions;
 using BanchoSharp;
@@ -190,15 +191,16 @@ public class MapManagerBehaviour : IBotBehaviour
 
                         if (_lobby.Bot.PerformancePointCalculator == null)
                         {
-                            _lobby.SendMessage($"(Star Rating: {starRating:.0#} | BPM: {beatmapModel.Bpm} | Length: {timeSpan.ToString(@"mm\:ss")})");
+                            
+                            _lobby.SendMessage($"(Star Rating: {starRating:.0#} | {beatmapModel.GetStatusString()} | Length: {timeSpan.ToString(@"mm\:ss")} | BPM: {beatmapModel.Bpm})");
                         }
                         else
                         {
                             var ppInfo = await _lobby.Bot.PerformancePointCalculator.CalculatePerformancePoints(id);
 
                             _lobby.SendMessage(ppInfo != null
-                                ? $"(Star Rating: {starRating:.0#} | BPM: {beatmapModel.Bpm} | Length: {timeSpan.ToString(@"mm\:ss")} | 100%: {ppInfo.Performance100}pp | 98%: {ppInfo.Performance98}pp | 95%: {ppInfo.Performance95}pp)"
-                                : $"(Star Rating: {starRating:.0#} | BPM: {beatmapModel.Bpm} | Length: {timeSpan.ToString(@"mm\:ss")})");
+                                ? $"(Star Rating: {starRating:.0#} | {beatmapModel.GetStatusString()} | Length: {timeSpan.ToString(@"mm\:ss")} | BPM: {beatmapModel.Bpm} | 100%: {ppInfo.Performance100}pp | 98%: {ppInfo.Performance98}pp | 95%: {ppInfo.Performance95}pp)"
+                                : $"(Star Rating: {starRating:.0#} | {beatmapModel.GetStatusString()} | Length: {timeSpan.ToString(@"mm\:ss")} | BPM: {beatmapModel.Bpm}");
                         }
                     }
                 }
