@@ -55,8 +55,17 @@ public class MapManagerBehaviour : IBotBehaviour
         if (msg.Content.EndsWith("!r") || msg.Content.StartsWith("!regulations"))
         {
             var timeSpan = TimeSpan.FromSeconds(_lobby.Configuration.MaximumMapLength);
-            
-            _lobby.SendMessage($"Star rating: {_lobby.Configuration.MinimumStarRating:.0#}* - {_lobby.Configuration.MaximumStarRating:.0#}* | Max length: {timeSpan.ToString(@"mm\:ss")}");
+
+            var requiredModeName = _lobby.Configuration.Mode switch
+            {
+                GameMode.osu => "osu!std",
+                GameMode.osuCatch => "osu!catch",
+                GameMode.osuMania => "osu!mania",
+                GameMode.osuTaiko => "osu!taiko",
+                _ => "Any Mode"
+            };
+
+            _lobby.SendMessage($"Star rating: {_lobby.Configuration.MinimumStarRating:.0#}* - {_lobby.Configuration.MaximumStarRating:.0#}* | Max length: {timeSpan.ToString(@"mm\:ss")} | {requiredModeName}");
         }
 
         if (msg.Content.Equals("!mirror"))
