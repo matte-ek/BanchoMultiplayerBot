@@ -98,10 +98,14 @@ public class MapManagerBehaviour : IBotBehaviour
         }
         catch (ApiKeyInvalidException)
         {
+            Log.Error("API Key invalid exception while trying to retrive map details.");
+
             _lobby.SendMessage($"Internal error while getting beatmap information, please try again.");
         }
-        catch (Exception)
+        catch (Exception e)
         {
+            Log.Error($"Exception while handing beatmap change: {e.Message}");
+
             _lobby.SendMessage($"Internal error while getting beatmap information, please try again.");
         }
     }
@@ -207,7 +211,7 @@ public class MapManagerBehaviour : IBotBehaviour
 
                 catch (Exception)
                 {
-                    // ignored
+                    // ignored, used to catch weird edge cases within the API
                 }
                 
                 OnNewAllowedMap?.Invoke();
@@ -215,7 +219,7 @@ public class MapManagerBehaviour : IBotBehaviour
         }
         catch (Exception)
         {
-            // ignored
+            // ignored, used to catch weird edge cases within the API
         }
     }
     
