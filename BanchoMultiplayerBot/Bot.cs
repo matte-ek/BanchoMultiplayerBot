@@ -13,7 +13,7 @@ namespace BanchoMultiplayerBot;
 
 public class Bot
 {
-    public static string Version => "1.2.1";
+    public static string Version => "1.2.2";
 
     public BanchoClient Client { get; private set; }
     
@@ -250,7 +250,7 @@ public class Bot
         };
 
         int lobbyIndex = 0;
-        foreach (var lobby in lobbyStates)
+        foreach (var lobby in lobbyStates.OrderBy(x => x.Name).ToList())
         {
             // Attempt to find the correct configuration within our lobby configurations.
             var config = Configuration.LobbyConfigurations?.FirstOrDefault(x => x.Name == lobby.Name);
