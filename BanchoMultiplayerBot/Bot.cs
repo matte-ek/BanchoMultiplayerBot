@@ -377,8 +377,6 @@ public class Bot
     
     /// <summary>
     /// Task to send all messages within the queue, and handle rate limits for the messages.
-    /// Currently hardcoded to send messages within the "Personal Account" limits for bancho, with small margins.
-    /// See, https://osu.ppy.sh/wiki/en/Bot_account#benefits-of-bot-accounts
     /// </summary>
     private async Task RunMessagePump()
     {
