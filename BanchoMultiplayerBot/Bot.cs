@@ -16,9 +16,9 @@ public class Bot
     public static string Version => "1.2.2";
 
     public BanchoClient Client { get; private set; }
-    
+
     public OsuApiWrapper OsuApi { get; private set; }
-    
+
     /// <summary>
     /// May or may not be available depending on PerformancePointCalculator.IsAvailable
     /// </summary>
@@ -27,28 +27,30 @@ public class Bot
     public AnnouncementManager AnnouncementManager { get; } = new();
 
     public BotConfiguration Configuration { get; private set; }
-    
+
     public List<Lobby> Lobbies { get; } = new();
-    
+
     public DateTime StartTime { get; set; }
-    
+
     public bool HadNetworkConnectionIssue { get; set; }
     public DateTime LastConnectionIssueTime { get; set; }
 
     public event Action? OnBotReady;
     public event Action? OnLobbiesUpdated;
-    
+
     /// <summary>
     /// Message queue which is part of the message rate limiting system.
     /// </summary>
     private readonly BlockingCollection<QueuedMessage> _messageQueue = new(20);
-    
+
     /// <summary>
     /// All lobbies created through CreateLobby, awaiting Bancho to create the room. Gets processed by
     /// OnTournamentLobbyCreated
     /// </summary>
     private readonly List<LobbyConfiguration> _lobbyCreationQueue = new();
-    
+
+    private DateTime _lastMessageTime;
+
     private bool _exitRequested;
 
     public Bot(string configurationFile)
@@ -107,7 +109,7 @@ public class Bot
         {
             Channel = channel,
             Content = message
-        });        
+        });
     }
 
     public async Task RunAsync()
@@ -118,6 +120,7 @@ public class Bot
         Client.OnDisconnected += ClientOnDisconnected;
         Client.OnChannelParted += ClientOnChannelParted;
         Client.BanchoBotEvents.OnTournamentLobbyCreated += OnTournamentLobbyCreated;
+        Client.OnPrivateMessageReceived += e => { _lastMessageTime = DateTime.Now; };
 
         // Events for logging purposes
         Client.OnPrivateMessageReceived += e => { Log.Information($"[{e.Recipient}] {e.Sender}: {e.Content}"); };
@@ -133,9 +136,9 @@ public class Bot
     public async Task DisconnectAsync()
     {
         _exitRequested = true;
-        
+
         await Client.DisconnectAsync();
-        
+
         SaveBotState();
     }
 
@@ -145,13 +148,13 @@ public class Bot
 
         await Client.MakeTournamentLobbyAsync(configuration.Name);
     }
-    
+
     public async Task AddLobbyAsync(string channel, LobbyConfiguration configuration)
     {
         var lobby = new Lobby(this, configuration, channel);
-        
+
         Lobbies.Add(lobby);
-        
+
         await lobby.SetupAsync();
 
         OnLobbiesUpdated?.Invoke();
@@ -167,7 +170,7 @@ public class Bot
     {
         Log.Warning($"Channel {channel.ChannelName} was parted.");
     }
-    
+
     /// <summary>
     /// Handle newly created lobbies that were created via the bot, other lobbies are ignored.
     /// </summary>
@@ -192,7 +195,7 @@ public class Bot
 
         OnLobbiesUpdated?.Invoke();
     }
-    
+
     private void ClientOnDisconnected()
     {
         Log.Error("Bot has been disconnected from Bancho!");
@@ -200,11 +203,13 @@ public class Bot
 
     private void ClientOnAuthenticated()
     {
+        _lastMessageTime = DateTime.Now;
+
         Task.Run(RunMessagePump);
-        
+
         if (!AutoRecoverExistingLobbies())
             CreateLobbiesFromConfiguration();
-        
+
         OnBotReady?.Invoke();
 
         Task.Run(RunConnectionWatchdog);
@@ -227,7 +232,7 @@ public class Bot
 
         reader.Close();
         reader.Dispose();
-        
+
         if (lobbyStates == null)
             return false;
 
@@ -243,7 +248,7 @@ public class Bot
             {
                 return;
             }
-            
+
             Log.Warning($"Failed to find lobby by name {lobbyName?.Name}, creating new one instead.");
 
             await CreateLobby(lobbyConfig);
@@ -259,7 +264,7 @@ public class Bot
             {
                 // Not sure how I want the bot to behave in this case yet, return is intentional. 
                 Log.Error($"Failed to find configuration for lobby during recovery.");
-                
+
                 return false;
             }
 
@@ -270,7 +275,7 @@ public class Bot
 
             lobbyIndex++;
         }
-        
+
         return true;
     }
 
@@ -289,7 +294,7 @@ public class Bot
 
         if (!Lobbies.Any())
             return;
-            
+
         List<LobbyState> lobbyStates = new();
 
         foreach (var lobby in Lobbies)
@@ -318,9 +323,9 @@ public class Bot
                 Queue = queue
             });
         }
-        
+
         File.WriteAllText("lobby_states.json", JsonSerializer.Serialize(lobbyStates));
-        
+
         Log.Information($"Saved bot state successfully ({lobbyStates.Count} lobbies)");
     }
 
@@ -331,7 +336,7 @@ public class Bot
     private async Task RunConnectionWatchdog()
     {
         int connectionAttempts = 0;
-        
+
         while (!_exitRequested)
         {
             if (!IsTcpConnectionAlive(Client.TcpClient))
@@ -350,12 +355,12 @@ public class Bot
                     Log.Information("Attempting to reconnect in 60 seconds");
 
                     await Task.Delay(60000);
-                
+
                     Client.Dispose();
                     Lobbies.Clear();
 
                     Client = new BanchoClient(new BanchoClientConfig(new IrcCredentials(Configuration.Username, Configuration.Password), LogLevel.Trace));
-                    
+
                     _ = Task.Run(RunAsync);
 
                     await Task.Delay(10000);
@@ -363,7 +368,27 @@ public class Bot
 
                 break;
             }
-            
+            else
+            {
+                try
+                {
+                    // This is an additional fail-safe for the connection state, by checking the last time we received a message,
+                    // so if we haven't recevied a message for 5 minutes, then write a message to test the connection.
+                    // I feel like 5 minutes is a pretty safe bet for now.
+                    if ((DateTime.Now - _lastMessageTime).TotalSeconds > 300)
+                    {
+                        _lastMessageTime = DateTime.Now;
+
+                        SendMessage("BanchoBot", $"connection check: {DateTime.Now.ToString()}");
+
+                        Log.Warning("No message for 5 minutes, testing connection by sending a message to BanchoBot.");
+                    }
+                }
+                catch (Exception)
+                {
+                }
+            }
+
             await Task.Delay(1000);
         }
 
@@ -374,7 +399,7 @@ public class Bot
                 : "Failed to restart the bot after 20 attempts.");
         }
     }
-    
+
     /// <summary>
     /// Task to send all messages within the queue, and handle rate limits for the messages.
     /// </summary>
@@ -382,9 +407,9 @@ public class Bot
     {
         int messageBurstCount = Configuration.IsBotAccount == true ? 300 : 10;
         int messageAge = Configuration.IsBotAccount == true ? 60 : 5;
-        
+
         List<QueuedMessage> sentMessages = new();
-        
+
         try
         {
             while (true)
@@ -396,19 +421,19 @@ public class Bot
                 do
                 {
                     shouldThrottle = sentMessages.Count >= messageBurstCount - 3;
-                    
+
                     // Remove old messages that are more than 5 seconds old
                     sentMessages.RemoveAll(x => (DateTime.Now - x.Time).Seconds > messageAge);
 
                     if (!shouldThrottle) continue;
-                    
+
                     Thread.Sleep(1000);
                 } while (shouldThrottle);
-                
+
                 message.Time = DateTime.Now;
 
                 Log.Verbose($"Sending message '{message.Content}' from {message.Time} (current queue: {sentMessages.Count})");
-                
+
                 try
                 {
                     await Client.SendPrivateMessageAsync(message.Channel, message.Content);
@@ -436,11 +461,11 @@ public class Bot
             if (client != null && client.Client.Connected)
             {
                 // Detect if client disconnected
-                if (!client.Client.Poll(0, SelectMode.SelectRead)) 
+                if (!client.Client.Poll(0, SelectMode.SelectRead))
                     return true;
-                
+
                 byte[] buff = new byte[1];
-               
+
                 return client.Client.Receive(buff, SocketFlags.Peek) != 0;
             }
         }
