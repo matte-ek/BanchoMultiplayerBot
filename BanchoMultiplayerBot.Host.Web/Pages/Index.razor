@@ -82,6 +82,8 @@
 
     <MudButton Color="Color.Primary" Variant="Variant.Filled" @onclick="SaveConfig">Save Configuration</MudButton>
 
+    <MudButton Color="Color.Error" Variant="Variant.Outlined" @onclick="RestartBot">Restart</MudButton>
+
     <MudButton Color="Color.Error" Variant="Variant.Outlined" @onclick="TerminateBot">Exit</MudButton>
 </MudPaper>
 
@@ -186,6 +188,21 @@
         _isConnecting = true;
 
         Bot.SaveConfiguration();
+        Bot.Start();
+    }
+
+    private async void RestartBot()
+    {
+        var parameters = new DialogParameters { ["Message"] = "Are you sure you want to restart the bot?" };
+
+        var dialog = DialogService.Show<ConfirmDialog>("ConfirmDialog", parameters);
+        var result = await dialog.Result;
+
+        if (result.Cancelled)
+            return;
+
+        await Bot.DisconnectAsync();
+
         Bot.Start();
     }
 

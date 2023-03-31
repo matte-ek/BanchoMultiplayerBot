@@ -12,6 +12,11 @@
 
         public void Start()
         {
+            if (_botRunTask != null && _botRunTask.IsFaulted)
+            {
+                _botRunTask = null;
+            }
+
             if (IsRunning)
                 return;
             if (!HasValidConfiguration())

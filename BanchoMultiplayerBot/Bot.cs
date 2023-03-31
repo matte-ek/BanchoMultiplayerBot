@@ -132,6 +132,8 @@ public class Bot
 
         StartTime = DateTime.Now;
 
+        Lobbies.Clear();
+
         await Client.ConnectAsync();
     }
 
@@ -211,6 +213,7 @@ public class Bot
     private void ClientOnAuthenticated()
     {
         _lastMessageTime = DateTime.Now;
+        _exitRequested = false;
 
         Task.Run(RunMessagePump);
 
