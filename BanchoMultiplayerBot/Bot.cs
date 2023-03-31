@@ -261,6 +261,12 @@ public class Bot
 
             Log.Warning($"Failed to find lobby by name {lobbyName?.Name}, creating new one instead.");
 
+            var failedLobby = Lobbies.FirstOrDefault(x => x.Configuration.Name ==  lobbyName?.Name);
+            if (failedLobby != null)
+            {
+                Lobbies.Remove(failedLobby);
+            }
+
             await CreateLobby(lobbyConfig);
         };
 
