@@ -31,7 +31,7 @@ public class AbortVoteBehaviour : IBotBehaviour
 
     private void OnUserMessage(IPrivateIrcMessage message)
     {
-        if (message.Content.StartsWith("!abort"))
+        if (message.Content.ToLower().StartsWith("!abort"))
         {
             var player = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name.ToIrcNameFormat() == message.Sender);
             if (player is not null)

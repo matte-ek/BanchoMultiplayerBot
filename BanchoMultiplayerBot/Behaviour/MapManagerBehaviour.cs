@@ -52,7 +52,7 @@ public class MapManagerBehaviour : IBotBehaviour
 
     private void OnUserMessage(IPrivateIrcMessage msg)
     {
-        if (msg.Content.EndsWith("!r") || msg.Content.StartsWith("!regulations"))
+        if (msg.Content.ToLower().EndsWith("!r") || msg.Content.ToLower().StartsWith("!regulations"))
         {
             var timeSpan = TimeSpan.FromSeconds(_lobby.Configuration.MaximumMapLength);
 
@@ -68,7 +68,7 @@ public class MapManagerBehaviour : IBotBehaviour
             _lobby.SendMessage($"Star rating: {_lobby.Configuration.MinimumStarRating:.0#}* - {_lobby.Configuration.MaximumStarRating:.0#}* | Max length: {timeSpan.ToString(@"mm\:ss")} | {requiredModeName}");
         }
 
-        if (msg.Content.Equals("!mirror"))
+        if (msg.Content.ToLower().Equals("!mirror"))
         {
             _lobby.SendMessage($"[https://beatconnect.io/b/{CurrentBeatmapSetId} Mirror Download]");
         }

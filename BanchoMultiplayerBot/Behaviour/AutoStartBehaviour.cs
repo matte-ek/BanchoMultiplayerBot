@@ -77,7 +77,7 @@ public class AutoStartBehaviour : IBotBehaviour
         // Kind of a stupid fix to prevent loop backs
         bool isPlayer = message.Sender != _lobby.Bot.Configuration.Username;
 
-        if (message.Content.StartsWith("!start") || (message.Content.StartsWith("!mp start") && isPlayer))
+        if (message.Content.ToLower().StartsWith("!start") || (message.Content.ToLower().StartsWith("!mp start") && isPlayer))
         {
             try
             {
@@ -87,7 +87,7 @@ public class AutoStartBehaviour : IBotBehaviour
                     {
                         // If the user ran '!start' without any arguments,
                         // start the match immediately.
-                        if (message.Content.Equals("!start") || message.Content.Equals("!mp start"))
+                        if (message.Content.ToLower().Equals("!start") || message.Content.ToLower().Equals("!mp start"))
                         {
                             _lobby.SendMessage("!mp start");
                             return;
@@ -95,10 +95,10 @@ public class AutoStartBehaviour : IBotBehaviour
                         
                         int requestedTime;
 
-                        if (message.Content.StartsWith("!start"))
-                            requestedTime = int.Parse(message.Content.Split("!start ")[1]);
+                        if (message.Content.ToLower().StartsWith("!start"))
+                            requestedTime = int.Parse(message.Content.ToLower().Split("!start ")[1]);
                         else
-                            requestedTime = int.Parse(message.Content.Split("!mp start ")[1]);
+                            requestedTime = int.Parse(message.Content.ToLower().Split("!mp start ")[1]);
 
                         StartTimer(requestedTime);
 
@@ -123,7 +123,7 @@ public class AutoStartBehaviour : IBotBehaviour
             }
         }
 
-        if (message.Content.StartsWith("!stop"))
+        if (message.Content.ToLower().StartsWith("!stop"))
         {
             if (_lobby.MultiplayerLobby.Host is not null)
             {
@@ -144,9 +144,7 @@ public class AutoStartBehaviour : IBotBehaviour
 
         if (length <= 1 || length >= 500)
             return;
-        
-        Log.Information("(Re)starting timer.");
-     
+             
         // This was previously implemented with Task.Delay, and a cancellation token to cancel the delay
         // task if we had to abort the timer. This however for some reason didn't exactly work all the time,
         // not sure why yet. As a result, this has been changed to a always on task instead.

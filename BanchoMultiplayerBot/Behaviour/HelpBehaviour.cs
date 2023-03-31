@@ -15,7 +15,7 @@ public class HelpBehaviour : IBotBehaviour
 
     private void OnUserMessage(IPrivateIrcMessage msg)
     {
-        if (msg.Content.Equals("!help") || msg.Content.Equals("!info"))
+        if (msg.Content.ToLower().Equals("!help") || msg.Content.ToLower().Equals("!info"))
         {
             _lobby.SendMessage("osu! multiplayer bot [https://github.com/matte-ek/BanchoMultiplayerBot/blob/master/COMMANDS.md Help & Commands]");
         }

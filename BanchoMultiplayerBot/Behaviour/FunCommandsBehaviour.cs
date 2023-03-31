@@ -25,7 +25,7 @@ public class FunCommandsBehaviour : IBotBehaviour
                 return;
             }
             
-            if (e.Content.Equals("!playtime"))
+            if (e.Content.ToLower().Equals("!playtime"))
             {
                 var time = DateTime.Now - player.JoinTime;
                 

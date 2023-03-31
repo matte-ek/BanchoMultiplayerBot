@@ -128,7 +128,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
     private void OnUserMessage(IPrivateIrcMessage message)
     {
         // Allow the users to see the current queue
-        if (message.Content.Equals("!q") || message.Content.Equals("!queue"))
+        if (message.Content.ToLower().Equals("!q") || message.Content.ToLower().Equals("!queue"))
         {
             SendCurrentQueue();
 
@@ -137,7 +137,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
         try
         {
-            if (message.Content.StartsWith("!queuepos"))
+            if (message.Content.ToLower().StartsWith("!queuepos"))
             {
                 var targetName = message.Sender;
                 
@@ -158,7 +158,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
             // ignored
         }
 
-        if (message.Content.StartsWith("!skip"))
+        if (message.Content.ToLower().StartsWith("!skip"))
         {
             // If the host is sending the message, just skip.
             if (_lobby.MultiplayerLobby.Host is not null)
