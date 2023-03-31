@@ -53,6 +53,8 @@ public class Bot
 
     private bool _exitRequested;
 
+    private bool WebhookConfigured => Configuration.EnableWebhookNotifications == true && Configuration.WebhookUrl?.Any() == true;
+
     public Bot(string configurationFile)
     {
         LoadConfiguration(configurationFile);
@@ -168,6 +170,11 @@ public class Bot
 
     private void ClientOnChannelParted(IChatChannel channel)
     {
+        if (WebhookConfigured && Configuration.WebhookNotifyLobbyTerminations == true)
+        {
+            _ = WebhookUtils.SendWebhookMessage(Configuration.WebhookUrl!, "Channel Closed", $"Channel {channel.ChannelName} was closed.");
+        }
+
         Log.Warning($"Channel {channel.ChannelName} was parted.");
     }
 
@@ -342,6 +349,11 @@ public class Bot
             if (!IsTcpConnectionAlive(Client.TcpClient))
             {
                 Log.Error("[!] DETECTED CONNECTION ERROR!");
+
+                if (WebhookConfigured && Configuration.WebhookNotifyConnectionErrors == true)
+                {
+                    _ = WebhookUtils.SendWebhookMessage(Configuration.WebhookUrl!, "Connection Error", $"Detected connection error to osu!bancho");
+                }
 
                 HadNetworkConnectionIssue = true;
                 LastConnectionIssueTime = DateTime.Now;

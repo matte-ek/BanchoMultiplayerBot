@@ -29,4 +29,9 @@ public class BotConfiguration
     public string[]? BannedPlayers { get; set; }
     public int[]? BannedBeatmaps { get; set; }
     
+    public bool? EnableWebhookNotifications { get; set; }
+    public string? WebhookUrl { get; set; }
+    public bool? WebhookNotifyLobbyTerminations { get; set; } = true;
+    public bool? WebhookNotifyConnectionErrors { get; set; } = true;
+
 }

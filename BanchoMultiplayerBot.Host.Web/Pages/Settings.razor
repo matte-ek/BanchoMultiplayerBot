@@ -25,6 +25,13 @@
                 <MudText Typo="Typo.h6" GutterBottom="true">osu! API</MudText>
                 <MudTextField @bind-Value="_configuration.ApiKey" T="string" Label="API Key" Required="true" RequiredError="API key is required!" InputType="InputType.Password" Variant="Variant.Filled"/>
             </MudPaper>
+            <MudPaper Class="pa-8 ma-2">
+                <MudText Typo="Typo.h6" GutterBottom="true">Webhook Notifications</MudText>
+                <MudSwitch @bind-Checked="_configuration.EnableWebhookNotifications" Label="Enable" Color="Color.Primary" />
+                <MudTextField @bind-Value="_configuration.WebhookUrl" T="string" Label="Webhook URL" Variant="Variant.Filled" />
+                <MudSwitch @bind-Checked="_configuration.WebhookNotifyConnectionErrors" Label="Notify on osu!bancho connection issues" Color="Color.Primary" />
+                <MudSwitch @bind-Checked="_configuration.WebhookNotifyLobbyTerminations" Label="Notify when managed lobbies gets removed" Color="Color.Primary" />
+            </MudPaper>
             <MudText Typo="Typo.body2" GutterBottom="true" Class="ml-2">Bot Version: @BanchoMultiplayerBot.Bot.Version</MudText>
         </MudItem>
         <MudItem xs="6">
