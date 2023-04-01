@@ -1,0 +1,49 @@
+﻿@implements IDisposable
+@inject BotService Bot
+@inject IDialogService DialogService
+@page "/settings/general"
+@using BanchoMultiplayerBot
+@using BanchoMultiplayerBot.Config
+@using BanchoMultiplayerBot.Data
+
+<PageTitle>Settings</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">Settings</MudText>
+
+<MudForm @ref="_form">
+    <MudGrid>
+        <MudItem xs="6">
+            <MudPaper Class="pa-8 ma-2">
+                <MudText Typo="Typo.h6" GutterBottom="true">General</MudText>
+                <MudSwitch @bind-Checked="_configuration.AutoStartAllPlayersReady" Label="Auto-start when all players are ready" Color="Color.Primary" />
+                <MudSwitch @bind-Checked="_configuration.EnableAutoStartTimer" Label="Automatically start auto-start timer" Color="Color.Primary" />
+                <MudNumericField @bind-Value="_configuration.AutoStartTimerTime" Label="Auto-start timer (s)" Variant="Variant.Filled" Min="10" Max="600" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6">
+            <MudPaper Class="pa-8 ma-2">
+                <MudText Typo="Typo.h6" GutterBottom="true">Webhook Notifications</MudText>
+                <MudSwitch @bind-Checked="_configuration.EnableWebhookNotifications" Label="Enable" Color="Color.Primary" />
+                <MudTextField @bind-Value="_configuration.WebhookUrl" T="string" Label="Webhook URL" Variant="Variant.Filled" />
+                <MudSwitch @bind-Checked="_configuration.WebhookNotifyConnectionErrors" Label="Notify on osu!bancho connection issues" Color="Color.Primary" />
+                <MudSwitch @bind-Checked="_configuration.WebhookNotifyLobbyTerminations" Label="Notify when managed lobbies gets removed" Color="Color.Primary" />
+            </MudPaper>
+
+            <MudText Typo="Typo.body2" GutterBottom="true" Class="ml-2">Bot Version: @BanchoMultiplayerBot.Bot.Version</MudText>
+        </MudItem>
+    </MudGrid>
+</MudForm>
+
+@code {
+    private MudForm? _form;
+    private BotConfiguration _configuration = null!;
+
+    protected override void OnInitialized()
+    {
+        _configuration = Bot.Configuration;
+    }
+
+    public void Dispose()
+    {
+    }
+}
