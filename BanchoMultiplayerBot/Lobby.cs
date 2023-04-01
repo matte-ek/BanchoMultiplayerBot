@@ -4,6 +4,7 @@ using BanchoSharp;
 using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
 using Serilog;
+using System.Linq;
 
 namespace BanchoMultiplayerBot;
 
@@ -181,9 +182,7 @@ public class Lobby
             return;
         }
 
-        // The bot should probably also allow multiple admins
-        // maybe get all referees?
-        if (message.Sender == Bot.Configuration.Username)
+        if (IsAdministrator(message.Sender))
         {
             OnAdminMessage?.Invoke(message);
         }
@@ -212,6 +211,16 @@ public class Lobby
             RecentMessages.RemoveAt(0);
         
         RecentMessages.Add(message);
+    }
+
+    private bool IsAdministrator(string username)
+    {
+        if (Bot.Configuration.Username == username)
+            return true;
+        if (Bot.Configuration.Administrators != null && username.Any() && Bot.Configuration.Administrators.FirstOrDefault(x => x.Name == username) != null)
+            return true;
+
+        return false;
     }
     
     private void AddBehaviour(IBotBehaviour behaviour) => Behaviours.Add(behaviour);

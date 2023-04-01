@@ -1,0 +1,84 @@
+﻿@implements IDisposable
+@inject BotService Bot
+@inject IDialogService DialogService
+@page "/settings/admins"
+@using BanchoMultiplayerBot
+@using BanchoMultiplayerBot.Config
+@using BanchoMultiplayerBot.Data
+@using BanchoMultiplayerBot.Host.Web.Pages.Dialogs;
+
+<PageTitle>Settings</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">Administrators</MudText>
+
+<MudForm @ref="_form">
+    <MudPaper Class="pa-8 ma-2">
+        <MudTable Class="pa-0 ma-2" Items="@Bot.Configuration.Administrators?.ToList()" T="AdministratorEntry" Hover="true" Breakpoint="Breakpoint.Sm">
+            <ColGroup>
+                <col style="width: 70%;" />
+                <col style="width: 120px;" />
+            </ColGroup>
+            <HeaderContent>
+                <MudTh>Name</MudTh>
+                <MudTh>Options</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Name">@context.Name</MudTd>
+                <MudTd DataLabel="Options"><MudIconButton Icon="@Icons.Material.Filled.Delete" Title="Remove" OnClick="(() => OnRemoveEntryPressed(context))" /></MudTd>
+            </RowTemplate>
+        </MudTable>
+        <MudPaper Class="pa-0 ma-2" Elevation="0">
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@OnAddAdministratorPressed">Add New</MudButton>
+        </MudPaper>
+    </MudPaper>
+</MudForm>
+
+@code {
+    private MudForm? _form;
+    private BotConfiguration _configuration = null!;
+    private DialogOptions _maxWidthOptions = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+    private async Task OnRemoveEntryPressed(AdministratorEntry entry)
+    {
+        var parameters = new DialogParameters { ["Message"] = $"Are you sure you want to remove {entry.Name} as an administrator?" };
+        var dialog = DialogService.Show<ConfirmDialog>("ConfirmDialog", parameters);
+        var result = await dialog.Result;
+
+        if (result.Cancelled)
+            return;
+
+        var list = Bot.Configuration.Administrators?.ToList() ?? new List<AdministratorEntry>();
+
+        list.Remove(entry);
+
+        Bot.Configuration.Administrators = list.ToArray();
+    }
+
+    private async Task OnAddAdministratorPressed()
+    {
+        var newAdministratorEntry = new AdministratorEntry();
+        var parameters = new DialogParameters { ["Administrator"] = newAdministratorEntry };
+        var dialog = DialogService.Show<AddAdministratorDialog>("NewAdministrator", parameters, _maxWidthOptions);
+        var result = await dialog.Result;
+
+        if (result.Cancelled)
+            return;
+
+        newAdministratorEntry.TimeAdded = DateTime.Now;
+
+        var list = Bot.Configuration.Administrators?.ToList() ?? new List<AdministratorEntry>();
+
+        list.Add(newAdministratorEntry);
+
+        Bot.Configuration.Administrators = list.ToArray();
+    }
+
+    protected override void OnInitialized()
+    {
+        _configuration = Bot.Configuration;
+    }
+
+    public void Dispose()
+    {
+    }
+}

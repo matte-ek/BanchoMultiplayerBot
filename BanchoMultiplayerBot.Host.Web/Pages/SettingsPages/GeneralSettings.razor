@@ -19,6 +19,7 @@
                 <MudSwitch @bind-Checked="_configuration.EnableAutoStartTimer" Label="Automatically start auto-start timer" Color="Color.Primary" />
                 <MudNumericField @bind-Value="_configuration.AutoStartTimerTime" Label="Auto-start timer (s)" Variant="Variant.Filled" Min="10" Max="600" />
             </MudPaper>
+            <MudText Typo="Typo.body2" GutterBottom="true" Class="ml-2">Bot Version: @BanchoMultiplayerBot.Bot.Version</MudText>
         </MudItem>
         <MudItem xs="6">
             <MudPaper Class="pa-8 ma-2">
@@ -28,8 +29,6 @@
                 <MudSwitch @bind-Checked="_configuration.WebhookNotifyConnectionErrors" Label="Notify on osu!bancho connection issues" Color="Color.Primary" />
                 <MudSwitch @bind-Checked="_configuration.WebhookNotifyLobbyTerminations" Label="Notify when managed lobbies gets removed" Color="Color.Primary" />
             </MudPaper>
-
-            <MudText Typo="Typo.body2" GutterBottom="true" Class="ml-2">Bot Version: @BanchoMultiplayerBot.Bot.Version</MudText>
         </MudItem>
     </MudGrid>
 </MudForm>
