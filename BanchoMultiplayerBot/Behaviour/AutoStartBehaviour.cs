@@ -54,6 +54,7 @@ public class AutoStartBehaviour : IBotBehaviour
 
         _lobby.MultiplayerLobby.OnHostChangingMap += AbortTimer;
         _lobby.OnUserMessage += OnUserMessage;
+        _lobby.OnAdminMessage += OnAdminMessage;
 
         var mapManagerBehaviour = _lobby.Behaviours.Find(x => x.GetType() == typeof(MapManagerBehaviour));
         if (mapManagerBehaviour != null)
@@ -70,6 +71,14 @@ public class AutoStartBehaviour : IBotBehaviour
             return;
 
         StartTimer(_lobby.Bot.Configuration.AutoStartTimerTime.Value);
+    }
+
+    private void OnAdminMessage(IPrivateIrcMessage message)
+    {
+        if (message.Content.ToLower().StartsWith("!stop"))
+        {
+            AbortTimer();
+        }
     }
 
     private void OnUserMessage(IPrivateIrcMessage message)

@@ -246,9 +246,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
     private void OnHostChanged(MultiplayerPlayer player)
     {
         if (!Queue.Any()) return;
-
-        if (_lobby.IsRecovering)
-            return;
+        if (_lobby.IsRecovering) return;
 
         if (player.Name != Queue[0])
         {
