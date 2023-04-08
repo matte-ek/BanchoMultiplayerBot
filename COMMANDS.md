@@ -7,12 +7,12 @@ An osu! multiplayer bot that will maintain a queue and pass the host around ever
 
 | Command               | Description |
 | -----------           | ----------- |
-| !queue                | Displays the current auto host rotate queue. |
-| !queuepos             | Displays your current position in the queue. |
+| !queue / !q           | Displays the current auto host rotate queue. |
+| !queuepos / !qp       | Displays your current position in the queue. |
 | !skip                 | Allows you to skip your turn as host, or initiate a vote skip for the current host as a non-host player. |
 | !start [\<seconds\>]  | Allows the host to start a match start timer, or for the non-host players to vote to start the match. |
 | !stop                 | Allows the host to stop any ongoing match start timer. |
-| !regulations          | Displays the current map regulations, such as star rating and/or map length. |
+| !regulations / !r     | Displays the current map regulations, such as star rating and/or map length. |
 | !abort                | Vote to abort the currently on-going match |
 | !playtime             | Shows the time you've been in the lobby since you joined. |
 | !mirror               | Sends a download link to the map from a mirror. |
