@@ -137,13 +137,15 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
         try
         {
-            if (message.Content.ToLower().StartsWith("!queuepos"))
+            if (message.Content.ToLower().StartsWith("!queuepos") || message.Content.ToLower().StartsWith("!qp"))
             {
                 var targetName = message.Sender;
                 
-                if (message.Content.StartsWith("!queuepos ")) 
+                if (message.Content.StartsWith("!queuepos "))
                     targetName = message.Content.Split("!queuepos ")[1];
-                
+                if (message.Content.StartsWith("!qp "))
+                    targetName = message.Content.Split("!qp ")[1];
+
                 var queuePosition = Queue.FindIndex(x => x.ToIrcNameFormat().Equals(targetName));
 
                 _lobby.SendMessage(queuePosition == -1
