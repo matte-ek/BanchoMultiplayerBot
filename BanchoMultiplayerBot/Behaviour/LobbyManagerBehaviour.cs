@@ -1,4 +1,5 @@
-﻿using BanchoSharp;
+﻿using BanchoMultiplayerBot.Extensions;
+using BanchoSharp;
 using BanchoSharp.Multiplayer;
 using Serilog;
 
@@ -52,6 +53,10 @@ public class LobbyManagerBehaviour : IBotBehaviour
 
     private void OnAdminMessage(BanchoSharp.Interfaces.IPrivateIrcMessage message)
     {
+        if (message.Content.StartsWith("!addref"))
+        {
+            _lobby.SendMessage($"!mp addref {message.Sender.ToIrcNameFormat()}");
+        }
     }
 
     private void OnMatchStarted()

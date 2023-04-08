@@ -30,6 +30,7 @@ An osu! multiplayer bot that will maintain a queue and pass the host around ever
 | !ban \<name\>             | Ban a user, will run `!mp ban` and also save the username and automatically ban in future lobbies. |
 | !banmapset \<id\>         | Ban a mapset by id |
 | !config \<name\> \<value\> | Update the lobby properties directly in-game
+| !addref		            | Adds you as a match referee to use bancho tournament commands. |
 
 ### Debug Commands
 *Can be used by anyone*
