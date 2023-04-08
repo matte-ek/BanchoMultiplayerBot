@@ -19,7 +19,7 @@ An osu! multiplayer bot that will maintain a queue and pass the host around ever
 | !help                 | Sends a link to the command/help page. |
 
 
-*Notice:* Some commands, such as `!regulations` and `!queue` have shortened versions, like `!r` and `!q` respectively.
+*Notice:* Some commands, such as `!regulations`, `!queue` and `!queueposition` have shortened versions, like `!r`, `!q` and `!qp` respectively.
 
 ### Admin Commands
 
