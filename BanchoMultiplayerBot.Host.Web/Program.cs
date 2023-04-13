@@ -18,6 +18,13 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.DashboardLogSink()
     .CreateLogger();
 
+AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
+{
+    var e = (Exception)args.ExceptionObject;
+
+    Log.Error($"Unhandeled exception: {e}");
+};
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
