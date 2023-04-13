@@ -8,6 +8,11 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="MudBlazor" Version="6.1.2" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    </ItemGroup>
+
+    <ItemGroup>
       <ProjectReference Include="..\BanchoMultiplayerBot\BanchoMultiplayerBot.csproj" />
     </ItemGroup>
 
