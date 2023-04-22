@@ -122,14 +122,14 @@ public class AntiAfkBehaviour : IBotBehaviour
 
                 if (_lobby.MultiplayerLobby.Players.Count == 0)
                 {
-                    return;
+                    continue;
                 }
 
                 var name = _lobby.MultiplayerLobby.Host?.Name;
 
                 if (name == null)
                 {
-                    return;
+                    continue;
                 }
 
                 _lobby.Bot.SendMessage("BanchoBot", $"!stat {name.Replace(' ', '_')}");
