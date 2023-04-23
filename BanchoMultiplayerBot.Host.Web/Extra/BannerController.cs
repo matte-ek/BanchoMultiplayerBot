@@ -1,5 +1,6 @@
 ﻿using BanchoMultiplayerBot.Behaviour;
 using BanchoMultiplayerBot.Host.Web.Pages;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.IO;
 using System.Net;
@@ -31,18 +32,19 @@ namespace BanchoMultiplayerBot.Host.Web.Extra
         public async Task<ActionResult> GetImage()
         {
             // These should theoretically overwrite each other, but I had some issues with caching.
-            Response.Headers.CacheControl = "max-age=30, no-cache, no-store, must-revalidate, proxy-revalidate";
-            Response.Headers.Add("Surrogate-Control", "max-age=30, no-cache, no-store, must-revalidate, proxy-revalidate");
+            Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, proxy-revalidate";
+            Response.Headers.Add("Surrogate-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+            Response.Headers.Add("Expires", "0");
 
             try
             {
-                if ((DateTime.Now - _bannerCacheService.CacheUpdateTime).Seconds <= 30)
+                if ((DateTime.Now - _bannerCacheService.CacheUpdateTime).TotalSeconds <= 30)
                 {
                     return File(Encoding.ASCII.GetBytes(_bannerCacheService.OutputCache), "image/svg+xml");
                 }
 
                 var svgFile = await System.IO.File.ReadAllTextAsync("banner.svg");
-                var bannerDownloadList = new List<Task<string>>();
+                var bannerDownloadList = new List<Task<BeatmapCoverData>>();
 
                 int index = 0;
                 foreach (var lobby in _bot.Lobbies)
@@ -62,15 +64,29 @@ namespace BanchoMultiplayerBot.Host.Web.Extra
 
                         if (behaviour.CurrentBeatmapSetId != 0)
                         {
-                            bannerDownloadList.Add(
-                                Task.Run(async () =>
-                                {
-                                    var bannerImage = await _httpClient.GetByteArrayAsync(
-                                        $"https://assets.ppy.sh/beatmaps/{behaviour.CurrentBeatmapSetId}/covers/cover.jpg");
+                            if (_bannerCacheService.BeatmapCoverCache[index]?.Id == behaviour.CurrentBeatmapSetId)
+                            {
+                                svgFile = svgFile.Replace($"$BANNER{index}", $"data:image/png;base64, {_bannerCacheService.BeatmapCoverCache[index]?.Data}");
+                            }
+                            else
+                            {
+                                int lobbyIndex = index;
 
-                                    return Convert.ToBase64String(bannerImage);
-                                })
-                            );
+                                bannerDownloadList.Add(
+                                    Task.Run(async () =>
+                                    {
+                                        var bannerImage = await _httpClient.GetByteArrayAsync(
+                                            $"https://assets.ppy.sh/beatmaps/{behaviour.CurrentBeatmapSetId}/covers/cover.jpg");
+
+                                        return new BeatmapCoverData()
+                                        {
+                                            Id = behaviour.CurrentBeatmapSetId,
+                                            LobbyIndex = lobbyIndex,
+                                            Data = Convert.ToBase64String(bannerImage),
+                                        };
+                                    })
+                                );
+                            }
                         }
                     }
 
@@ -79,12 +95,11 @@ namespace BanchoMultiplayerBot.Host.Web.Extra
 
                 var results = await Task.WhenAll(bannerDownloadList);
 
-                index = 0;
                 foreach (var imgResult in results)
                 {
-                    svgFile = svgFile.Replace($"$BANNER{index}", $"data:image/png;base64, {imgResult}");
+                    _bannerCacheService.BeatmapCoverCache[imgResult.LobbyIndex] = imgResult;
 
-                    index++;
+                    svgFile = svgFile.Replace($"$BANNER{imgResult.LobbyIndex}", $"data:image/png;base64, {imgResult.Data}");
                 }
 
                 _bannerCacheService.CacheUpdateTime = DateTime.Now;

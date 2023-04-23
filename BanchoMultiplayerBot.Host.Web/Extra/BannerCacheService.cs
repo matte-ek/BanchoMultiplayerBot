@@ -9,6 +9,8 @@
         public string OutputCache { get; set; } = string.Empty;
         public DateTime CacheUpdateTime { get; set; }
 
+        public BeatmapCoverData?[] BeatmapCoverCache { get; set; } = new BeatmapCoverData[3];
+
         public BannerCacheService() { }
     }
 }
