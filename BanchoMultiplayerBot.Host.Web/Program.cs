@@ -1,10 +1,12 @@
 using BanchoMultiplayerBot.Host.Web;
 using BanchoMultiplayerBot.Host.Web.Auth;
+using BanchoMultiplayerBot.Host.Web.Extra;
 using BanchoMultiplayerBot.Host.Web.Log;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http.Connections;
+using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 using Serilog;
 
@@ -28,9 +30,11 @@ AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddControllers();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<BotService>();
+builder.Services.AddSingleton<BannerCacheService>();
 builder.Services.AddMudServices();
 builder.Services.AddScoped<AuthenticationStateProvider, TemporaryAuthStateProvider>();
 
@@ -60,5 +64,7 @@ app.MapBlazorHub(configureOptions: options =>
 });
 
 app.MapFallbackToPage("/_Host");
+
+app.MapControllers();
 
 app.Run();
