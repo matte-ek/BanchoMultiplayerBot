@@ -75,14 +75,26 @@ namespace BanchoMultiplayerBot.Host.Web.Extra
                                 bannerDownloadList.Add(
                                     Task.Run(async () =>
                                     {
-                                        var bannerImage = await _httpClient.GetByteArrayAsync(
+                                        var bannerImageResponse = await _httpClient.GetAsync(
                                             $"https://assets.ppy.sh/beatmaps/{behaviour.CurrentBeatmapSetId}/covers/cover.jpg");
+
+                                        if (bannerImageResponse.IsSuccessStatusCode)
+                                        {
+                                            var bannerImageByteArray = await bannerImageResponse.Content.ReadAsByteArrayAsync();
+
+                                            return new BeatmapCoverData()
+                                            {
+                                                Id = behaviour.CurrentBeatmapSetId,
+                                                LobbyIndex = lobbyIndex,
+                                                Data = Convert.ToBase64String(bannerImageByteArray),
+                                            };
+                                        }
 
                                         return new BeatmapCoverData()
                                         {
                                             Id = behaviour.CurrentBeatmapSetId,
                                             LobbyIndex = lobbyIndex,
-                                            Data = Convert.ToBase64String(bannerImage),
+                                            Data = "",
                                         };
                                     })
                                 );
