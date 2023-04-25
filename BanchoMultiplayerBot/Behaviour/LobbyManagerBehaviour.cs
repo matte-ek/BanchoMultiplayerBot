@@ -1,5 +1,6 @@
 ﻿using BanchoMultiplayerBot.Extensions;
 using BanchoSharp;
+using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
 using Serilog;
 
@@ -27,6 +28,7 @@ public class LobbyManagerBehaviour : IBotBehaviour
         _lobby.MultiplayerLobby.OnMatchAborted += OnMatchFinishedOrAborted;
         _lobby.MultiplayerLobby.OnSettingsUpdated += OnRoomSettingsUpdated;
 
+        _lobby.OnBanchoMessage += OnBanchoMessage; 
         _lobby.OnAdminMessage += OnAdminMessage;
 
         _lobby.OnLobbyChannelJoined += RunSettingsCommand;
@@ -51,7 +53,25 @@ public class LobbyManagerBehaviour : IBotBehaviour
         };
     }
 
-    private void OnAdminMessage(BanchoSharp.Interfaces.IPrivateIrcMessage message)
+    private void OnBanchoMessage(IPrivateIrcMessage message)
+    {
+        // Bot receives the message from both #lobby and #osu, so only check #osu
+        // to avoid duplicate messages.
+        if (message.Recipient != "#osu")
+        {
+            return;
+        }
+
+        if (!message.Content.StartsWith("Bancho will be restarting for maintenance in 1 minute."))
+        {
+            return;
+        }
+
+        _lobby.SendMessage("Bancho is about to restart, the lobby should be automatically re-created in few minutes after Bancho is restarted.");
+        _lobby.SendMessage("Try searching for the lobby if you cannot find it in the list, thanks for playing!");
+    }
+
+    private void OnAdminMessage(IPrivateIrcMessage message)
     {
         if (message.Content.StartsWith("!addref"))
         {
