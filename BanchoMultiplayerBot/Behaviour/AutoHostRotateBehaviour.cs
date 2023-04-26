@@ -4,6 +4,7 @@ using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
 using Serilog;
 using System.Xml.Linq;
+using MudBlazor.Services;
 
 namespace BanchoMultiplayerBot.Behaviour;
 
@@ -276,18 +277,22 @@ public class AutoHostRotateBehaviour : IBotBehaviour
     /// </summary>
     private void SendCurrentQueue()
     {
+        var queueStr = "";
         var cleanPlayerNamesQueue = new List<string>();
 
         // Add a zero width space to the player names to avoid mentioning them
-        foreach (var playerName in Queue.Take(5))
+        Queue.ForEach(playerName => cleanPlayerNamesQueue.Add($"{playerName[0]}\u200B{playerName[1..]}"));
+
+        foreach (var name in cleanPlayerNamesQueue)
         {
-            cleanPlayerNamesQueue.Add($"{playerName[0]}\u200B{playerName.Substring(1)}");
+            if (queueStr.Length > 70)
+            {
+                queueStr = queueStr[..^2] + "...";
+                break;
+            }
+
+            queueStr += name + (name != cleanPlayerNamesQueue.Last() ? ", " : string.Empty);
         }
-
-        var queueStr = string.Join(", ", cleanPlayerNamesQueue.Take(5));
-
-        if (Queue.Count > 5)
-            queueStr += "...";
 
         _lobby.SendMessage($"Queue: {queueStr}");
     }
