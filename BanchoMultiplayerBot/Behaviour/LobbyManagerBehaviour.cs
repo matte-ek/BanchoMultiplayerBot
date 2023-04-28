@@ -18,6 +18,9 @@ public class LobbyManagerBehaviour : IBotBehaviour
 
     // I really, really hate this but whatever.
     private int _mpSettingsAttempts = 0;
+
+    private int _mpPasswordAttempts = 0;
+    private bool _mpPasswordSet = false;
     
     public void Setup(Lobby lobby)
     {
@@ -57,18 +60,29 @@ public class LobbyManagerBehaviour : IBotBehaviour
     {
         // Bot receives the message from both #lobby and #osu, so only check #osu
         // to avoid duplicate messages.
-        if (message.Recipient != "#osu")
+        if (message.Recipient == "#osu")
+        {
+            if (!message.Content.StartsWith("Bancho will be restarting for maintenance in 1 minute."))
+            {
+                return;
+            }
+
+            _lobby.SendMessage("Bancho is about to restart, the lobby should be automatically re-created in few minutes after Bancho is restarted.");
+            _lobby.SendMessage("Try searching for the lobby if you cannot find it in the list, thanks for playing!");
+
+            return;
+        }
+
+        if (message.Recipient != _lobby.Channel)
         {
             return;
         }
 
-        if (!message.Content.StartsWith("Bancho will be restarting for maintenance in 1 minute."))
+        if (message.Content.StartsWith("Removed the match password") ||
+            message.Content.StartsWith("Changed the match password"))
         {
-            return;
+            _mpPasswordSet = true;
         }
-
-        _lobby.SendMessage("Bancho is about to restart, the lobby should be automatically re-created in few minutes after Bancho is restarted.");
-        _lobby.SendMessage("Try searching for the lobby if you cannot find it in the list, thanks for playing!");
     }
 
     private void OnAdminMessage(IPrivateIrcMessage message)
@@ -101,6 +115,7 @@ public class LobbyManagerBehaviour : IBotBehaviour
         // from "!mp settings"
         _lastSettingsUpdateReceivedTime = DateTime.Now;
         _mpSettingsAttempts = 0;
+        _mpPasswordAttempts = 0;
 
         EnsureRoomName();
         EnsureRoomSize();
@@ -137,7 +152,11 @@ public class LobbyManagerBehaviour : IBotBehaviour
 
         // We cannot verify anything here either.
 
+        _mpPasswordSet = false;
+
         _lobby.SendMessage($"!mp password {_lobby.Configuration.Password}");
+
+        Task.Run(EnsurePasswordSet);
     }
 
     private void EnsureRoomMods()
@@ -223,6 +242,23 @@ public class LobbyManagerBehaviour : IBotBehaviour
                 _mpSettingsAttempts++;
 
                 _ = Task.Run(EnsureSettingsSent);
+            }
+        }
+    }
+
+    // Same story here but for passwords, as this is critical for the lobbies when created for the first time.
+    // Especially during Bancho restarts.
+    private async Task EnsurePasswordSet()
+    {
+        await Task.Delay(5000);
+
+        if (!_mpPasswordSet)
+        {
+            if (_mpPasswordAttempts < 10)
+            {
+                _mpPasswordAttempts++;
+
+                EnsureRoomPassword();
             }
         }
     }

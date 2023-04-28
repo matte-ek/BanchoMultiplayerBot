@@ -44,14 +44,14 @@ public class Lobby
     public event Action<IPrivateIrcMessage>? OnAdminMessage;
     public event Action<IPrivateIrcMessage>? OnBanchoMessage;
     
-    private readonly string _channelName;
+    public string Channel { get; set; }
     
     public Lobby(Bot bot, LobbyConfiguration configuration, string channel)
     {
         Bot = bot;
         Configuration = configuration;
         MultiplayerLobby = new MultiplayerLobby(Bot.Client, long.Parse(channel[4..]), channel);
-        _channelName = channel;
+        Channel = channel;
     }
     
     public Lobby(Bot bot, LobbyConfiguration configuration, MultiplayerLobby lobby)
@@ -59,7 +59,7 @@ public class Lobby
         Bot = bot;
         Configuration = configuration;
         MultiplayerLobby = lobby;
-        _channelName = lobby.ChannelName;
+        Channel = lobby.ChannelName;
     }
 
     public async Task SetupAsync(bool joinedChannel = false)
@@ -125,7 +125,7 @@ public class Lobby
 
             Bot.Client.OnChannelJoined += channel =>
             {
-                if (channel.ChannelName != _channelName) return;
+                if (channel.ChannelName != Channel) return;
                 
                 OnLobbyChannelJoined?.Invoke();
             };
@@ -133,7 +133,7 @@ public class Lobby
             // "Temporary" (permanent) fix for the fact that BanchoSharp's JoinChannelAsync calls 
             // OnChannelJoined before Bancho acknowledges that we have joined, so we'll send JOIN manually.
             // And as a result, OnChannelJoined will only get invoked when we've actually joined.
-            await Bot.Client.SendAsync($"JOIN {_channelName}");
+            await Bot.Client.SendAsync($"JOIN {Channel}");
         }
         else
         {
@@ -147,7 +147,7 @@ public class Lobby
     /// </summary>
     public void SendMessage(string message)
     {
-        Bot.SendMessage(_channelName, message);
+        Bot.SendMessage(Channel, message);
     }
 
     /// <summary>
@@ -163,7 +163,7 @@ public class Lobby
     
     private void ClientOnPrivateMessageReceived(IPrivateIrcMessage message)
     {
-        if (message.Recipient == _channelName)
+        if (message.Recipient == Channel)
         {
             AddMessageToHistory(message);
         }
@@ -177,7 +177,7 @@ public class Lobby
             return;
         }
 
-        if (message.Recipient != _channelName)
+        if (message.Recipient != Channel)
         {
             return;
         }
@@ -192,7 +192,7 @@ public class Lobby
     
     private void ClientOnPrivateMessageSent(IPrivateIrcMessage e)
     {
-        if (e.Recipient != _channelName)
+        if (e.Recipient != Channel)
         {
             return;
         }
