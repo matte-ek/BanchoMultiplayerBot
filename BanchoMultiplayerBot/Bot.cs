@@ -373,9 +373,9 @@ public class Bot
                 {
                     connectionAttempts++;
 
-                    Log.Information("Attempting to reconnect in 60 seconds");
+                    Log.Information("Attempting to reconnect in 45 seconds");
 
-                    await Task.Delay(60000);
+                    await Task.Delay(45000);
 
                     Client.Dispose();
                     Lobbies.Clear();
@@ -394,7 +394,7 @@ public class Bot
                 try
                 {
                     // This is an additional fail-safe for the connection state, by checking the last time we received a message,
-                    // so if we haven't recevied a message for 5 minutes, then write a message to test the connection.
+                    // so if we haven't received a message for 5 minutes, then write a message to test the connection.
                     // I feel like 5 minutes is a pretty safe bet for now.
                     if ((DateTime.Now - _lastMessageTime).TotalSeconds > 300)
                     {
