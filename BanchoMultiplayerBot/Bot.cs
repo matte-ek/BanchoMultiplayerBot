@@ -13,7 +13,7 @@ namespace BanchoMultiplayerBot;
 
 public class Bot
 {
-    public static string Version => "1.3.3";
+    public static string Version => "1.4.0";
 
     public BanchoClient Client { get; private set; }
 
