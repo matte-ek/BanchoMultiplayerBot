@@ -70,7 +70,7 @@ public class MapManagerBehaviour : IBotBehaviour
 
         if (msg.Content.ToLower().Equals("!mirror"))
         {
-            _lobby.SendMessage($"[https://beatconnect.io/b/{CurrentBeatmapSetId} Mirror Download]");
+            _lobby.SendMessage($"[https://beatconnect.io/b/{CurrentBeatmapSetId} BeatConnect Mirror] - [https://osu.direct/d/{CurrentBeatmapSetId} osu.direct Mirror]");
         }
     }
 
@@ -196,8 +196,8 @@ public class MapManagerBehaviour : IBotBehaviour
             {
                 var timeSpan = TimeSpan.FromSeconds(int.Parse(beatmapModel.TotalLength));
 
-                _lobby.SendMessage($"[https://osu.ppy.sh/b/{id} {beatmapModel.Artist} - {beatmapModel.Title}] - ([https://beatconnect.io/b/{CurrentBeatmapSetId} Mirror])");
-
+                _lobby.SendMessage($"[https://osu.ppy.sh/b/{id} {beatmapModel.Artist} - {beatmapModel.Title}] - ([https://beatconnect.io/b/{CurrentBeatmapSetId} BeatConnect Mirror] - [https://osu.direct/d/{CurrentBeatmapSetId} osu.direct Mirror])");
+                
                 try
                 {
                     if (beatmapModel.DifficultyRating != null)
@@ -206,16 +206,20 @@ public class MapManagerBehaviour : IBotBehaviour
 
                         if (_lobby.Bot.PerformancePointCalculator == null)
                         {
-                            
-                            _lobby.SendMessage($"(Star Rating: {starRating:.0#} | {beatmapModel.GetStatusString()} | Length: {timeSpan.ToString(@"mm\:ss")} | BPM: {beatmapModel.Bpm})");
+                            _lobby.SendMessage($"(Star Rating: {starRating:.0#} | {beatmapModel.GetStatusString()} | Length: {timeSpan.ToString(@"mm\:ss")} | BPM: {beatmapModel.Bpm}");
+                            _lobby.SendMessage($"(AR: {beatmapModel.DiffApproach} | CS: {beatmapModel.DiffSize} | OD: {beatmapModel.DiffOverall})");
                         }
                         else
                         {
                             var ppInfo = await _lobby.Bot.PerformancePointCalculator.CalculatePerformancePoints(id);
 
+                            _lobby.SendMessage($"(Star Rating: {starRating:.0#} | {beatmapModel.GetStatusString()} | Length: {timeSpan.ToString(@"mm\:ss")} | BPM: {beatmapModel.Bpm})");
+
                             _lobby.SendMessage(ppInfo != null
-                                ? $"(Star Rating: {starRating:.0#} | {beatmapModel.GetStatusString()} | Length: {timeSpan.ToString(@"mm\:ss")} | BPM: {beatmapModel.Bpm} | 100%: {ppInfo.Performance100}pp | 98%: {ppInfo.Performance98}pp | 95%: {ppInfo.Performance95}pp)"
-                                : $"(Star Rating: {starRating:.0#} | {beatmapModel.GetStatusString()} | Length: {timeSpan.ToString(@"mm\:ss")} | BPM: {beatmapModel.Bpm})");
+                                ? $"(AR: {beatmapModel.DiffApproach} | CS: {beatmapModel.DiffSize} | OD: {beatmapModel.DiffOverall} | 100%: {ppInfo.Performance100}pp | 98%: {ppInfo.Performance98}pp | 95%: {ppInfo.Performance95}pp)"
+                                : $"(AR: {beatmapModel.DiffApproach} | CS: {beatmapModel.DiffSize} | OD: {beatmapModel.DiffOverall})");
+                            
+
                         }
                     }
                 }
