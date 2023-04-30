@@ -8,6 +8,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Web;
 using Serilog;
+using Microsoft.FeatureManagement.Mvc;
 
 namespace BanchoMultiplayerBot.Host.Web.Extra
 {
@@ -17,6 +18,7 @@ namespace BanchoMultiplayerBot.Host.Web.Extra
     /// </summary>
     [Route("[controller]")]
     [ApiController]
+    [FeatureGate("BannerEndpoint")]
     public class BannerController : Controller
     {
         private readonly BotService _bot;

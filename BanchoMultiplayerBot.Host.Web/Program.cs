@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 using Serilog;
+using Microsoft.FeatureManagement;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
@@ -37,6 +38,7 @@ builder.Services.AddSingleton<BotService>();
 builder.Services.AddSingleton<BannerCacheService>();
 builder.Services.AddMudServices();
 builder.Services.AddScoped<AuthenticationStateProvider, TemporaryAuthStateProvider>();
+builder.Services.AddFeatureManagement();
 
 var app = builder.Build();
 
