@@ -148,7 +148,9 @@ public class MapManagerBehaviour : IBotBehaviour
         }
         
         SetBeatmap(_beatmapFallbackId);
-        
+
+        _lobby.HostViolationCount++;
+
         if (IsBannedBeatmap(beatmap))
         {
             _lobby.SendMessage(beatmap.Title != null
@@ -218,8 +220,11 @@ public class MapManagerBehaviour : IBotBehaviour
                             _lobby.SendMessage(ppInfo != null
                                 ? $"(AR: {beatmapModel.DiffApproach} | CS: {beatmapModel.DiffSize} | OD: {beatmapModel.DiffOverall} | 100%: {ppInfo.Performance100}pp | 98%: {ppInfo.Performance98}pp | 95%: {ppInfo.Performance95}pp)"
                                 : $"(AR: {beatmapModel.DiffApproach} | CS: {beatmapModel.DiffSize} | OD: {beatmapModel.DiffOverall})");
-                            
 
+                            if (ppInfo != null)
+                                _lobby.PerformanceCalculationSuccessCount++;
+                            else
+                                _lobby.PerformanceCalculationErrorCount++;
                         }
                     }
                 }

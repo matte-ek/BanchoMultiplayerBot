@@ -2,6 +2,7 @@ using BanchoMultiplayerBot.Host.Web;
 using BanchoMultiplayerBot.Host.Web.Auth;
 using BanchoMultiplayerBot.Host.Web.Extra;
 using BanchoMultiplayerBot.Host.Web.Log;
+using BanchoMultiplayerBot.Host.Web.Statistics;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -36,12 +37,14 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<BotService>();
 builder.Services.AddSingleton<BannerCacheService>();
+builder.Services.AddSingleton<StatisticsTrackerService>();
 builder.Services.AddMudServices();
 builder.Services.AddScoped<AuthenticationStateProvider, TemporaryAuthStateProvider>();
 builder.Services.AddFeatureManagement();
 
 var app = builder.Build();
 
+app.Services.GetService<StatisticsTrackerService>()?.Start();
 app.Services.GetService<BotService>()?.Start();
 
 app.UsePathBase("/osu-bot");

@@ -39,6 +39,11 @@ public class Lobby
     
     public int GamesPlayed { get; private set; }
 
+    public int PerformanceCalculationSuccessCount { get; set; }
+    public int PerformanceCalculationErrorCount { get; set; }
+
+    public int HostViolationCount { get; set; }
+
     public event Action? OnLobbyChannelJoined;
     public event Action<IPrivateIrcMessage>? OnUserMessage;
     public event Action<IPrivateIrcMessage>? OnAdminMessage;
