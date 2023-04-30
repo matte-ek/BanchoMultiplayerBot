@@ -121,10 +121,12 @@ public class MapManagerBehaviour : IBotBehaviour
 
     private async Task EnsureBeatmapLimits(BeatmapModel beatmap, int id)
     {
-        if (IsAllowedBeatmapLength(beatmap) && IsAllowedBeatmapStarRating(beatmap) && IsAllowedBeatmapGameMode(beatmap) && !IsBannedBeatmap(beatmap))
+        bool hostIsAdministrator = _lobby.MultiplayerLobby.Host is not null && _lobby.IsAdministrator(_lobby.MultiplayerLobby.Host.Name);
+
+        if ((IsAllowedBeatmapLength(beatmap) && IsAllowedBeatmapStarRating(beatmap) && IsAllowedBeatmapGameMode(beatmap) && !IsBannedBeatmap(beatmap)) || hostIsAdministrator)
         {
             // Update the fallback id whenever someone picks a map that's 
-            // within limits, so we don't have to reset to the osu!tutorial everytime.
+            // within limits, so we don't have to reset to the osu!tutorial every time.
             _beatmapFallbackId = id;
 
             CurrentBeatmapName = $"{beatmap.Artist} - {beatmap.Title}";
@@ -136,7 +138,7 @@ public class MapManagerBehaviour : IBotBehaviour
             _botAppliedBeatmap = true;
             _lastBotAppliedBeatmap = CurrentBeatmapId;
             
-            // By "setting" the map ourself directly after the host picked it, 
+            // By "setting" the map our self directly after the host picked it, 
             // it will automatically be set to the newest version, even if the host's one is outdated.
             _lobby.SendMessage($"!mp map {CurrentBeatmapId} 0");
 
