@@ -49,7 +49,10 @@ At this point you may start creating lobbies, with the "Add new lobby" page to t
 * Lobby behaviours are modules that each have a specific task within managing the lobby, such as AntiAfk, AutoHostRotate etc. If you want to for example disable AntiAfk you can remove that module from the lobby (see below!). The auto host rotate preset in the create lobby section will enable all relevant behaviours required by default.
 * Change in behaviours will NOT update until the lobby/bot is restarted. The easiest way to deal with this is just hitting the Restart button in the dashboard.
 
-### Map performance-points information
+### Map performance-points information (OUTDATED)
+
+**This section is outdated and needs to be updated. TL;DR compile https://github.com/matte-ek/performance-calculator and put it in the bot directory.**
+
 The bot will function just fine without it, but if you want the bot to provide pp information for each map, you will need to build [osu-tools](https://github.com/ppy/osu-tools), and then provide it's binaries in a directory called `osu-pp-tools` in the bot's parent directory.
 
 1. Download the source code of osu-tools with the currently deployed version, which you can find [here](https://github.com/ppy/osu-infrastructure/wiki/Star-Rating-and-Performance-Points). (Click the version number which corresponds to osu-tools, and then download the source code from there)
@@ -61,3 +64,10 @@ The bot will function just fine without it, but if you want the bot to provide p
 
 ## Build Note
 The current newest release of BanchoSharp will not work with the bot currently, instead use [my fork](https://github.com/matte-ek/BanchoSharp/tree/v1.2.0-add-join-time) for now.
+
+## Additional Thanks
+[hburn7 (Stage)](https://github.com/hburn7) for BanchoSharp and other help
+
+[MaxOhn](https://github.com/MaxOhn) for rosu-pp that the bot uses to calculate performance points
+
+[bitknox](https://github.com/bitknox) for giving me cool ideas and additional help
