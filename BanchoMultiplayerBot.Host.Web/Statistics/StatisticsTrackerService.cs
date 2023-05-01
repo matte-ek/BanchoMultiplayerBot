@@ -1,4 +1,6 @@
-﻿using BanchoSharp.Interfaces;
+﻿using BanchoMultiplayerBot.Behaviour;
+using BanchoMultiplayerBot.Host.Web.Pages;
+using BanchoSharp.Interfaces;
 using Serilog;
 
 namespace BanchoMultiplayerBot.Host.Web.Statistics
@@ -10,6 +12,7 @@ namespace BanchoMultiplayerBot.Host.Web.Statistics
         public StatisticsMinuteSnapshot? MinuteSnapshot { get; set; }
 
         private int _currentMessagesSent;
+        private int _currentMessagesReceived;
         private int _currentGamesPlayed;
         private int _currentPpCalcSuccess;
         private int _currentPpCalcError;
@@ -29,6 +32,7 @@ namespace BanchoMultiplayerBot.Host.Web.Statistics
             _bot.OnBotReady += () =>
             {
                 _bot.Client.OnPrivateMessageSent += OnMessageSent;
+                _bot.Client.OnPrivateMessageReceived += OnMessageReceived;
             };
 
             while (true)
@@ -47,18 +51,28 @@ namespace BanchoMultiplayerBot.Host.Web.Statistics
                     ppCalcSuccess += x.PerformanceCalculationSuccessCount;
                     ppCalcError += x.PerformanceCalculationErrorCount;
 
-                    lobbyMinuteSnapshots.Add(new StatisticsLobbyMinuteSnapshot()
+                    var mapManagerBehaviour = (MapManagerBehaviour?)x.Behaviours.Find(behaviour => behaviour.GetType() == typeof(MapManagerBehaviour));
+                    if (mapManagerBehaviour != null)
                     {
-                        Name = x.Configuration.Name,
-                        Players = x.MultiplayerLobby.Players.Count,
-                        GamesPlayed = x.GamesPlayed - (MinuteSnapshot?.Lobbies.Find(lobby => lobby.Name == x.Configuration.Name)?.GamesPlayed ?? 0),
-                        HostViolations = x.HostViolationCount - (MinuteSnapshot?.Lobbies.Find(lobby => lobby.Name == x.Configuration.Name)?.HostViolations ?? 0)
-                    });
+                        lobbyMinuteSnapshots.Add(new StatisticsLobbyMinuteSnapshot()
+                        {
+                            Name = x.Configuration.Name,
+                            MapId = mapManagerBehaviour.CurrentBeatmapId,
+                            MapSetId = mapManagerBehaviour.CurrentBeatmapSetId,
+                            MapName = mapManagerBehaviour.CurrentBeatmapName,
+                            Players = x.MultiplayerLobby.Players.Count,
+                            TotalGamesPlayed = x.GamesPlayed,
+                            TotalHostViolations = x.HostViolationCount,
+                            GamesPlayed = x.GamesPlayed - (MinuteSnapshot?.Lobbies.Find(lobby => lobby.Name == x.Configuration.Name)?.TotalGamesPlayed ?? 0),
+                            HostViolations = x.HostViolationCount - (MinuteSnapshot?.Lobbies.Find(lobby => lobby.Name == x.Configuration.Name)?.TotalHostViolations ?? 0)
+                        });
+                    }
                 });
 
                 MinuteSnapshot = new StatisticsMinuteSnapshot()
                 {
                     MessagesSent = _currentMessagesSent,
+                    MessageThroughput = _currentMessagesSent + _currentMessagesReceived,
                     GamesPlayed = gamesPlayed - _currentGamesPlayed,
                     TotalPlayers = playerCount,
                     PerformancePointCalcSuccessCount = ppCalcSuccess - _currentPpCalcSuccess,
@@ -70,6 +84,7 @@ namespace BanchoMultiplayerBot.Host.Web.Statistics
                 _currentPpCalcError = ppCalcError;
                 _currentGamesPlayed = gamesPlayed;
                 _currentMessagesSent = 0;
+                _currentMessagesReceived = 0;
 
                 await Task.Delay(TimeSpan.FromMinutes(1));
             }
@@ -78,6 +93,11 @@ namespace BanchoMultiplayerBot.Host.Web.Statistics
         private void OnMessageSent(IPrivateIrcMessage message)
         {
             _currentMessagesSent++;
+        }
+
+        private void OnMessageReceived(IPrivateIrcMessage message)
+        {
+            _currentMessagesReceived++;
         }
     }
 }

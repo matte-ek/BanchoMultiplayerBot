@@ -3,6 +3,7 @@
     public class StatisticsMinuteSnapshot
     {
 
+        public int MessageThroughput { get; set; }
         public int MessagesSent { get; set; }
 
         public int GamesPlayed { get; set; }
