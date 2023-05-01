@@ -1,0 +1,225 @@
+﻿@page "/"
+@using BanchoMultiplayerBot.Status.Data
+@inject StatisticsManagerService StatisticsManagerService;
+
+<PageTitle>Index</PageTitle>
+
+<MudText Typo="Typo.h2" GutterBottom="true">Status</MudText>
+
+
+<MudText Typo="Typo.h4" Class="py-8">Global</MudText>
+
+<MudGrid>
+    <MudItem xs="6">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.body2">Up time</MudText>
+                <MudText Typo="Typo.h4" Color="@(_upTime >= 99 ? Color.Success : Color.Error)">@_upTime%</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="3">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.body2">Players</MudText>
+                <MudText Typo="Typo.h4">@_players</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="3">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.body2">Lobbies</MudText>
+                <MudText Typo="Typo.h4">@_lobbyCount</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="3">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.body2">Message throughput (per minute)</MudText>
+                <MudText Typo="Typo.h4">@_messageThroughput</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="3">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.body2">Performance Point Success Rate</MudText>
+                <MudText Typo="Typo.h4" Color="@(_ppCalcSuccessRate < 90 ? Color.Warning : Color.Default)">@_ppCalcSuccessRate%</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="3">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.body2">Average players (past hour)</MudText>
+                <MudText Typo="Typo.h4">@_avgPlayers.ToString("0.##")</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="3">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.body2">Average games per minute</MudText>
+                <MudText Typo="Typo.h4">@_avgGames.ToString("0.##")</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+<MudGrid>
+    @foreach (var lobby in _lobbies)
+    {
+        <MudItem xs="6">
+            <MudText Typo="Typo.h4" Class="py-8">@lobby.Name</MudText>
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudText Typo="Typo.body2">Players</MudText>
+                            <MudChart ChartType="ChartType.Line" ChartOptions="@_chartOptions" ChartSeries="@lobby.Chart" XAxisLabels="@_past12HLabels" Width="100%"></MudChart>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudText Typo="Typo.body2">Players</MudText>
+                            <MudText Typo="Typo.h4">@lobby.Players</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudText Typo="Typo.body2">Average players</MudText>
+                            <MudText Typo="Typo.h4">@lobby.AveragePlayers.ToString("0.##")</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudText Typo="Typo.body2">Games last hour</MudText>
+                            <MudText Typo="Typo.h4">@lobby.GamesLastHour.ToString("0.##")</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+        </MudItem>
+    }
+
+</MudGrid>
+
+@code
+{
+    // Global Data
+    private int _upTime;
+    private int _players;
+    private int _lobbyCount;
+    private int _messageThroughput;
+    private int _ppCalcSuccessRate;
+    private double _avgPlayers;
+    private double _avgGames;
+
+    private readonly List<LobbyData> _lobbies = new();
+
+    private string[] _past12HLabels = null!;
+
+    private readonly ChartOptions _chartOptions = new();
+
+    protected override void OnInitialized()
+    {
+        List<string> past12HLabels = new();
+
+        for (int i = 0; i < 12; i++)
+        {
+            past12HLabels.Insert(0, DateTime.Now.Subtract(TimeSpan.FromHours(i * 2)).ToString("HH:mm"));
+        }
+
+        _past12HLabels = past12HLabels.ToArray();
+
+        _chartOptions.YAxisTicks = 2;
+
+        UpdateData();
+    }
+
+    private void UpdateData()
+    {
+        _upTime = 100 - (int)Math.Round(((double)StatisticsManagerService.StatisticsMinuteSnapshots.FindAll(x => x == null).Count / (double)StatisticsManagerService.StatisticsMinuteSnapshots.Count) * 100);
+
+        var currentSnapshot = StatisticsManagerService.StatisticsMinuteSnapshots.FirstOrDefault();
+        var pastHour = StatisticsManagerService.StatisticsMinuteSnapshots.Take(60).ToList();
+
+        int totalPerPointSuccess = 0;
+        int totalPerPointError = 0;
+
+        pastHour.ForEach(x =>
+        {
+            totalPerPointSuccess += x.PerformancePointCalcSuccessCount;
+            totalPerPointError += x.PerformancePointCalcErrorCount;
+        });
+
+        _players = currentSnapshot?.TotalPlayers ?? 0;
+        _lobbyCount = currentSnapshot?.Lobbies.Count ?? 0;
+        _messageThroughput = currentSnapshot?.MessageThroughput ?? 0;
+        _avgPlayers = (pastHour.Average(x => x?.TotalPlayers) ?? 0);
+        _avgGames = (pastHour.Average(x => x?.GamesPlayed) ?? 0);
+        _ppCalcSuccessRate = 100 - (int)((double)totalPerPointError / (double)(totalPerPointError + totalPerPointSuccess) * 100);
+
+        _lobbies.Clear();
+
+        currentSnapshot?.Lobbies.ForEach(lobby =>
+        {
+            List<double> playerHistoryData = new();
+
+            // This below has to be one of the most over-engineered 3 AM solutions I've written in a while.
+            // TL;DR average out players within 2 hour time frames and add it to playerHistoryData
+            for (int i = 0; i < 12; i++)
+            {
+                int targetSnapshotIndexBegin = (60 * (12 - i) * 2) - 60 * 2; // don't worry about it.
+
+                // If we don't have enough data for the time-frame, ignore it.
+                if ((targetSnapshotIndexBegin + 60 * 2) - 1 >= StatisticsManagerService.StatisticsMinuteSnapshots.Count)
+                {
+                    playerHistoryData.Add(0);
+                    continue;
+                }
+
+                List<int> twoHourPlayerData = new();
+
+                for (int j = targetSnapshotIndexBegin; j < targetSnapshotIndexBegin + (60 * 2); j++)
+                {
+                    twoHourPlayerData.Add(StatisticsManagerService.StatisticsMinuteSnapshots[j]?.Lobbies.Find(x => x.Name == lobby.Name)?.Players ?? 0);
+                }
+
+                playerHistoryData.Add((int)Math.Round(twoHourPlayerData.Average()));
+            }
+
+            _lobbies.Add(new LobbyData()
+                {
+                    Name = lobby.Name,
+                    Players = lobby.Players,
+                    MapName = lobby.MapName,
+                    MapId = lobby.MapId,
+                    MapSetId = lobby.MapSetId,
+                    GamesLastHour = pastHour.Sum(x => x?.Lobbies.Find(y => y.Name == lobby.Name)?.GamesPlayed) ?? 0,
+                    AveragePlayers = pastHour.Average(x => x?.Lobbies.Find(y => y.Name == lobby.Name)?.Players) ?? 0,
+                    Chart = new List<ChartSeries>()
+                    {
+                        new ChartSeries() { Name = "Players", Data = playerHistoryData.ToArray() }
+                    }
+                });
+        });
+    }
+}
