@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using BanchoSharp.Multiplayer;
 using BanchoMultiplayerBot.Behaviour;
 using Serilog;
+using BanchoMultiplayerBot.Data;
 
 namespace BanchoMultiplayerBot;
 
@@ -62,7 +63,7 @@ public class Bot
         if (PerformancePointCalculator.IsAvailable)
             PerformancePointCalculator = new PerformancePointCalculator();
         else
-            Log.Warning($"Could not find '{PerformancePointCalculator.OsuToolsDirectory}', pp calculations unavailable.");
+            Log.Warning($"Could not find 'performance-calculator', pp calculations unavailable.");
 
         AnnouncementManager.Run(this);
 

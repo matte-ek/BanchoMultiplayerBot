@@ -1,18 +1,16 @@
 ﻿using System.Diagnostics;
+using System.Globalization;
 using BanchoMultiplayerBot.Data;
 using Serilog;
 
 namespace BanchoMultiplayerBot.OsuApi;
 
 /// <summary>
-/// Utility class to interface with osu-tools and calculate performance points of beatmaps.
-/// This is not rather efficient since it will literally run osu-tools processes on your system each time.
-/// However the alternatives weren't too appealing anyway, and this will work just fine for this purpose. 
+/// Utility class to interface with performance calculator and calculate performance points of beat maps.
 /// </summary>
 public class PerformancePointCalculator
 {
-    public const string OsuToolsDirectory = "../osu-pp-tools";
-    public static bool IsAvailable => Directory.Exists(OsuToolsDirectory);
+    public static bool IsAvailable => File.Exists("performance-calculator.exe") || File.Exists("performance-calculator");
     
     private readonly HttpClient _httpClient = new();
 
@@ -21,18 +19,18 @@ public class PerformancePointCalculator
     /// </summary>
     public async Task<BeatmapPerformanceInfo?> CalculatePerformancePoints(int beatmapId)
     {
-        const string cacheDir = $"{OsuToolsDirectory}/cache";
+        const string cacheDir = $"cache";
         var beatmapFilePath = $"{cacheDir}/{beatmapId}.osu";
         
         // This should never be the case but better safe than sorry.
-        if (!Directory.Exists(OsuToolsDirectory))
+        if (!IsAvailable)
         {
             Log.Error("Failed to find osu tools directory.");
             return null;
         }
         
         if (!Directory.Exists(cacheDir))
-            Directory.CreateDirectory(cacheDir);
+            Directory.CreateDirectory(cacheDir);    
      
         // Download the beatmap (if necessary), this will only download the beatmap itself (.osu), without any additional media.
         if (!File.Exists(beatmapFilePath))
@@ -54,28 +52,7 @@ public class PerformancePointCalculator
 
         try
         {
-            var pp100 = CalculateBeatmapPerformancePoints(beatmapId, 100);
-            var pp98 = CalculateBeatmapPerformancePoints(beatmapId, 98);
-            var pp95 = CalculateBeatmapPerformancePoints(beatmapId, 95);
-            
-            var ppResults100 = await pp100;
-            var ppResults98 = await pp98;
-            var ppResults95 = await pp95;
-
-            if (ppResults100 == null ||
-                ppResults98 == null ||
-                ppResults95 == null)
-            {
-                // If any of these are null, we should have logged a reason earlier (hopefully).
-                return null;
-            }
-            
-            return new BeatmapPerformanceInfo
-            {
-                Performance100 = ppResults100.Value,
-                Performance98 = ppResults98.Value,
-                Performance95 = ppResults95.Value,
-            };;
+            return await CalculateBeatmapPerformancePoints(beatmapId);
         }
         catch (Exception e)
         {
@@ -85,30 +62,36 @@ public class PerformancePointCalculator
     }
 
     /// <summary>
-    /// Calculates the pp for beatmap with the specified accuracy, has a 5 second timeout.  
+    /// Calculates the pp for beatmap, has a 5 second timeout.  
     /// </summary>
-    private async Task<int?> CalculateBeatmapPerformancePoints(int beatmapId, int acc)
+    private async Task<BeatmapPerformanceInfo?> CalculateBeatmapPerformancePoints(int beatmapId)
     {
-        // osu-tools will be ran with "-j", which will cause it to output the data in JSON format.
-        var performanceCalcProcess = RunProcessAsync($"dotnet", $"../osu-pp-tools/PerformanceCalculator.dll simulate osu -a {acc} -j ../osu-pp-tools/cache/{beatmapId}.osu");
+        var performanceCalcProcess = RunProcessAsync($"performance-calculator", $"{beatmapId}");
 
         try
         {
             string output = await performanceCalcProcess.WaitAsync(TimeSpan.FromSeconds(5));
 
-            // Quick check to make sure we're actually throwing in JSON into DeserializeObject later on.
-            if (!(output.StartsWith("{") && output.EndsWith("}")))
+            if (output.StartsWith("err: "))
             {
-                Log.Error($"Error while calculating pp for map, PerformanceCalculator probably threw an exception. Id: {beatmapId}");
+                Log.Error($"Failed to calculate pp for beatmap {beatmapId}: {output}");
+
                 return null;
             }
 
-            // The code below is prone to failure, but it's fine for this use case.
-            dynamic performanceData = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(output)!;
+            var values = output.Split('\n');
+            if (values.Length < 4)
+            {
+                Log.Error($"Failed to calculate pp for beatmap {beatmapId}: {output}");
+                return null;
+            }
 
-            double pp = performanceData.performance_attributes.pp;
-
-            return Convert.ToInt32(Math.Round(pp));
+            return new BeatmapPerformanceInfo()
+            {
+                Performance100 = (int)Math.Round(Convert.ToDouble(values[0], CultureInfo.InvariantCulture)),
+                Performance98 = (int)Math.Round(Convert.ToDouble(values[1], CultureInfo.InvariantCulture)),
+                Performance95 = (int)Math.Round(Convert.ToDouble(values[2], CultureInfo.InvariantCulture)),
+            };
         }
         catch (TimeoutException)
         {
