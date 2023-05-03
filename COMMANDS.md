@@ -14,7 +14,8 @@ An osu! multiplayer bot that will maintain a queue and pass the host around ever
 | !stop                 | Allows the host to stop any ongoing match start timer. |
 | !regulations / !r     | Displays the current map regulations, such as star rating and/or map length. |
 | !abort                | Vote to abort the currently on-going match |
-| !playtime             | Shows the time you've been in the lobby since you joined. |
+| !playtime             | Shows your current and total playtime. |
+| !playstats            | Shows your total matches played and #1's |
 | !mirror               | Sends a download link to the map from a mirror. |
 | !help                 | Sends a link to the command/help page. |
 
