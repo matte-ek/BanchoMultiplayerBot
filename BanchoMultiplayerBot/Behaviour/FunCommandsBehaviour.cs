@@ -72,7 +72,8 @@ public class FunCommandsBehaviour : IBotBehaviour
         {
             var user = await userRepository.FindUser(player.Name) ?? await userRepository.CreateUser(player.Name);
 
-            user.MatchesPlayed++;
+            if (player.Score > 0)
+                user.MatchesPlayed++;
         }
 
         await userRepository.Save();
