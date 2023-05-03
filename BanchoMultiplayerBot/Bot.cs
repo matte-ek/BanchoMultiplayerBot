@@ -9,6 +9,7 @@ using BanchoSharp.Multiplayer;
 using BanchoMultiplayerBot.Behaviour;
 using Serilog;
 using BanchoMultiplayerBot.Data;
+using BanchoMultiplayerBot.Database.Repositories;
 
 namespace BanchoMultiplayerBot;
 

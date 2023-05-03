@@ -13,6 +13,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\BanchoMultiplayerBot.Database\BanchoMultiplayerBot.Database.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
       <Reference Include="BanchoSharp">
         <HintPath>..\..\forks\BanchoSharp\BanchoSharp\bin\Release\net6.0\BanchoSharp.dll</HintPath>
       </Reference>
