@@ -84,7 +84,7 @@ public class FunCommandsBehaviour : IBotBehaviour
         using var userRepository = new UserRepository();
         var user = await userRepository.FindUser(args.Player.Name) ?? await userRepository.CreateUser(args.Player.Name);
 
-        user.Playtime += (DateTime.Now - args.Player.JoinTime).Seconds;
+        user.Playtime += (int)(DateTime.Now - args.Player.JoinTime).TotalSeconds;
 
         await userRepository.Save();
     }
