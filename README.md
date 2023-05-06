@@ -10,7 +10,7 @@ There are already a lot of good osu multiplayer bots, (such as [osu!ahr](https:/
 
 To clearly what I meant with extra features:
 * Completely abstract the whole "separate lobby config" stuff, configure the lobbies once within the UI and forget about it. It'll save them and either rejoin/create them for you, with their respective configs.
-* Ability to fully recover and pick up where it left of during a restart, network issues, bancho restart etc. 
+* Ability to fully recover and pick up where it left of during a normal restart, network issues, bancho restart etc. 
 * Ability for me to add more features in the future, for example like what I did with the map pp counter.
 
 This is a bit more complicated to get up and running than other bots as of now, if you just want a normal osu! auto host rotate bot up and running, I would highly recommend the mentioned alternatives above for now. The reason to this is mostly due to the WebUI, might add functionally for something like Discord in the future.
@@ -35,12 +35,12 @@ Then modify `appsettings.json` and fill out a username and a password as shown b
 }
 ```
 
-Then run the bot itself, for example on Windows you may run the `BanchoMultiplayerBot.Host.Web.exe` file, or on Linux run `dotnet BanchoMultiplayerBot.Host.Web.dll`. Now while the bot application is running you may visit
+Then run the bot, for example on Windows you may run the `BanchoMultiplayerBot.Host.Web.exe` file, or on Linux run `dotnet BanchoMultiplayerBot.Host.Web.dll`. Now while the bot application is running you can visit
 [http://localhost:5000/osu-bot](http://localhost:5000/osu-bot) where you should be greeted by a login page. Here you can login with the username and password that you picked earlier.
 
-At this point you should open up the Authentication page (within Settings) and fill out your osu! IRC credentials which you can get from [here](https://osu.ppy.sh/p/irc). You also need an osu!api v1 key which you can get from [here](https://osu.ppy.sh/p/api/). (You can use localhost for the app URL).
+Now you should open up the Authentication page (within Settings) and fill out your osu! IRC credentials which you can get from [here](https://osu.ppy.sh/p/irc). You also need an osu!api v1 key which you can get from [here](https://osu.ppy.sh/p/api/). (You can use localhost for the app URL).
 
-After this is done you may go back to the Dashboard page and hit the "Connect" button, and after waiting a few seconds it should hopefully connect and the Bancho Connection label should say OK. If you encounter issues and you are sure that the credentails are correct, try hitting the Save Configuration button, then manually restart the bot and try again. If you still have issues check out the console window for any error messages which might point you in the right direction. If you still have issues feel free to open up an issue here.
+After this is done you may go back to the Dashboard page and hit the "Connect" button, and after waiting a few seconds it should hopefully connect and the Bancho Connection label should say OK. If you encounter issues and you are sure that the credentials are correct, try hitting the Save Configuration button, then manually restart the bot and try again. If you still have issues check out the console window for any error messages which might point you in the right direction. If you still have issues feel free to open up an issue here or DM me on osu!
 
 At this point you may start creating lobbies, with the "Add new lobby" page to the left. Use the Auto Host Rotate preset to create an AHR lobby. The lobby should then be created and you should be able to click on it on the menu to the left, where you can configure it to your liking and see the current players and chat etc.
 
@@ -49,18 +49,9 @@ At this point you may start creating lobbies, with the "Add new lobby" page to t
 * Lobby behaviours are modules that each have a specific task within managing the lobby, such as AntiAfk, AutoHostRotate etc. If you want to for example disable AntiAfk you can remove that module from the lobby (see below!). The auto host rotate preset in the create lobby section will enable all relevant behaviours required by default.
 * Change in behaviours will NOT update until the lobby/bot is restarted. The easiest way to deal with this is just hitting the Restart button in the dashboard.
 
-### Map performance-points information (OUTDATED)
+### Map performance-points information 
 
-**This section is outdated and needs to be updated. TL;DR compile https://github.com/matte-ek/performance-calculator and put it in the bot directory.**
-
-The bot will function just fine without it, but if you want the bot to provide pp information for each map, you will need to build [osu-tools](https://github.com/ppy/osu-tools), and then provide it's binaries in a directory called `osu-pp-tools` in the bot's parent directory.
-
-1. Download the source code of osu-tools with the currently deployed version, which you can find [here](https://github.com/ppy/osu-infrastructure/wiki/Star-Rating-and-Performance-Points). (Click the version number which corresponds to osu-tools, and then download the source code from there)
-2. Open a terminal and move into the `PerformanceCalculator` directory
-3. Run `dotnet build -c Release`
-4. You should now have a directory within the `bin/Release`, with all the required binary files. In my case it's called `net-6.0`. Rename this folder to `osu-pp-tools`.
-5. Move `osu-pp-tools` to the bot's parent directory.
-6. After restarting the bot, it should not longer warn about it not finding `osu-pp-tools` and it should now print out pp values automatically.
+The bot will function just fine without it, but if you want the bot to provide pp information for each map, you will need to build [performance-calculator](https://github.com/matte-ek/performance-calculator), and then provide it's binary in the bot folder. After restarting the bot it should automatically be calculating the pp for each map picked. I could possibly released pre-compiled binaries soon.
 
 ## Build Note
 The current newest release of BanchoSharp will not work with the bot currently, instead use [my fork](https://github.com/matte-ek/BanchoSharp/tree/v1.2.0-add-join-time) for now.
