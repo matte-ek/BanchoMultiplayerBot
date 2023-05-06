@@ -163,7 +163,7 @@ public class AutoStartBehaviour : IBotBehaviour
         _sentWarningMessage = false;
         _startTimerActive = true;
 
-        _lobby.SendMessage($"Queued to start match in {length} seconds! Use !stop to abort");
+        _lobby.SendMessage($"Queued to start match in {length} seconds, use !stop to abort");
     }
 
     private void AbortTimer()
