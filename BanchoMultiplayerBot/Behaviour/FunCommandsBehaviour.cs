@@ -8,6 +8,7 @@ namespace BanchoMultiplayerBot.Behaviour;
 public class FunCommandsBehaviour : IBotBehaviour
 {
     private Lobby _lobby = null!;
+    private bool _flushedPlaytime = false;
 
     public void Setup(Lobby lobby)
     {
@@ -16,6 +17,22 @@ public class FunCommandsBehaviour : IBotBehaviour
         _lobby.MultiplayerLobby.OnPlayerDisconnected += OnPlayerDisconnected;
         _lobby.MultiplayerLobby.OnMatchFinished += OnMatchFinished;
         _lobby.OnUserMessage += OnUserMessage;
+    }
+
+    public async Task FlushPlaytime()
+    {
+        using var userRepository = new UserRepository();
+
+        foreach (var player in _lobby.MultiplayerLobby.Players)
+        {
+            var user = await userRepository.FindUser(player.Name) ?? await userRepository.CreateUser(player.Name);
+
+            user.Playtime += (int)(DateTime.Now - player.JoinTime).TotalSeconds;
+        }
+
+        await userRepository.Save();
+
+        _flushedPlaytime = true;
     }
 
     private async void OnUserMessage(IPrivateIrcMessage msg)
@@ -79,8 +96,11 @@ public class FunCommandsBehaviour : IBotBehaviour
         await userRepository.Save();
     }
 
-    private static async void OnPlayerDisconnected(PlayerDisconnectedEventArgs args)
+    private async void OnPlayerDisconnected(PlayerDisconnectedEventArgs args)
     {
+        if (_flushedPlaytime)
+            return;
+
         using var userRepository = new UserRepository();
         var user = await userRepository.FindUser(args.Player.Name) ?? await userRepository.CreateUser(args.Player.Name);
 

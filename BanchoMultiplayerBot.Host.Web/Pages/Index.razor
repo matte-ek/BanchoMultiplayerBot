@@ -6,6 +6,7 @@
 @using BanchoMultiplayerBot
 @using BanchoMultiplayerBot.Config
 @using System.Threading
+@using BanchoMultiplayerBot.Behaviour
 @using BanchoMultiplayerBot.Host.Web.Log
 @using BanchoMultiplayerBot.Host.Web.Pages.Dialogs;
 @using MudBlazor.Utilities
@@ -216,7 +217,23 @@
 
         if (result.Cancelled)
             return;
-        
+
+        try
+        {
+            foreach (var lobby in Bot.Lobbies)
+            {
+                var funCommandsBehaviour = (FunCommandsBehaviour?)lobby.Behaviours.Find(x => x.GetType() == typeof(FunCommandsBehaviour));
+                if (funCommandsBehaviour == null)
+                    continue;
+
+                await funCommandsBehaviour.FlushPlaytime();
+            }
+        }
+        catch (Exception e)
+        {
+            // ignored
+        }
+
         await Bot.DisconnectAsync();
 
         ApplicationLifetime.StopApplication();
