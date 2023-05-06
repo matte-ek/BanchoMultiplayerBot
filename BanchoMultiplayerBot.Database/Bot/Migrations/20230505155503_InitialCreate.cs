@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace BanchoMultiplayerBot.Database.Migrations
+namespace BanchoMultiplayerBot.Database.Bot.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BanchoMultiplayerBot.Database.Models
+namespace BanchoMultiplayerBot.Database.Bot.Models
 {
     public class User
     {

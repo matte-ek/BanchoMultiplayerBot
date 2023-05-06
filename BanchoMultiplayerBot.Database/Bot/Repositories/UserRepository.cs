@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using BanchoMultiplayerBot.Database.Models;
+using BanchoMultiplayerBot.Database.Bot.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace BanchoMultiplayerBot.Database.Repositories
+namespace BanchoMultiplayerBot.Database.Bot.Repositories
 {
     public class UserRepository : IDisposable
     {

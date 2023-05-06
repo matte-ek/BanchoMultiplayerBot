@@ -1,4 +1,4 @@
-﻿using BanchoMultiplayerBot.Database.Repositories;
+﻿using BanchoMultiplayerBot.Database.Bot.Repositories;
 using BanchoMultiplayerBot.Extensions;
 using BanchoSharp.EventArgs;
 using BanchoSharp.Interfaces;
