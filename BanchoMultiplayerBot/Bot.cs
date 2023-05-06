@@ -9,7 +9,6 @@ using BanchoSharp.Multiplayer;
 using BanchoMultiplayerBot.Behaviour;
 using Serilog;
 using BanchoMultiplayerBot.Data;
-using BanchoMultiplayerBot.Database.Repositories;
 
 namespace BanchoMultiplayerBot;
 
@@ -375,9 +374,9 @@ public class Bot
                 {
                     connectionAttempts++;
 
-                    Log.Information("Attempting to reconnect in 45 seconds");
+                    Log.Information("Attempting to reconnect in 60 seconds");
 
-                    await Task.Delay(45000);
+                    await Task.Delay(60000);
 
                     Client.Dispose();
                     Lobbies.Clear();

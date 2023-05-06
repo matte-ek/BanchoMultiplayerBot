@@ -237,7 +237,7 @@ public class LobbyManagerBehaviour : IBotBehaviour
             // If we still have some attempts left, then check if it got ran successfully again
             // I hate the fact that I even have to do this but I have no clue as to why it doesn't get ran
             // in the first place. Seems to only be happening with `!mp settings` so I am assuming something Bancho related?
-            if (_mpSettingsAttempts < 10)
+            if (_mpSettingsAttempts < 100)
             {
                 _mpSettingsAttempts++;
 
@@ -254,7 +254,7 @@ public class LobbyManagerBehaviour : IBotBehaviour
 
         if (!_mpPasswordSet)
         {
-            if (_mpPasswordAttempts < 10)
+            if (_mpPasswordAttempts < 100)
             {
                 _mpPasswordAttempts++;
 
