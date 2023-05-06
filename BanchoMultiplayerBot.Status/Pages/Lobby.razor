@@ -1,0 +1,122 @@
+﻿@page "/lobby/{IdStr}"
+@using BanchoMultiplayerBot.Status.Data
+@using BanchoMultiplayerBot.Host.Web.Statistics
+@using BanchoMultiplayerBot.Database.Status.Repositories
+@using BanchoMultiplayerBot.Database.Status.Models
+@inject StatisticsManagerService StatisticsManagerService;
+@inject BotSnapshotRepository BotSnapshotRepository;
+@inject DbBotDataService DataService;
+
+<PageTitle>Lobby Data</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">@_lobbyName</MudText>
+
+<MudGrid>
+    <MudItem xs="6">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.body2">Games played (past hour)</MudText>
+                <MudText Typo="Typo.h4">@_pastHourData.Sum(x => x.GamesPlayed)</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    
+    <MudItem xs="6">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.body2">Host violations (past hour)</MudText>
+                <MudText Typo="Typo.h4">@_pastHourData.Sum(x => x.HostViolations)</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudCard>
+            <MudCardContent>
+                <ApexChart TItem="BotSnapshot" Title="Total Players"
+                           XAxisType="XAxisType.Datetime"
+                           Options="_chartOptions"
+                           @ref="_playerChart">
+
+                    <ApexPointSeries TItem="BotSnapshot"
+                                     Items="DataService.Data"
+                                     Name="Player Count"
+                                     SeriesType="SeriesType.Line"
+                                     XValue="@(e => e.Time)"
+                                     YAggregate="@(e => e.Sum(e => e.LobbySnapshots.Where(lobby => lobby.BotLobbyIndex == _lobbyIndex).Sum(lobby => lobby.Players)))"
+                                     OrderBy="e => e.X"/>
+                </ApexChart>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    
+    <MudItem xs="6">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.body2">Average players (past hour)</MudText>
+                <MudText Typo="Typo.h4">@_pastHourData.Average(x => x.Players).ToString("0.##")</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code
+{
+    [Parameter]
+    public string? IdStr { get; set; }
+
+    private string _lobbyName = string.Empty;
+    private int _lobbyIndex;
+
+    private DateTime _pastHour;
+
+    private readonly List<LobbySnapshot> _pastHourData = new List<LobbySnapshot>();
+
+    private ApexChart<BotSnapshot>? _playerChart;
+    private ApexChartOptions<BotSnapshot> _chartOptions;
+
+    protected override async void OnInitialized()
+    {
+        await DataService.RetrieveData();
+
+        _pastHour = DateTime.Now - TimeSpan.FromMinutes(1);
+        _lobbyIndex = Convert.ToInt32(IdStr);
+        _lobbyName = DataService.Data?.First().LobbySnapshots.Where(x => x.BotLobbyIndex == _lobbyIndex)?.First().Name ?? "N/A";
+
+        _pastHourData.Clear();
+        _pastHourData.EnsureCapacity(60);
+
+        DataService.Data?.Where(x => x.Time >= _pastHour).ToList().ForEach(x =>
+        {
+            var lobbySnapshot = x.LobbySnapshots.FirstOrDefault(lobby => lobby.BotLobbyIndex == _lobbyIndex);
+
+            if (lobbySnapshot != null)
+                _pastHourData.Add(lobbySnapshot);
+        });
+
+        _chartOptions = new ApexChartOptions<BotSnapshot>
+        {
+            Theme = new Theme
+            {
+                Mode = Mode.Dark,
+                Palette = PaletteType.Palette1
+            },
+            Stroke = new Stroke()
+            {
+                Width = 3,
+            },
+            Chart = new Chart()
+            {
+                Background = "#00000000"
+            }
+        };
+
+        if (_playerChart != null)
+            await _playerChart.RenderAsync();
+    }
+
+    protected override void OnParametersSet()
+    {
+        OnInitialized();
+    }
+}

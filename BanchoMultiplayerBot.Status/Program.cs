@@ -1,3 +1,4 @@
+using BanchoMultiplayerBot.Database.Status.Repositories;
 using BanchoMultiplayerBot.Status.Data;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -10,6 +11,9 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddMudServices();
 builder.Services.AddSingleton<StatisticsManagerService>();
+
+builder.Services.AddScoped<BotSnapshotRepository>();
+builder.Services.AddScoped<DbBotDataService>();
 
 var app = builder.Build();
 

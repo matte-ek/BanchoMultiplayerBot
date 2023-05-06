@@ -1,20 +1,24 @@
 ﻿@page "/"
 @using BanchoMultiplayerBot.Status.Data
+@using BanchoMultiplayerBot.Host.Web.Statistics
+@using BanchoMultiplayerBot.Database.Status.Repositories
+@using BanchoMultiplayerBot.Database.Status.Models
+@using Color = ApexCharts.Color
 @inject StatisticsManagerService StatisticsManagerService;
+@inject DbBotDataService DataService;
 
 <PageTitle>Index</PageTitle>
 
-<MudText Typo="Typo.h2" GutterBottom="true">Status</MudText>
-
-
-<MudText Typo="Typo.h4" Class="py-8">Global</MudText>
+<MudText Typo="Typo.h4" GutterBottom="true">General</MudText>
 
 <MudGrid>
     <MudItem xs="6">
         <MudCard>
             <MudCardContent>
-                <MudText Typo="Typo.body2">Up time</MudText>
-                <MudText Typo="Typo.h4" Color="@(_upTime >= 99 ? Color.Success : Color.Error)">@_upTime%</MudText>
+                <MudTooltip Text="Not implemented yet.">
+                    <MudText Typo="Typo.body2">Up time</MudText>
+                    <MudText Typo="Typo.h4" Color="@(_upTime >= 99 ? MudBlazor.Color.Success : MudBlazor.Color.Error)">@_upTime%</MudText>
+                </MudTooltip>
             </MudCardContent>
         </MudCard>
     </MudItem>
@@ -22,8 +26,8 @@
     <MudItem xs="3">
         <MudCard>
             <MudCardContent>
-                <MudText Typo="Typo.body2">Players</MudText>
-                <MudText Typo="Typo.h4">@_players</MudText>
+                <MudText Typo="Typo.body2">Messages sent (past minute)</MudText>
+                <MudText Typo="Typo.h4">@DataService.Data.Where(x => x.Time >= _pastMinute).Sum(x => x.MessagesSent)</MudText>
             </MudCardContent>
         </MudCard>
     </MudItem>
@@ -31,8 +35,8 @@
     <MudItem xs="3">
         <MudCard>
             <MudCardContent>
-                <MudText Typo="Typo.body2">Lobbies</MudText>
-                <MudText Typo="Typo.h4">@_lobbyCount</MudText>
+                <MudText Typo="Typo.body2">Messages received (past minute)</MudText>
+                <MudText Typo="Typo.h4">@DataService.Data.Where(x => x.Time >= _pastMinute).Sum(x => x.MessagesReceived)</MudText>
             </MudCardContent>
         </MudCard>
     </MudItem>
@@ -40,8 +44,8 @@
     <MudItem xs="3">
         <MudCard>
             <MudCardContent>
-                <MudText Typo="Typo.body2">Message throughput (per minute)</MudText>
-                <MudText Typo="Typo.h4">@_messageThroughput</MudText>
+                <MudText Typo="Typo.body2">osu! API success rate</MudText>
+                <MudText Typo="Typo.h4">@(_pastHourData.Any() ? RatioToPercentage(_pastHourData.Sum(x => x.ApiErrorCount), _pastHourData.Sum(x => x.ApiLookups)).ToString("0.###") : "N/A")%</MudText>
             </MudCardContent>
         </MudCard>
     </MudItem>
@@ -49,177 +53,94 @@
     <MudItem xs="3">
         <MudCard>
             <MudCardContent>
-                <MudText Typo="Typo.body2">Performance Point Success Rate</MudText>
-                <MudText Typo="Typo.h4" Color="@(_ppCalcSuccessRate < 90 ? Color.Warning : Color.Default)">@_ppCalcSuccessRate%</MudText>
+                <MudText Typo="Typo.body2">Performance point success rate</MudText>
+                <MudText Typo="Typo.h4">@(_pastHourData.Any() ? RatioToPercentage(_pastHourData.Sum(x => x.PerformancePointCalculationErrors), _pastHourData.Sum(x => x.PerformancePointCalculations)).ToString("0.###") : "N/A")%</MudText>
             </MudCardContent>
         </MudCard>
     </MudItem>
 
-    <MudItem xs="3">
+    <MudItem xs="6">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.body2">Message error rate</MudText>
+                <MudText Typo="Typo.h4">@((_pastHourData.Any() ? RatioToPercentage(_pastHourData.Sum(x => x.MessagesSent), _pastHourData.Sum(x => x.MessageErrorCount)).ToString("0.###") : "N/A"))%</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudCard>
+            <MudCardContent>
+                <ApexChart TItem="BotSnapshot" Title="Total Players"
+                           XAxisType="XAxisType.Datetime"
+                           Options="_chartOptions">
+
+                    <ApexPointSeries TItem="BotSnapshot"
+                                     Items="DataService.Data"
+                                     Name="Player Count"
+                                     SeriesType="SeriesType.Line"
+                                     XValue="@(e => e.Time)"
+                                     YAggregate="@(e => e.Sum(e => e.LobbySnapshots.Sum(lobby => lobby.Players)))"
+                                     OrderBy="e=>e.X" />
+                </ApexChart>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="6">
         <MudCard>
             <MudCardContent>
                 <MudText Typo="Typo.body2">Average players (past hour)</MudText>
-                <MudText Typo="Typo.h4">@_avgPlayers.ToString("0.##")</MudText>
-            </MudCardContent>
-        </MudCard>
-    </MudItem>
-
-    <MudItem xs="3">
-        <MudCard>
-            <MudCardContent>
-                <MudText Typo="Typo.body2">Average games per minute</MudText>
-                <MudText Typo="Typo.h4">@_avgGames.ToString("0.##")</MudText>
+                <MudText Typo="Typo.h4">@(_pastHourData.Any() ? _pastHourData.Average(x => x.LobbySnapshots.Sum(y => y.Players)).ToString("0.##") : "N/A")</MudText>
             </MudCardContent>
         </MudCard>
     </MudItem>
 </MudGrid>
 
-<MudGrid>
-    @foreach (var lobby in _lobbies)
-    {
-        <MudItem xs="6">
-            <MudText Typo="Typo.h4" Class="py-8">@lobby.Name</MudText>
-            <MudGrid>
-                <MudItem xs="12">
-                    <MudCard>
-                        <MudCardContent>
-                            <MudText Typo="Typo.body2">Players</MudText>
-                            <MudChart ChartType="ChartType.Line" ChartOptions="@_chartOptions" ChartSeries="@lobby.Chart" XAxisLabels="@_past12HLabels" Width="100%"></MudChart>
-                        </MudCardContent>
-                    </MudCard>
-                </MudItem>
 
-                <MudItem xs="6">
-                    <MudCard>
-                        <MudCardContent>
-                            <MudText Typo="Typo.body2">Players</MudText>
-                            <MudText Typo="Typo.h4">@lobby.Players</MudText>
-                        </MudCardContent>
-                    </MudCard>
-                </MudItem>
-
-                <MudItem xs="6">
-                    <MudCard>
-                        <MudCardContent>
-                            <MudText Typo="Typo.body2">Average players</MudText>
-                            <MudText Typo="Typo.h4">@lobby.AveragePlayers.ToString("0.##")</MudText>
-                        </MudCardContent>
-                    </MudCard>
-                </MudItem>
-
-                <MudItem xs="12">
-                    <MudCard>
-                        <MudCardContent>
-                            <MudText Typo="Typo.body2">Games last hour</MudText>
-                            <MudText Typo="Typo.h4">@lobby.GamesLastHour.ToString("0.##")</MudText>
-                        </MudCardContent>
-                    </MudCard>
-                </MudItem>
-            </MudGrid>
-        </MudItem>
-    }
-
-</MudGrid>
 
 @code
 {
-    // Global Data
     private int _upTime;
-    private int _players;
-    private int _lobbyCount;
-    private int _messageThroughput;
-    private int _ppCalcSuccessRate;
-    private double _avgPlayers;
-    private double _avgGames;
 
-    private readonly List<LobbyData> _lobbies = new();
+    private readonly DateTime _pastMinute = DateTime.Now - TimeSpan.FromMinutes(1);
+    private readonly DateTime _pastHour = DateTime.Now - TimeSpan.FromMinutes(1);
 
-    private string[] _past12HLabels = null!;
+    private List<BotSnapshot>? _pastHourData;
 
-    private readonly ChartOptions _chartOptions = new();
+    private ApexChartOptions<BotSnapshot> _chartOptions;
 
-    protected override void OnInitialized()
+    protected override async void OnInitialized()
     {
-        List<string> past12HLabels = new();
+        await DataService.RetrieveData();
 
-        for (int i = 0; i < 12; i++)
+        _pastHourData = DataService.Data?.Where(x => x.Time >= _pastHour).ToList();
+        _upTime = 100; // todo: lol.
+
+        _chartOptions = new ApexChartOptions<BotSnapshot>
         {
-            past12HLabels.Insert(0, DateTime.Now.Subtract(TimeSpan.FromHours(i * 2)).ToString("HH:mm"));
-        }
-
-        _past12HLabels = past12HLabels.ToArray();
-
-        _chartOptions.YAxisTicks = 2;
-
-        UpdateData();
+            Theme = new Theme
+            {
+                Mode = Mode.Dark,
+                Palette = PaletteType.Palette1
+            },
+            Stroke = new Stroke()
+            {
+                Width = 3,
+            },
+            Chart = new Chart()
+            {
+                Background = "#00000000"
+            }
+        };
     }
 
-    private void UpdateData()
+
+    // Also takes cares of cases where it otherwise divides by 0
+    private double RatioToPercentage(int a, int b)
     {
-        _upTime = 100 - (int)Math.Round(((double)StatisticsManagerService.StatisticsMinuteSnapshots.FindAll(x => x == null).Count / (double)StatisticsManagerService.StatisticsMinuteSnapshots.Count) * 100);
+        if (b == 0) return 0.0;
 
-        var currentSnapshot = StatisticsManagerService.StatisticsMinuteSnapshots.FirstOrDefault();
-        var pastHour = StatisticsManagerService.StatisticsMinuteSnapshots.Take(60).ToList();
-
-        int totalPerPointSuccess = 0;
-        int totalPerPointError = 0;
-
-        pastHour.ForEach(x =>
-        {
-            totalPerPointSuccess += x.PerformancePointCalcSuccessCount;
-            totalPerPointError += x.PerformancePointCalcErrorCount;
-        });
-
-        _players = currentSnapshot?.TotalPlayers ?? 0;
-        _lobbyCount = currentSnapshot?.Lobbies.Count ?? 0;
-        _messageThroughput = currentSnapshot?.MessageThroughput ?? 0;
-        _avgPlayers = (pastHour.Average(x => x?.TotalPlayers) ?? 0);
-        _avgGames = (pastHour.Average(x => x?.GamesPlayed) ?? 0);
-        _ppCalcSuccessRate = 100 - (int)((double)totalPerPointError / (double)(totalPerPointError + totalPerPointSuccess) * 100);
-
-        _lobbies.Clear();
-
-        currentSnapshot?.Lobbies.ForEach(lobby =>
-        {
-            List<double> playerHistoryData = new();
-
-            // This below has to be one of the most over-engineered 3 AM solutions I've written in a while.
-            // TL;DR average out players within 2 hour time frames and add it to playerHistoryData
-            for (int i = 0; i < 12; i++)
-            {
-                int targetSnapshotIndexBegin = (60 * (12 - i) * 2) - 60 * 2; // don't worry about it.
-
-                // If we don't have enough data for the time-frame, ignore it.
-                if ((targetSnapshotIndexBegin + 60 * 2) - 1 >= StatisticsManagerService.StatisticsMinuteSnapshots.Count)
-                {
-                    playerHistoryData.Add(0);
-                    continue;
-                }
-
-                List<int> twoHourPlayerData = new();
-
-                for (int j = targetSnapshotIndexBegin; j < targetSnapshotIndexBegin + (60 * 2); j++)
-                {
-                    twoHourPlayerData.Add(StatisticsManagerService.StatisticsMinuteSnapshots[j]?.Lobbies.Find(x => x.Name == lobby.Name)?.Players ?? 0);
-                }
-
-                playerHistoryData.Add((int)Math.Round(twoHourPlayerData.Average()));
-            }
-
-            _lobbies.Add(new LobbyData()
-                {
-                    Name = lobby.Name,
-                    Players = lobby.Players,
-                    MapName = lobby.MapName,
-                    MapId = lobby.MapId,
-                    MapSetId = lobby.MapSetId,
-                    GamesLastHour = pastHour.Sum(x => x?.Lobbies.Find(y => y.Name == lobby.Name)?.GamesPlayed) ?? 0,
-                    AveragePlayers = pastHour.Average(x => x?.Lobbies.Find(y => y.Name == lobby.Name)?.Players) ?? 0,
-                    Chart = new List<ChartSeries>()
-                    {
-                        new ChartSeries() { Name = "Players", Data = playerHistoryData.ToArray() }
-                    }
-                });
-        });
+        return 100.0 - (double)a / (double)b;
     }
 }
