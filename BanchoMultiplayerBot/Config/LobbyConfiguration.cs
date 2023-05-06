@@ -45,5 +45,8 @@ public class LobbyConfiguration
     // Behaviour specific 
 
     public string? PreviousQueue;
+
+    // I really wish I didn't have to store this here, but it currently needs to be entered manually.
+    public string? LobbyJoinLink { get; set; }
     
 }

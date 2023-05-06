@@ -139,27 +139,21 @@ namespace BanchoMultiplayerBot.Host.Web.Extra
         }
 
         [HttpGet("join/{lobbyId}")]
-        public async Task<ActionResult> GetJoinLink(int lobbyId)
+        public ActionResult GetJoinLink(int lobbyId)
         {
-            // I currently have no clue how to get these programatically, so I'll hard code them for now.
-            // Possibly look into doing "!mp invite", then grabbing the id from the invite link. If all of that fails
-            // then I'll rewrite this to read it from a file/the config.
-
-            switch (lobbyId)
+            if (0 > lobbyId || lobbyId >= _bot.Lobbies.Count)
             {
-                case 0:
-                    return Redirect("osu://mp/19454");
-                case 1:
-                    return Redirect("osu://mp/19455");
-                case 2:
-                    return Redirect("osu://mp/19456");
-                case 3:
-                    return Redirect("osu://mp/14500");
-                default:
-                    break;
+                return BadRequest();
             }
 
-            return BadRequest();
+            var lobby = _bot.Lobbies[lobbyId];
+
+            if (lobby.Configuration.LobbyJoinLink == null)
+            {
+                return BadRequest();
+            }
+
+            return Redirect(lobby.Configuration.LobbyJoinLink);
         }
     }
 }
