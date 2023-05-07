@@ -32,6 +32,7 @@ An osu! multiplayer bot that will maintain a queue and pass the host around ever
 | !banmapset \<id\>         | Ban a mapset by id |
 | !config \<name\> \<value\> | Update the lobby properties directly in-game
 | !addref		            | Adds you as a match referee to use bancho tournament commands. |
+| !togglemapcheck           | Toggle map regulation checker for the lobby. |
 
 ### Debug Commands
 *Can be used by anyone*
