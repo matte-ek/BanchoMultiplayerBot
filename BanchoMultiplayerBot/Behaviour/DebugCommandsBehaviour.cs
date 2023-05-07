@@ -6,19 +6,11 @@ public class DebugCommandsBehaviour : IBotBehaviour
 {
     private Lobby _lobby = null!;
 
-    private AutoHostRotateBehaviour? _autoHostRotateBehaviour;
-    
     public void Setup(Lobby lobby)
     {
         _lobby = lobby;
         
         _lobby.OnUserMessage += OnUserMessage;
-
-        var autoHostRotateBehaviour = _lobby.Behaviours.Find(x => x.GetType() == typeof(AutoHostRotateBehaviour));
-        if (autoHostRotateBehaviour != null)
-        {
-            _autoHostRotateBehaviour = (AutoHostRotateBehaviour)autoHostRotateBehaviour;
-        }
     }
 
     private void OnUserMessage(IPrivateIrcMessage msg)

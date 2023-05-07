@@ -17,9 +17,9 @@ public class AutoHostRotateBehaviour : IBotBehaviour
     private Lobby _lobby = null!;
     private PlayerVote _playerSkipVote = null!;
 
-    private bool _hasSkippedHost;
-
     private bool _matchInProgress;
+
+    private bool _hasSkippedHost;
 
     public List<string> Queue { get; } = new();
 
@@ -64,7 +64,6 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         _lobby.MultiplayerLobby.OnHostChanged += OnHostChanged;
         _lobby.OnUserMessage += OnUserMessage;
         _lobby.OnAdminMessage += OnAdminMessage;
-        _lobby.OnBanchoMessage += OnBanchoMessage;
     }
 
     public void SkipCurrentHost()
@@ -86,49 +85,9 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
         OnQueueUpdated();
     }
-    
-    private void OnBanchoMessage(IPrivateIrcMessage msg)
-    {
-        if (msg.Content.Equals("User not found"))
-        {
-            Log.Warning("Bancho couldn't find a targeted user!");
-        }
-    }
-    
-    private void OnAdminMessage(IPrivateIrcMessage message)
-    {
-        if (message.Content.StartsWith("!forceskip"))
-        {
-            SkipCurrentPlayer();
-            OnQueueUpdated();
-        }
-
-        if (message.Content.StartsWith("!sethost "))
-        {
-            try
-            {
-                var name = message.Content.Split("!sethost ")[1];
-                var player = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name.ToIrcNameFormat().ToLower() == name.ToLower());
-
-                if (player is null)
-                {
-                    _lobby.SendMessage("Failed to find player.");
-                }
-                else
-                {
-                    SetNewHost(player);
-                }
-            }
-            catch (Exception)
-            {
-                // ignored
-            }
-        }
-    }
 
     private void OnUserMessage(IPrivateIrcMessage message)
     {
-        // Allow the users to see the current queue
         if (message.Content.ToLower().Equals("!q") || message.Content.ToLower().Equals("!queue"))
         {
             SendCurrentQueue();
@@ -136,29 +95,15 @@ public class AutoHostRotateBehaviour : IBotBehaviour
             return;
         }
 
-        try
+        if (message.Content.ToLower().StartsWith("!queuepos") || message.Content.ToLower().StartsWith("!qp"))
         {
-            if (message.Content.ToLower().StartsWith("!queuepos") || message.Content.ToLower().StartsWith("!qp"))
-            {
-                var targetName = message.Sender;
-                
-                if (message.Content.StartsWith("!queuepos "))
-                    targetName = message.Content.Split("!queuepos ")[1];
-                if (message.Content.StartsWith("!qp "))
-                    targetName = message.Content.Split("!qp ")[1];
+            var queuePosition = Queue.FindIndex(x => x.ToIrcNameFormat().Equals(message.Sender));
 
-                var queuePosition = Queue.FindIndex(x => x.ToIrcNameFormat().Equals(targetName));
+            _lobby.SendMessage(queuePosition == -1
+                ? "Couldn't find player in queue."
+                : $"Queue position for {message.Sender}: #{(queuePosition + 1).ToString()}");
 
-                _lobby.SendMessage(queuePosition == -1
-                    ? "Couldn't find player in queue." // Don't really wanna echo back user input, so don't include the player name here.
-                    : $"Queue position for {targetName}: #{(queuePosition + 1).ToString()}");
-
-                return;
-            }
-        }
-        catch (Exception)
-        {
-            // ignored
+            return;
         }
 
         if (message.Content.ToLower().StartsWith("!skip"))
@@ -189,6 +134,37 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
                     return;
                 }
+            }
+        }
+    }
+
+    private void OnAdminMessage(IPrivateIrcMessage message)
+    {
+        if (message.Content.StartsWith("!forceskip"))
+        {
+            SkipCurrentPlayer();
+            OnQueueUpdated();
+        }
+
+        if (message.Content.StartsWith("!sethost "))
+        {
+            try
+            {
+                var name = message.Content.Split("!sethost ")[1];
+                var player = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name.ToIrcNameFormat().ToLower() == name.ToLower());
+
+                if (player is null)
+                {
+                    _lobby.SendMessage("Failed to find player.");
+                }
+                else
+                {
+                    SetNewHost(player);
+                }
+            }
+            catch (Exception)
+            {
+                // ignored
             }
         }
     }
@@ -236,7 +212,9 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         }
 
         if (!_hasSkippedHost)
+        {
             SkipCurrentPlayer();
+        }
 
         OnQueueUpdated();
         SendCurrentQueue();
@@ -246,8 +224,10 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
     private void OnHostChanged(MultiplayerPlayer player)
     {
-        if (!Queue.Any()) return;
-        if (_lobby.IsRecovering) return;
+        if (!Queue.Any()) 
+            return;
+        if (_lobby.IsRecovering) 
+            return;
 
         if (player.Name != Queue[0])
         {
@@ -257,7 +237,8 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
     private void OnQueueUpdated()
     {
-        if (!Queue.Any()) return;
+        if (!Queue.Any()) 
+            return;
 
         if (_lobby.MultiplayerLobby.Host is null)
         {
@@ -285,7 +266,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
         foreach (var name in cleanPlayerNamesQueue)
         {
-            if (queueStr.Length > 70)
+            if (queueStr.Length > 100)
             {
                 queueStr = queueStr[..^2] + "...";
                 break;

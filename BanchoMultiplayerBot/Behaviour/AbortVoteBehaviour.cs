@@ -20,27 +20,28 @@ public class AbortVoteBehaviour : IBotBehaviour
         {
             _playerAbortVote.Reset();
         };
-        
+
         _lobby.MultiplayerLobby.OnMatchAborted += () =>
         {
             _playerAbortVote.Reset();
         };
-        
+
         _lobby.OnUserMessage += OnUserMessage;
     }
 
     private void OnUserMessage(IPrivateIrcMessage message)
     {
-        if (message.Content.ToLower().StartsWith("!abort"))
+        if (!message.Content.ToLower().StartsWith("!abort"))
+            return;
+
+        var player = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name.ToIrcNameFormat() == message.Sender);
+
+        if (player is null)
+            return;
+
+        if (_playerAbortVote.Vote(player))
         {
-            var player = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name.ToIrcNameFormat() == message.Sender);
-            if (player is not null)
-            {
-                if (_playerAbortVote.Vote(player))
-                {
-                    _lobby.SendMessage("!mp abort");
-                }
-            }
+            _lobby.SendMessage("!mp abort");
         }
     }
 }

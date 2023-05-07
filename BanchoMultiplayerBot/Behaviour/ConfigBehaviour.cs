@@ -1,11 +1,5 @@
 ﻿using BanchoMultiplayerBot.Config;
-using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
+using Serilog;
 
 namespace BanchoMultiplayerBot.Behaviour
 {
@@ -47,22 +41,24 @@ namespace BanchoMultiplayerBot.Behaviour
 
                     if (type.IsEnum)
                     {
-                        property?.SetValue(_lobby.Configuration, Enum.Parse(type, value));
+                        property.SetValue(_lobby.Configuration, Enum.Parse(type, value));
                     }
                     else if (type.IsArray)
                     {
                         var values = value.Split(",");
 
-                        property?.SetValue(_lobby.Configuration, values);
+                        property.SetValue(_lobby.Configuration, values);
                     }
                     else
                     {
-                        property?.SetValue(_lobby.Configuration, Convert.ChangeType(value, type), null);
+                        property.SetValue(_lobby.Configuration, Convert.ChangeType(value, type), null);
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                _lobby.SendMessage("Error applying config property.");
+                Log.Error($"Error applying config property: {e}");
             }
         }
     }

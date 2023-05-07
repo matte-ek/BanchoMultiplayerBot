@@ -50,43 +50,22 @@ public class AntiAfkBehaviour : IBotBehaviour
             {
                 return;
             }
-            
-            var status = "Unknown";
 
-            // No clue why Bancho both reports "Multiplaying" and "Multiplayer", possibly if the user is in the
-            // multiplayer lobbies screen?
-            if (msg.Content.Contains("is Multiplaying") || msg.Content.Contains("is Multiplayer"))
-                status = "Multiplayer";
-            if (msg.Content.Contains("is Idle"))
-                status = "Idle";
             if (msg.Content.Contains("is Afk"))
-                status = "Afk";
-
-            Log.Information($"Parsed status {status} for {playerName}");
-
-            if (status == "Afk")
             {
                 Log.Information("Kicking host due to AFK.");
+                
                 _lobby.SendMessage($"!mp kick {_lobby.GetPlayerIdentifier(playerName)}");
+
                 return;
             }
             
             StartTimer(60);
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            // ignored
+            Log.Error($"Failure in parsing BanchoBot stats response, {e}");
         }    
-    }
-
-    private void OnMatchStarted()
-    {
-        AbortTimer();
-    }
-    
-    private void OnHostChangingMap()
-    {
-        AbortTimer();
     }
 
     private void OnHostChanged(MultiplayerPlayer player)
@@ -94,22 +73,27 @@ public class AntiAfkBehaviour : IBotBehaviour
         StartTimer();
     }
 
+    private void OnMatchStarted()
+    {
+        _afkTimerActive = false;
+    }
+
+    private void OnHostChangingMap()
+    {
+        _afkTimerActive = false;
+    }
+
     private void StartTimer(int timeoutTime = 30)
     {
         if (_afkTimerActive)
         {
-            AbortTimer();
+            _afkTimerActive = false;
         }
 
         _afkTimerTime = DateTime.Now.AddSeconds(timeoutTime);
         _afkTimerActive = true;
     }
     
-    private void AbortTimer()
-    {
-        _afkTimerActive = false;
-    }
-
     private async Task AfkTimerTask()
     {
         while (_afkTimerTaskActive)

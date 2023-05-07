@@ -62,7 +62,7 @@ public class BanBehaviour : IBotBehaviour
                 {
                     if (_lobby.Bot.Configuration.BannedBeatmaps.ToList().Contains(beatmapSetId))
                     {
-                        // Player already exists.
+                        // Map set already exists.
                         return;
                     }
 
@@ -92,7 +92,7 @@ public class BanBehaviour : IBotBehaviour
         {
             if (botConfiguration.BannedPlayers.ToList().Contains(name))
             {
-                _lobby.SendMessage($"!mp ban {name.Replace(' ','_')}");
+                _lobby.SendMessage($"!mp ban {name.Replace(' ', '_')}");
             }
         }
         catch (Exception)

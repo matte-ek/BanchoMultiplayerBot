@@ -11,20 +11,24 @@ public class AutoStartBehaviour : IBotBehaviour
     private PlayerVote _playerStartVote = null!;
 
     private bool _startTimerTaskActive = true;
-    private Task? _startTimerTask;
 
-    private bool _startTimerActive = false;
+    private bool _startTimerActive;
     private DateTime _startTimer;
 
-    private bool _shouldSendWarningMessage = false;
-    private bool _sentWarningMessage = false;
+    private bool _shouldSendWarningMessage;
+    private bool _sentWarningMessage;
+
+    ~AutoStartBehaviour()
+    {
+        _startTimerTaskActive = false;
+    }
 
     public void Setup(Lobby lobby)
     {
         _lobby = lobby;
         _playerStartVote = new PlayerVote(_lobby, "Vote to start");
 
-        _startTimerTask = Task.Run(StartTimerTask); 
+        Task.Run(StartTimerTask); 
 
         _lobby.MultiplayerLobby.OnAllPlayersReady += () =>
         {
@@ -128,7 +132,7 @@ public class AutoStartBehaviour : IBotBehaviour
             }
             catch (Exception)
             {
-                _lobby.SendMessage("Usage: !start <seconds>");
+                _lobby.SendMessage("Usage: !start [<seconds>]");
             }
         }
 
@@ -179,32 +183,34 @@ public class AutoStartBehaviour : IBotBehaviour
         {
             await Task.Delay(100);
 
-            if (_startTimerActive)
+            if (!_startTimerActive)
             {
-                if (_shouldSendWarningMessage && !_sentWarningMessage && (DateTime.Now.AddSeconds(10)) >= _startTimer)
-                {
-                    _sentWarningMessage = true;
-
-                    _lobby.SendMessage("Starting match in 10 seconds, use !stop to abort");
-
-                    continue;
-                }
-
-                if (DateTime.Now < _startTimer)
-                {
-                    continue;
-                }
-
-                if (_lobby.MultiplayerLobby.Players.Count == 0)
-                {
-                    _startTimerActive = false;
-                    continue;
-                }
-
-                _startTimerActive = false;
-
-                _lobby.SendMessage("!mp start");
+                continue;
             }
+
+            if (_shouldSendWarningMessage && !_sentWarningMessage && (DateTime.Now.AddSeconds(10)) >= _startTimer)
+            {
+                _sentWarningMessage = true;
+
+                _lobby.SendMessage("Starting match in 10 seconds, use !stop to abort");
+
+                continue;
+            }
+
+            if (DateTime.Now < _startTimer)
+            {
+                continue;
+            }
+
+            if (_lobby.MultiplayerLobby.Players.Count == 0)
+            {
+                _startTimerActive = false;
+                continue;
+            }
+
+            _startTimerActive = false;
+
+            _lobby.SendMessage("!mp start");
         }
     }
 }
