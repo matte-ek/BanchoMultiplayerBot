@@ -29,6 +29,8 @@ public class MapManagerBehaviour : IBotBehaviour
     private int _lastBotAppliedBeatmap;
     private int _beatmapFallbackId = 2116202; // use the osu! tutorial as default
 
+    private bool _beatmapCheckEnabled = true;
+
     private int _hostViolationCount = 0;
 
     public void Setup(Lobby lobby)
@@ -37,6 +39,7 @@ public class MapManagerBehaviour : IBotBehaviour
 
         _lobby.MultiplayerLobby.OnBeatmapChanged += OnBeatmapChanged;
         _lobby.OnUserMessage += OnUserMessage;
+        _lobby.OnAdminMessage += OnAdminMessage;
 
         _lobby.MultiplayerLobby.OnHostChanged += player =>
         {
@@ -72,6 +75,18 @@ public class MapManagerBehaviour : IBotBehaviour
         {
             _lobby.SendMessage($"[https://beatconnect.io/b/{CurrentBeatmapSetId} BeatConnect Mirror] - [https://osu.direct/d/{CurrentBeatmapSetId} osu.direct Mirror]");
         }
+    }
+
+    private void OnAdminMessage(IPrivateIrcMessage msg)
+    {
+        if (!msg.Content.StartsWith("!togglemapcheck"))
+        {
+            return;
+        }
+
+        _beatmapCheckEnabled = !_beatmapCheckEnabled;
+
+        _lobby.SendMessage(_beatmapCheckEnabled ? "Enabled" : "Disabled" + " beatmap checker!");
     }
 
     private async void OnBeatmapChanged(BeatmapShell beatmap)
@@ -123,7 +138,9 @@ public class MapManagerBehaviour : IBotBehaviour
     {
         bool hostIsAdministrator = _lobby.MultiplayerLobby.Host is not null && _lobby.IsAdministrator(_lobby.MultiplayerLobby.Host.Name);
 
-        if ((IsAllowedBeatmapLength(beatmap) && IsAllowedBeatmapStarRating(beatmap) && IsAllowedBeatmapGameMode(beatmap) && !IsBannedBeatmap(beatmap)) || hostIsAdministrator)
+        if ((IsAllowedBeatmapLength(beatmap) && IsAllowedBeatmapStarRating(beatmap) && IsAllowedBeatmapGameMode(beatmap) && !IsBannedBeatmap(beatmap)) 
+            || hostIsAdministrator
+            || !_beatmapCheckEnabled)
         {
             // Update the fallback id whenever someone picks a map that's 
             // within limits, so we don't have to reset to the osu!tutorial every time.
