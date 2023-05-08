@@ -136,7 +136,7 @@ public class MapManagerBehaviour : IBotBehaviour
 
     private async Task EnsureBeatmapLimits(BeatmapModel beatmap, int id)
     {
-        bool hostIsAdministrator = _lobby.MultiplayerLobby.Host is not null && _lobby.IsAdministrator(_lobby.MultiplayerLobby.Host.Name);
+        bool hostIsAdministrator = _lobby.MultiplayerLobby.Host is not null && _lobby.Bot.IsAdministrator(_lobby.MultiplayerLobby.Host.Name);
 
         if ((IsAllowedBeatmapLength(beatmap) && IsAllowedBeatmapStarRating(beatmap) && IsAllowedBeatmapGameMode(beatmap) && !IsBannedBeatmap(beatmap)) 
             || hostIsAdministrator

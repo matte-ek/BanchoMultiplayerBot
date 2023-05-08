@@ -55,7 +55,7 @@ public class FunCommandsBehaviour : IBotBehaviour
                 var totalPlaytime = TimeSpan.FromSeconds(user.Playtime) + currentPlaytime; // We add current play-time since it's only appended after the player disconnects.
 
                 _lobby.SendMessage(
-                    _lobby.Bot.StartTime.AddMinutes(2) >= player.JoinTime
+                    _lobby.Bot.RuntimeInfo.StartTime.AddMinutes(2) >= player.JoinTime
                         ? $"{msg.Sender} has been here since last bot restart, {currentPlaytime:h' hours 'm' minutes 's' seconds'} ({totalPlaytime:d' days 'h' hours 'm' minutes 's' seconds'} in total)"
                         : $"{msg.Sender} has been here for {currentPlaytime:h' hours 'm' minutes 's' seconds'} ({totalPlaytime:d' days 'h' hours 'm' minutes 's' seconds'} in total)");
             }

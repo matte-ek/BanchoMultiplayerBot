@@ -155,16 +155,6 @@ public class Lobby
         Bot.SendMessage(Channel, message);
     }
 
-    public bool IsAdministrator(string username)
-    {
-        if (Bot.Configuration.Username == username)
-            return true;
-        if (Bot.Configuration.Administrators != null && username.Any() && Bot.Configuration.Administrators.FirstOrDefault(x => x.Name == username) != null)
-            return true;
-
-        return false;
-    }
-
     /// <summary>
     /// Get what string to use when passing a player as a parameter in tournament commands.
     /// This will make sure to prioritize player ID, or use player names if not available.
@@ -197,7 +187,7 @@ public class Lobby
             return;
         }
 
-        if (IsAdministrator(message.Sender))
+        if (Bot.IsAdministrator(message.Sender))
         {
             OnAdminMessage?.Invoke(message);
         }

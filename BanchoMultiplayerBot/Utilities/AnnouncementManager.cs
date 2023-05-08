@@ -1,19 +1,19 @@
 ﻿using BanchoMultiplayerBot.Data;
 using Serilog;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace BanchoMultiplayerBot
+namespace BanchoMultiplayerBot.Utilities
 {
     public class AnnouncementManager
     {
         public List<Announcement> Announcements { get; } = new();
 
         private Bot _bot = null!;
-        private bool _exitRequested = false;
+        private bool _exitRequested;
+
+        ~AnnouncementManager()
+        {
+            _exitRequested = true;
+        }
 
         public void Run(Bot bot)
         {

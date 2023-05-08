@@ -9,6 +9,7 @@ using BanchoSharp.Multiplayer;
 using BanchoMultiplayerBot.Behaviour;
 using Serilog;
 using BanchoMultiplayerBot.Data;
+using BanchoMultiplayerBot.Utilities;
 
 namespace BanchoMultiplayerBot;
 
@@ -31,10 +32,7 @@ public class Bot
 
     public List<Lobby> Lobbies { get; } = new();
 
-    public DateTime StartTime { get; set; }
-
-    public bool HadNetworkConnectionIssue { get; set; }
-    public DateTime LastConnectionIssueTime { get; set; }
+    public BotRuntimeInfo RuntimeInfo { get; } = new();
 
     public event Action? OnBotReady;
     public event Action? OnLobbiesUpdated;
@@ -71,6 +69,9 @@ public class Bot
             throw new Exception("Failed to read configuration file.");
     }
 
+    /// <summary>
+    /// Saves the current lobby configurations, but not the currently active lobbies.
+    /// </summary>
     public void SaveConfiguration()
     {
         Configuration.LobbyConfigurations = new LobbyConfiguration[Lobbies.Count];
@@ -83,6 +84,51 @@ public class Bot
         AnnouncementManager.Save();
 
         File.WriteAllText("config.json", JsonSerializer.Serialize(Configuration));
+    }
+    
+    /// <summary>
+    /// Saves all the current lobbies channels and queue and their configuration. When everything is saved, the bot may pick up
+    /// where it left via AutoRecoverExistingLobbies()
+    /// </summary>
+    public void SaveBotState()
+    {
+        SaveConfiguration();
+
+        if (!Lobbies.Any())
+            return;
+
+        List<LobbyState> lobbyStates = new();
+
+        foreach (var lobby in Lobbies)
+        {
+            string? queue = null;
+
+            try
+            {
+                // Special case for AutoHostRotateBehaviour, this should be done differently if any more of these cases come up.
+                // This will save the queue, so that also gets recovered successfully.
+                var autoHostRotateBehaviour = lobby.Behaviours.Find(x => x.GetType() == typeof(AutoHostRotateBehaviour));
+                if (autoHostRotateBehaviour != null)
+                {
+                    queue = string.Join(',', ((AutoHostRotateBehaviour)autoHostRotateBehaviour).Queue);
+                }
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+
+            lobbyStates.Add(new LobbyState()
+            {
+                Channel = lobby.MultiplayerLobby.ChannelName,
+                Name = lobby.Configuration.Name,
+                Queue = queue
+            });
+        }
+
+        File.WriteAllText("lobby_states.json", JsonSerializer.Serialize(lobbyStates));
+
+        Log.Information($"Saved bot state successfully ({lobbyStates.Count} lobbies)");
     }
 
     public void LoadConfiguration(string configurationFile)
@@ -104,7 +150,7 @@ public class Bot
     }
 
     /// <summary>
-    /// Sends a message to the channel (may also be username), will also include rate limiting.
+    /// Sends a message to the channel (may also be username), will also handle rate limiting automatically.
     /// </summary>
     public void SendMessage(string channel, string message)
     {
@@ -121,7 +167,7 @@ public class Bot
         Client.OnAuthenticationFailed += () => throw new Exception($"Failed to authenticate with the username {Configuration.Username}");
         Client.OnAuthenticated += ClientOnAuthenticated;
         Client.OnDisconnected += ClientOnDisconnected;
-        Client.OnChannelParted += ClientOnChannelParted;
+        Client.OnChannelParted += OnChannelParted;
         Client.BanchoBotEvents.OnTournamentLobbyCreated += OnTournamentLobbyCreated;
         Client.OnPrivateMessageReceived += e => { _lastMessageTime = DateTime.Now; };
 
@@ -131,7 +177,7 @@ public class Bot
         Client.OnChannelJoined += e => { Log.Information($"Joined channel {e.ChannelName}"); };
         Client.OnChannelParted += e => { Log.Information($"Parted channel {e.ChannelName}"); };
 
-        StartTime = DateTime.Now;
+        RuntimeInfo.StartTime = DateTime.Now;
 
         Lobbies.Clear();
 
@@ -147,7 +193,7 @@ public class Bot
         SaveBotState();
     }
 
-    public async Task CreateLobby(LobbyConfiguration configuration)
+    public async Task CreateLobbyAsync(LobbyConfiguration configuration)
     {
         _lobbyCreationQueue.Add(configuration);
 
@@ -171,7 +217,7 @@ public class Bot
         OnLobbiesUpdated?.Invoke();
     }
 
-    private void ClientOnChannelParted(IChatChannel channel)
+    private void OnChannelParted(IChatChannel channel)
     {
         if (WebhookConfigured && Configuration.WebhookNotifyLobbyTerminations == true)
         {
@@ -217,9 +263,6 @@ public class Bot
         _exitRequested = false;
 
         Task.Run(RunMessagePump);
-
-        if (!AutoRecoverExistingLobbies())
-            CreateLobbiesFromConfiguration();
 
         OnBotReady?.Invoke();
 
@@ -268,7 +311,7 @@ public class Bot
                 Lobbies.Remove(failedLobby);
             }
 
-            await CreateLobby(lobbyConfig);
+            await CreateLobbyAsync(lobbyConfig);
         };
 
         int lobbyIndex = 0;
@@ -296,56 +339,6 @@ public class Bot
         return true;
     }
 
-    private void CreateLobbiesFromConfiguration()
-    {
-        // TODO: Actually implement this
-    }
-
-    /// <summary>
-    /// Saves all the current lobbies and their configuration. When everything is saved, the bot may pick up
-    /// where it left via AutoRecoverExistingLobbies()
-    /// </summary>
-    public void SaveBotState()
-    {
-        SaveConfiguration();
-
-        if (!Lobbies.Any())
-            return;
-
-        List<LobbyState> lobbyStates = new();
-
-        foreach (var lobby in Lobbies)
-        {
-            string? queue = null;
-
-            try
-            {
-                // Special case for AutoHostRotateBehaviour, this should be done differently if any more of these cases come up.
-                // This will save the queue, so that also gets recovered successfully.
-                var autoHostRotateBehaviour = lobby.Behaviours.Find(x => x.GetType() == typeof(AutoHostRotateBehaviour));
-                if (autoHostRotateBehaviour != null)
-                {
-                    queue = string.Join(',', ((AutoHostRotateBehaviour)autoHostRotateBehaviour).Queue);
-                }
-            }
-            catch (Exception)
-            {
-                // ignored
-            }
-
-            lobbyStates.Add(new LobbyState()
-            {
-                Channel = lobby.MultiplayerLobby.ChannelName,
-                Name = lobby.Configuration.Name,
-                Queue = queue
-            });
-        }
-
-        File.WriteAllText("lobby_states.json", JsonSerializer.Serialize(lobbyStates));
-
-        Log.Information($"Saved bot state successfully ({lobbyStates.Count} lobbies)");
-    }
-
     /// <summary>
     /// Task to continuously monitor the TCP connection to Bancho, and in case of an network issue
     /// automatically attempt to reconnect to Bancho and restore the bot.
@@ -365,8 +358,8 @@ public class Bot
                     _ = WebhookUtils.SendWebhookMessage(Configuration.WebhookUrl!, "Connection Error", $"Detected connection error to osu!bancho");
                 }
 
-                HadNetworkConnectionIssue = true;
-                LastConnectionIssueTime = DateTime.Now;
+                RuntimeInfo.HadNetworkConnectionIssue = true;
+                RuntimeInfo.LastConnectionIssueTime = DateTime.Now;
 
                 SaveBotState();
 
@@ -474,9 +467,22 @@ public class Bot
             // so we'll just exit out off this thread normally.
         }
     }
+    
+    /// <summary>
+    /// Checks if the osu! username specified is added as an bot administrator.
+    /// </summary>
+    internal bool IsAdministrator(string username)
+    {
+        if (Configuration.Username == username)
+            return true;
+        if (Configuration.Administrators != null && username.Any() && Configuration.Administrators.FirstOrDefault(x => x.Name == username) != null)
+            return true;
+
+        return false;
+    }
 
     // See https://stackoverflow.com/a/6993334
-    private bool IsTcpConnectionAlive(TcpClient? client)
+    private static bool IsTcpConnectionAlive(TcpClient? client)
     {
         try
         {

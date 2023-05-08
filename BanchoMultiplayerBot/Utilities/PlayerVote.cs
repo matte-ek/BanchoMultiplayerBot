@@ -1,7 +1,7 @@
 ﻿using BanchoSharp.Multiplayer;
 using Serilog;
 
-namespace BanchoMultiplayerBot;
+namespace BanchoMultiplayerBot.Utilities;
 
 /// <summary>
 /// Utility to easily create a player vote
@@ -35,10 +35,14 @@ public class PlayerVote
         
         Votes.Add(player);
         
-        Lobby.SendMessage($"{Question} ({Votes.Count}/{requiredVotes})");
+        if (Votes.Count < requiredVotes)
+        {
+            Lobby.SendMessage($"{Question} ({Votes.Count}/{requiredVotes})");
 
-        if (Votes.Count < requiredVotes) 
             return false;
+        }
+        
+        Lobby.SendMessage($"{Question} passed ({Votes.Count}/{requiredVotes})");
 
         Log.Information($"Passed vote {Question} with ({Votes.Count}/{requiredVotes})");
 

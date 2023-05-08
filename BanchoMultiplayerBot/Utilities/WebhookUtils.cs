@@ -1,20 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Net;
+﻿using System.Text;
 using Newtonsoft.Json;
 using Serilog;
 
-namespace BanchoMultiplayerBot
+namespace BanchoMultiplayerBot.Utilities
 {
     /// <summary>
     /// Quick utility to send webhooks
     /// </summary>
-    internal class WebhookUtils
+    internal static class WebhookUtils
     {
-        private static readonly HttpClient _httpClient = new();
+        private static readonly HttpClient HttpClient = new();
 
         public static async Task SendWebhookMessage(string url, string title, string message)
         {
@@ -33,7 +28,7 @@ namespace BanchoMultiplayerBot
 
             try
             {
-                await _httpClient.PostAsync(url, new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json"));
+                await HttpClient.PostAsync(url, new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json"));
             }
             catch (Exception e)
             {

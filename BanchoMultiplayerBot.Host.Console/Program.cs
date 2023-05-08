@@ -20,7 +20,7 @@ bot.OnBotReady += async () =>
         MaximumMapLength = 330
     };
 
-    await bot.CreateLobby(fakeConfig);
+    await bot.CreateLobbyAsync(fakeConfig);
 };
 
 await bot.RunAsync();

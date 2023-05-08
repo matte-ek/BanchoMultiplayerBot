@@ -19,20 +19,20 @@ public class DebugCommandsBehaviour : IBotBehaviour
         {
             if (msg.Content.Equals("!uptime"))
             {
-                var time = DateTime.Now - _lobby.Bot.StartTime;
+                var time = DateTime.Now - _lobby.Bot.RuntimeInfo.StartTime;
                 
                 _lobby.SendMessage($"{msg.Sender}, current uptime: {time:d' days 'h' hours 'm' minutes 's' seconds'}");
             }
             
             if (msg.Content.Equals("!issuetime"))
             {
-                if (!_lobby.Bot.HadNetworkConnectionIssue)
+                if (!_lobby.Bot.RuntimeInfo.HadNetworkConnectionIssue)
                 {
                     _lobby.SendMessage($"{msg.Sender}, no recent connection issues.");
                 }
                 else
                 {
-                    var time = DateTime.Now - _lobby.Bot.LastConnectionIssueTime;
+                    var time = DateTime.Now - _lobby.Bot.RuntimeInfo.LastConnectionIssueTime;
 
                     _lobby.SendMessage($"{msg.Sender}, last connection issue: {time:d' days 'h' hours 'm' minutes 's' seconds'}");   
                 }
