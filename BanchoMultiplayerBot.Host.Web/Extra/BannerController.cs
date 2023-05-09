@@ -45,6 +45,12 @@ namespace BanchoMultiplayerBot.Host.Web.Extra
 
             try
             {
+                // Make sure we have the placeholder image present if required
+                if (!_bannerCacheService.PlaceholderImage.Any() && System.IO.File.Exists("placeholder.png"))
+                {
+                    _bannerCacheService.PlaceholderImage = Convert.ToBase64String(await System.IO.File.ReadAllBytesAsync("placeholder.png"));
+                }
+
                 // If a user already requested the image within 30 seconds, use that instead.
                 if ((DateTime.Now - _bannerCacheService.CacheUpdateTime).TotalSeconds <= 30)
                 {
@@ -98,16 +104,12 @@ namespace BanchoMultiplayerBot.Host.Web.Extra
                             var bannerImageResponse = await _httpClient.GetAsync(
                                 $"https://assets.ppy.sh/beatmaps/{behaviour.CurrentBeatmapSetId}/covers/cover.jpg");
 
-                            var ret = new BeatmapCoverData()
+                            var ret = new BeatmapCoverData
                             {
                                 Id = behaviour.CurrentBeatmapSetId,
-                                LobbyIndex = lobbyIndex
+                                LobbyIndex = lobbyIndex,
+                                Data = bannerImageResponse.IsSuccessStatusCode ? Convert.ToBase64String(await bannerImageResponse.Content.ReadAsByteArrayAsync()) : _bannerCacheService.PlaceholderImage
                             };
-
-                            if (bannerImageResponse.IsSuccessStatusCode)
-                            {
-                                ret.Data = Convert.ToBase64String(await bannerImageResponse.Content.ReadAsByteArrayAsync());
-                            }
 
                             return ret;
                         })
