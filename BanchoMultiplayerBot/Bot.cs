@@ -264,6 +264,8 @@ public class Bot
 
         Task.Run(RunMessagePump);
 
+        AutoRecoverExistingLobbies();
+
         OnBotReady?.Invoke();
 
         Task.Run(RunConnectionWatchdog);
