@@ -2,6 +2,7 @@
 using BanchoMultiplayerBot.Extensions;
 using BanchoSharp.EventArgs;
 using BanchoSharp.Interfaces;
+using Serilog;
 
 namespace BanchoMultiplayerBot.Behaviour;
 
@@ -21,18 +22,25 @@ public class FunCommandsBehaviour : IBotBehaviour
 
     public async Task FlushPlaytime()
     {
-        using var userRepository = new UserRepository();
-
-        foreach (var player in _lobby.MultiplayerLobby.Players)
+        try
         {
-            var user = await userRepository.FindUser(player.Name) ?? await userRepository.CreateUser(player.Name);
+            using var userRepository = new UserRepository();
 
-            user.Playtime += (int)(DateTime.Now - player.JoinTime).TotalSeconds;
+            foreach (var player in _lobby.MultiplayerLobby.Players)
+            {
+                var user = await userRepository.FindUser(player.Name) ?? await userRepository.CreateUser(player.Name);
+
+                user.Playtime += (int)(DateTime.Now - player.JoinTime).TotalSeconds;
+            }
+
+            await userRepository.Save();
+
+            _flushedPlaytime = true;
         }
-
-        await userRepository.Save();
-
-        _flushedPlaytime = true;
+        catch (Exception e)
+        {
+            Log.Error($"Exception at FunCommands.FlushPlaytime(): {e}");
+        }
     }
 
     private async void OnUserMessage(IPrivateIrcMessage msg)
@@ -76,38 +84,52 @@ public class FunCommandsBehaviour : IBotBehaviour
 
     private async void OnMatchFinished()
     {
-        using var userRepository = new UserRepository();
-
-        var highestScorePlayer = _lobby.MultiplayerLobby.Players.Where(x => x.Passed == true).MaxBy(x => x.Score);
-
-        if (_lobby.MultiplayerLobby.Players.Count >= 3 && highestScorePlayer is not null)
+        try
         {
-            var user = await userRepository.FindUser(highestScorePlayer.Name) ?? await userRepository.CreateUser(highestScorePlayer.Name);
+            using var userRepository = new UserRepository();
 
-            user.NumberOneResults++;
+            var highestScorePlayer = _lobby.MultiplayerLobby.Players.Where(x => x.Passed == true).MaxBy(x => x.Score);
+
+            if (_lobby.MultiplayerLobby.Players.Count >= 3 && highestScorePlayer is not null)
+            {
+                var user = await userRepository.FindUser(highestScorePlayer.Name) ?? await userRepository.CreateUser(highestScorePlayer.Name);
+
+                user.NumberOneResults++;
+            }
+
+            foreach (var player in _lobby.MultiplayerLobby.Players)
+            {
+                var user = await userRepository.FindUser(player.Name) ?? await userRepository.CreateUser(player.Name);
+
+                if (player.Score > 0)
+                    user.MatchesPlayed++;
+            }
+
+            await userRepository.Save();
         }
-
-        foreach (var player in _lobby.MultiplayerLobby.Players)
+        catch (Exception e)
         {
-            var user = await userRepository.FindUser(player.Name) ?? await userRepository.CreateUser(player.Name);
-
-            if (player.Score > 0)
-                user.MatchesPlayed++;
+            Log.Error($"Exception at FunCommands.OnMatchFinished(): {e}");
         }
-
-        await userRepository.Save();
     }
 
     private async void OnPlayerDisconnected(PlayerDisconnectedEventArgs args)
     {
-        if (_flushedPlaytime)
-            return;
+        try
+        {
+            if (_flushedPlaytime)
+                return;
+            
+            using var userRepository = new UserRepository();
+            var user = await userRepository.FindUser(args.Player.Name) ?? await userRepository.CreateUser(args.Player.Name);
 
-        using var userRepository = new UserRepository();
-        var user = await userRepository.FindUser(args.Player.Name) ?? await userRepository.CreateUser(args.Player.Name);
+            user.Playtime += (int)(DateTime.Now - args.Player.JoinTime).TotalSeconds;
 
-        user.Playtime += (int)(DateTime.Now - args.Player.JoinTime).TotalSeconds;
-
-        await userRepository.Save();
+            await userRepository.Save();
+        }
+        catch (Exception e)
+        {
+            Log.Error($"Exception at FunCommands.OnPlayerDisconnected(): {e}");
+        }
     }
 }
