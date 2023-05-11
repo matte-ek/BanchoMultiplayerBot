@@ -64,8 +64,8 @@ public class FunCommandsBehaviour : IBotBehaviour
 
                 _lobby.SendMessage(
                     _lobby.Bot.RuntimeInfo.StartTime.AddMinutes(2) >= player.JoinTime
-                        ? $"{msg.Sender} has been here since last bot restart, {currentPlaytime:h' hours 'm' minutes 's' seconds'} (DB broke sorry in total)"
-                        : $"{msg.Sender} has been here for {currentPlaytime:h' hours 'm' minutes 's' seconds'} (DB broke sorry in total)");
+                        ? $"{msg.Sender} has been here since last bot restart, {currentPlaytime:h' hours 'm' minutes 's' seconds'} ({totalPlaytime:d' days 'h' hours 'm' minutes 's' seconds'} in total)"
+                        : $"{msg.Sender} has been here for {currentPlaytime:h' hours 'm' minutes 's' seconds'} ({totalPlaytime:d' days 'h' hours 'm' minutes 's' seconds'} in total)");
             }
 
             if (msg.Content.ToLower().Equals("!playstats"))
