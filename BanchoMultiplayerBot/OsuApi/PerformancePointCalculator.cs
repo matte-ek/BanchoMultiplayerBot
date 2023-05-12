@@ -68,6 +68,11 @@ public class PerformancePointCalculator
     {
         var performanceCalcProcess = RunProcessAsync($"performance-calculator", $"{beatmapId}");
 
+        if (performanceCalcProcess == null)
+        {
+            return null;
+        }
+        
         try
         {
             string output = await performanceCalcProcess.WaitAsync(TimeSpan.FromSeconds(5));
@@ -109,32 +114,47 @@ public class PerformancePointCalculator
     /// Returns a task to run a process asynchronously, end result is STDOUT.
     /// This should be use with caution, make sure no weird user input is sent.
     /// </summary>
-    private Task<string> RunProcessAsync(string cmd, string arguments)
+    private Task<string>? RunProcessAsync(string cmd, string arguments)
     {
-        var taskCompletionSource = new TaskCompletionSource<string>();
+        try
+        {
+            var taskCompletionSource = new TaskCompletionSource<string>();
         
-        var process = new Process
-        {
-            StartInfo =
+            var process = new Process
             {
-                FileName = cmd,
-                Arguments = arguments,
-                RedirectStandardOutput = true,
-            },
-            EnableRaisingEvents = true
-        };
+                StartInfo =
+                {
+                    FileName = cmd,
+                    Arguments = arguments,
+                    RedirectStandardOutput = true,
+                },
+                EnableRaisingEvents = true
+            };
 
-        process.Exited += (sender, args) =>
+            process.Exited += (sender, args) =>
+            {
+                try
+                {
+                    string stdOut = process.StandardOutput.ReadToEnd();
+            
+                    taskCompletionSource.SetResult(stdOut);
+            
+                    process.Dispose();
+                }
+                catch (Exception e)
+                {
+                    // ignored
+                }
+            };
+
+            process.Start();
+
+            return taskCompletionSource.Task;
+        }
+        catch (Exception e)
         {
-            string stdOut = process.StandardOutput.ReadToEnd();
-            
-            taskCompletionSource.SetResult(stdOut);
-            
-            process.Dispose();
-        };
-
-        process.Start();
-
-        return taskCompletionSource.Task;
+            Log.Error($"Exception at RunProcessAsync: {e}");
+            return null;
+        }
     }
 }
