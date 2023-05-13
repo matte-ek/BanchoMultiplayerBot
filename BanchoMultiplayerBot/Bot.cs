@@ -169,7 +169,7 @@ public class Bot
         Client.OnDisconnected += ClientOnDisconnected;
         Client.OnChannelParted += OnChannelParted;
         Client.BanchoBotEvents.OnTournamentLobbyCreated += OnTournamentLobbyCreated;
-        Client.OnPrivateMessageReceived += e => { _lastMessageTime = DateTime.Now; };
+        Client.OnPrivateMessageReceived += OnPrivateMessageReceived;
 
         // Events for logging purposes
         Client.OnPrivateMessageReceived += e => { Log.Information($"[{e.Recipient}] {e.Sender}: {e.Content}"); };
@@ -182,6 +182,19 @@ public class Bot
         Lobbies.Clear();
 
         await Client.ConnectAsync();
+    }
+
+    private void OnPrivateMessageReceived(IPrivateIrcMessage msg)
+    {
+        _lastMessageTime = DateTime.Now;
+
+        if (msg.Recipient != "matte")
+            return;
+
+        if (msg.Content.ToLower().Equals("!help") || msg.Content.ToLower().Equals("!info"))
+        {
+            SendMessage(msg.Sender, "osu! multiplayer bot [https://github.com/matte-ek/BanchoMultiplayerBot/blob/master/COMMANDS.md Help & Commands]");
+        }    
     }
 
     public async Task DisconnectAsync()
