@@ -95,9 +95,6 @@ public class Lobby
                     case "AbortVote":
                         AddBehaviour(new AbortVoteBehaviour());
                         break;
-                    case "Help":
-                        AddBehaviour(new HelpBehaviour());
-                        break;
                     case "FunCommands":
                         AddBehaviour(new FunCommandsBehaviour());
                         break;

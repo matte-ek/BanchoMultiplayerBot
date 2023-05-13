@@ -188,12 +188,9 @@ public class Bot
     {
         _lastMessageTime = DateTime.Now;
 
-        if (msg.Recipient != "matte")
-            return;
-
         if (msg.Content.ToLower().Equals("!help") || msg.Content.ToLower().Equals("!info"))
         {
-            SendMessage(msg.Sender, "osu! multiplayer bot [https://github.com/matte-ek/BanchoMultiplayerBot/blob/master/COMMANDS.md Help & Commands]");
+            SendMessage(msg.IsDirect ? msg.Sender : msg.Recipient, $"osu! auto host rotation bot (v{Version}) [https://github.com/matte-ek/BanchoMultiplayerBot/blob/master/COMMANDS.md Help & Commands]");
         }    
     }
 
