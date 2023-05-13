@@ -2,6 +2,7 @@
 using BanchoMultiplayerBot.Extensions;
 using BanchoMultiplayerBot.OsuApi;
 using BanchoMultiplayerBot.OsuApi.Exceptions;
+using BanchoMultiplayerBot.Utilities;
 using BanchoSharp;
 using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
@@ -112,6 +113,13 @@ public class MapManagerBehaviour : IBotBehaviour
             {
                 // Make sure we're within limits
                 await EnsureBeatmapLimits(beatmapInfo, beatmap.Id);
+            }
+            else
+            {
+                // Not going to reset the map here, since in the rare case that the osu!api might have issues, I wouldn't
+                // want the lobby to be immediately killed since nobody can pick a new map. We'll just have to trust the hosts
+                // to be within limits, and if not, players can always "!skip".
+                _lobby.SendMessage($"osu!api error while getting beatmap information, star rating could not be validated.");
             }
         }
         catch (BeatmapNotFoundException)
