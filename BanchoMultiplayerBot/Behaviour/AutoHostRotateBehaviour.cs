@@ -152,7 +152,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
             try
             {
                 var name = message.Content.Split("!sethost ")[1];
-                var player = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name.ToIrcNameFormat().ToLower() == name.ToLower());
+                var player = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name.ToIrcNameFormat().ToLower() == name.ToLower() || x.Name.ToLower() == name.ToLower());
 
                 if (player is null)
                 {
