@@ -78,8 +78,8 @@ namespace BanchoMultiplayerBot.Host.Web.Extra
                     // Clamp and apply map name
                     var mapName = behaviour.CurrentBeatmapName;
 
-                    if (mapName.Length > 40)
-                        mapName = mapName[..40] + "...";
+                    if (mapName.Length > 35)
+                        mapName = mapName[..35] + "...";
 
                     svgFile = svgFile.Replace($"$MAP{i}", $"{HttpUtility.HtmlEncode(mapName)}");
 
