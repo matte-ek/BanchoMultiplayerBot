@@ -227,6 +227,7 @@ public class Bot
         OnLobbiesUpdated?.Invoke();
     }
 
+    // This does not currently work due to an issue in BanchoSharp
     private void OnChannelParted(IChatChannel channel)
     {
         if (WebhookConfigured && Configuration.WebhookNotifyLobbyTerminations == true)
@@ -395,25 +396,24 @@ public class Bot
 
                 break;
             }
-            else
+
+            try
             {
-                try
+                // This is an additional fail-safe for the connection state, by checking the last time we received a message,
+                // so if we haven't received a message for 5 minutes, then write a message to test the connection.
+                // I feel like 5 minutes is a pretty safe bet for now.
+                if ((DateTime.Now - _lastMessageTime).TotalSeconds > 300)
                 {
-                    // This is an additional fail-safe for the connection state, by checking the last time we received a message,
-                    // so if we haven't received a message for 5 minutes, then write a message to test the connection.
-                    // I feel like 5 minutes is a pretty safe bet for now.
-                    if ((DateTime.Now - _lastMessageTime).TotalSeconds > 300)
-                    {
-                        _lastMessageTime = DateTime.Now;
+                    _lastMessageTime = DateTime.Now;
 
-                        SendMessage("BanchoBot", $"connection check: {DateTime.Now.ToString()}");
+                    SendMessage("BanchoBot", $"connection check: {DateTime.Now}");
 
-                        Log.Warning("No message for 5 minutes, testing connection by sending a message to BanchoBot.");
-                    }
+                    Log.Warning("No message for 5 minutes, testing connection by sending a message to BanchoBot.");
                 }
-                catch (Exception)
-                {
-                }
+            }
+            catch (Exception)
+            {
+                // ignored
             }
 
             await Task.Delay(1000);
