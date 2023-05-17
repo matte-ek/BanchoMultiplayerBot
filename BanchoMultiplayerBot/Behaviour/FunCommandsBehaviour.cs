@@ -54,7 +54,7 @@ public class FunCommandsBehaviour : IBotBehaviour
                 return;
             }
 
-            if (msg.Content.ToLower().Equals("!playtime"))
+            if (msg.Content.ToLower().Equals("!playtime") || msg.Content.ToLower().Equals("!pt"))
             {
                 using var userRepository = new UserRepository();
                 var user = await userRepository.FindUser(player.Name) ?? await userRepository.CreateUser(player.Name);
@@ -68,7 +68,7 @@ public class FunCommandsBehaviour : IBotBehaviour
                         : $"{msg.Sender} has been here for {currentPlaytime:h' hours 'm' minutes 's' seconds'} ({totalPlaytime:d' days 'h' hours 'm' minutes 's' seconds'} in total)");
             }
 
-            if (msg.Content.ToLower().Equals("!playstats"))
+            if (msg.Content.ToLower().Equals("!playstats") || msg.Content.ToLower().Equals("!ps"))
             {
                 using var userRepository = new UserRepository();
                 var user = await userRepository.FindUser(player.Name) ?? await userRepository.CreateUser(player.Name);
