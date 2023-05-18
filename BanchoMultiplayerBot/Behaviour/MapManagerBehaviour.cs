@@ -126,7 +126,7 @@ public class MapManagerBehaviour : IBotBehaviour
         {
             SetBeatmap(_beatmapFallbackId);
             
-            _lobby.SendMessage($"Only submitted beat maps are allowed.");
+            _lobby.SendMessage($"The beatmap picked is not submitted, please pick another one.");
         }
         catch (ApiKeyInvalidException)
         {

@@ -29,7 +29,6 @@ public class OsuApiWrapper
             return result.StatusCode switch
             {
                 HttpStatusCode.Unauthorized => throw new ApiKeyInvalidException(),
-                HttpStatusCode.NotFound => throw new BeatmapNotFoundException(),
                 _ => null
             };
         }
@@ -38,11 +37,16 @@ public class OsuApiWrapper
 
         try
         {
-            return JsonSerializer.Deserialize<List<BeatmapModel>>(jsonStr)?.FirstOrDefault();
+            var maps = JsonSerializer.Deserialize<List<BeatmapModel>>(jsonStr);
+
+            if (maps != null && !maps.Any())
+                throw new BeatmapNotFoundException(); // the API does not return 404 for some reason, just an empty list.
+            
+            return maps?.FirstOrDefault();
         }
         catch (Exception e)
         {
-            Log.Error($"Error while parsing json from osu!api: {e.Message}, beatmap: {beatmapId}");
+            Log.Error($"Error while parsing JSON from osu!api: {e.Message}, beatmap: {beatmapId}");
 
             throw;
         }
