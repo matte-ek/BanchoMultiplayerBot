@@ -191,7 +191,27 @@ public class Bot
         if (msg.Content.ToLower().Equals("!help") || msg.Content.ToLower().Equals("!info"))
         {
             SendMessage(msg.IsDirect ? msg.Sender : msg.Recipient, $"osu! auto host rotation bot (v{Version}) [https://github.com/matte-ek/BanchoMultiplayerBot/blob/master/COMMANDS.md Help & Commands]");
-        }    
+        }
+
+        try
+        {
+            if (msg.Recipient == "#osu" && 
+                msg.IsBanchoBotMessage &&
+                msg.Content.StartsWith("Bancho will be restarting for maintenance in 1 minute."))
+            {
+                if (WebhookConfigured && Configuration.WebhookNotifyConnectionErrors == true)
+                {
+                    _ = WebhookUtils.SendWebhookMessage(Configuration.WebhookUrl!, "Bancho Restart", $"Bancho is queued to restart within a minute.");
+                }
+            
+                AnnouncementManager.SendAnnouncementMessage("Bancho is about to restart, the lobby should be automatically re-created in few minutes after Bancho is restarted.");
+                AnnouncementManager.SendAnnouncementMessage("Try searching for the lobby if you cannot find it in the list, thanks for playing!");
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Error($"{e}");
+        }
     }
 
     public async Task DisconnectAsync()

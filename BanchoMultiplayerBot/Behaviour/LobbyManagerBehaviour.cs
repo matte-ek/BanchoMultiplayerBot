@@ -58,21 +58,6 @@ public class LobbyManagerBehaviour : IBotBehaviour
 
     private void OnBanchoMessage(IPrivateIrcMessage message)
     {
-        // Bot receives the message from both #lobby and #osu, so only check #osu
-        // to avoid duplicate messages.
-        if (message.Recipient == "#osu")
-        {
-            if (!message.Content.StartsWith("Bancho will be restarting for maintenance in 1 minute."))
-            {
-                return;
-            }
-
-            _lobby.SendMessage("Bancho is about to restart, the lobby should be automatically re-created in few minutes after Bancho is restarted.");
-            _lobby.SendMessage("Try searching for the lobby if you cannot find it in the list, thanks for playing!");
-
-            return;
-        }
-
         if (message.Recipient != _lobby.Channel)
         {
             return;
