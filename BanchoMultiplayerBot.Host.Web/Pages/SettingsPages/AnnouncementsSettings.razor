@@ -13,7 +13,7 @@
 
 <MudForm @ref="_form">
     <MudPaper Class="pa-8 ma-2">
-        <MudText Typo="Typo.h6" GutterBottom="true">Announcements</MudText>
+        <MudText Typo="Typo.h6" GutterBottom="true">Scheduled Announcements</MudText>
         <MudTable Class="pa-0 ma-2" Items="@Bot.AnnouncementManager.Announcements" Hover="true" Breakpoint="Breakpoint.Sm">
             <ColGroup>
                 <col style="width: 50%;" />
@@ -37,10 +37,18 @@
     </MudPaper>
 </MudForm>
 
+<MudPaper Class="pa-8 ma-2">
+    <MudText Typo="Typo.h6" GutterBottom="true">Manual Announcement</MudText>
+    <MudTextField @bind-Value="_announcementMessage" T="string" Label="Message" Variant="Variant.Filled" Style="width: 50%"/>
+    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="mt-2" OnClick="@OnAnnouncementSendPressed">Send</MudButton>
+</MudPaper>
+
 @code {
     private MudForm? _form;
     private BotConfiguration _configuration = null!;
 
+    private string? _announcementMessage;
+    
     private DialogOptions _maxWidthOptions = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
     private async Task OnConfigureAnnouncementPressed(Announcement announcement)
@@ -83,6 +91,14 @@
         newAnnouncement.LastSent = DateTime.Now;
 
         Bot.AnnouncementManager.Announcements.Add(newAnnouncement);
+    }
+
+    private void OnAnnouncementSendPressed()
+    {
+        if (_announcementMessage == null || !_announcementMessage.Any())
+            return;
+        
+        Bot.AnnouncementManager.SendAnnouncementMessage(_announcementMessage);
     }
 
     protected override void OnInitialized()
