@@ -32,6 +32,34 @@ namespace BanchoMultiplayerBot.Utilities
             _bot.Configuration.Announcements = Announcements.ToArray();
         }
         
+        /// <summary>
+        /// Sends the specified message in all lobbies, with a small delay in between all lobbies
+        /// </summary>
+        public void SendAnnouncementMessage(string message)
+        {
+            try
+            {
+                int index = 0;
+                
+                foreach (var lobby in _bot.Lobbies)
+                {
+                    // We use the same trick that we use to avoid pinging people in the queue message here,
+                    // basically add x amount of zero-width spaces for each lobby, which will make them unique.
+                    // We do this to avoid bancho silently dropping the messages. However they still appear 
+                    // the same for the user.
+                    var uniqueMessage = $"{message[0]}{string.Join("", Enumerable.Repeat("\u200B", index))}{message[1..]}";
+                    
+                    lobby.SendMessage(uniqueMessage);
+                    
+                    index++;
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"Error while sending announcement: {e.Message}");
+            }
+        }
+        
         private async Task AnnouncementSenderTask()
         {
             while (!_exitRequested)
@@ -47,29 +75,9 @@ namespace BanchoMultiplayerBot.Utilities
                     {
                         announcement.LastSent = DateTime.Now;
 
-                        await SendAnnouncementMessage(announcement);
+                        SendAnnouncementMessage(announcement.Message);
                     }
                 }
-            }
-        }
-
-        /// <summary>
-        /// Sends the specified message in all lobbies, with a small delay in between all lobbies
-        /// </summary>
-        private async Task SendAnnouncementMessage(Announcement announcement)
-        {
-            try
-            {
-                foreach (var lobby in _bot.Lobbies)
-                {
-                    lobby.SendMessage(announcement.Message);
-
-                    await Task.Delay(1000);
-                }
-            }
-            catch (Exception e)
-            {
-                Log.Error($"Error while sending announcement: {e.Message}");
             }
         }
     }
