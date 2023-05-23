@@ -265,10 +265,14 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         // Add a zero width space to the player names to avoid mentioning them
         Queue.ForEach(playerName => cleanPlayerNamesQueue.Add($"{playerName[0]}\u200B{playerName[1..]}"));
 
-        foreach (var clearPlayerName in cleanPlayerNamesQueue)
+        if (tagHost && cleanPlayerNamesQueue.Any())
         {
-            var name = tagHost && clearPlayerName == cleanPlayerNamesQueue.First() ? Queue.First() : clearPlayerName;
-
+            cleanPlayerNamesQueue.RemoveAt(0);
+            cleanPlayerNamesQueue.Insert(0, Queue.First());
+        }
+        
+        foreach (var name in cleanPlayerNamesQueue)
+        {
             if (queueStr.Length > 150)
             {
                 queueStr = queueStr[..^2] + "...";
