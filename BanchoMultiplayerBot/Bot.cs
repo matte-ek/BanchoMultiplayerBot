@@ -454,6 +454,7 @@ public class Bot
     {
         int messageBurstCount = Configuration.IsBotAccount == true ? 300 : 10;
         int messageAge = Configuration.IsBotAccount == true ? 60 : 5;
+        const int maxMessageLength = 400;
 
         List<QueuedMessage> sentMessages = new();
 
@@ -479,6 +480,14 @@ public class Bot
 
                 message.Time = DateTime.Now;
 
+                // Ideally the messages should maybe just get trimmed here and sent anyway, but this isn't really
+                // meant as an convenience, it's more of a fail-safe to never exceed the message limit. 
+                if (message.Content.Length >= maxMessageLength)
+                {
+                    Log.Warning($"Ignoring message '{message.Content}', message is too long.");
+                    continue;
+                }
+                
                 Log.Verbose($"Sending message '{message.Content}' from {message.Time} (current queue: {sentMessages.Count})");
 
                 try
