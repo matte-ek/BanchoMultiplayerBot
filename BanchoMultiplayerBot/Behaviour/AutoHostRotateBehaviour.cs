@@ -218,7 +218,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         }
 
         OnQueueUpdated();
-        SendCurrentQueue();
+        SendCurrentQueue(true);
 
         _matchInProgress = false;
     }
@@ -257,7 +257,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
     /// Send the first 5 people in the queue in the lobby chat. The player names will include a 
     /// zero width space to avoid tagging people.
     /// </summary>
-    private void SendCurrentQueue()
+    private void SendCurrentQueue(bool tagHost = false)
     {
         var queueStr = "";
         var cleanPlayerNamesQueue = new List<string>();
@@ -265,9 +265,11 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         // Add a zero width space to the player names to avoid mentioning them
         Queue.ForEach(playerName => cleanPlayerNamesQueue.Add($"{playerName[0]}\u200B{playerName[1..]}"));
 
-        foreach (var name in cleanPlayerNamesQueue)
+        foreach (var clearPlayerName in cleanPlayerNamesQueue)
         {
-            if (queueStr.Length > 100)
+            var name = tagHost && clearPlayerName == cleanPlayerNamesQueue.First() ? Queue.First() : clearPlayerName;
+
+            if (queueStr.Length > 150)
             {
                 queueStr = queueStr[..^2] + "...";
                 break;
