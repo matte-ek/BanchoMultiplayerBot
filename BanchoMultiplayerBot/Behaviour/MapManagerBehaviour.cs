@@ -233,7 +233,7 @@ public class MapManagerBehaviour : IBotBehaviour
 
                         if (_lobby.Bot.PerformancePointCalculator == null)
                         {
-                            _lobby.SendMessage($"(Star Rating: {starRating:.0#} | {beatmapModel.GetStatusString()} | Length: {timeSpan.ToString(@"mm\:ss")} | BPM: {beatmapModel.Bpm}");
+                            _lobby.SendMessage($"(Star Rating: {starRating:.0#} | {beatmapModel.GetStatusString()} | Length: {timeSpan.ToString(@"mm\:ss")} | BPM: {beatmapModel.Bpm})");
                             _lobby.SendMessage($"(AR: {beatmapModel.DiffApproach} | CS: {beatmapModel.DiffSize} | OD: {beatmapModel.DiffOverall})");
                         }
                         else
