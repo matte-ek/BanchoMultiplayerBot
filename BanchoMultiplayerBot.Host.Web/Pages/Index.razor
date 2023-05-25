@@ -205,6 +205,8 @@
 
         await Bot.DisconnectAsync();
 
+        Bot.LoadConfiguration("config.json");
+        
         Bot.Start();
     }
 
