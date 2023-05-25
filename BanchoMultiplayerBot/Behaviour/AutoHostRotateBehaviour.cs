@@ -273,7 +273,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         
         foreach (var name in cleanPlayerNamesQueue)
         {
-            if (queueStr.Length > 150)
+            if (queueStr.Length > 100)
             {
                 queueStr = queueStr[..^2] + "...";
                 break;
