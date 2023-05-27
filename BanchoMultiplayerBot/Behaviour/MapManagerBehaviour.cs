@@ -197,11 +197,24 @@ public class MapManagerBehaviour : IBotBehaviour
         }
         else if (!IsAllowedBeatmapLength(beatmap))
         {
-            _lobby.SendMessage($"The beatmap you've picked is too long, please pick another one.");
+            var configuredMaxMapLength = TimeSpan.FromSeconds(_lobby.Configuration.MaximumMapLength);
+                
+            _lobby.SendMessage($"The beatmap you've picked is too long. Max map length: {configuredMaxMapLength:mm\\:ss}");
         }
         else
         {
-            _lobby.SendMessage($"The beatmap you've picked is out of the lobby star range ({_lobby.Configuration.MinimumStarRating:.0#}* - {_lobby.Configuration.MaximumStarRating:.0#}*), please make sure to use the online star rating.");
+            if (_lobby.Configuration.LimitStarRating && beatmap.DifficultyRating != null)
+            {
+                var mapStarRating = float.Parse(beatmap.DifficultyRating, CultureInfo.InvariantCulture);
+
+                _lobby.SendMessage(mapStarRating >= _lobby.Configuration.MaximumStarRating
+                    ? $"The selected beatmap's star rating is too high for the lobby ({mapStarRating:0.0} > {_lobby.Configuration.MaximumStarRating:0.0}). Please make sure to use the online star rating!"
+                    : $"The selected beatmap's star rating is too low for the lobby ({_lobby.Configuration.MinimumStarRating:0.0} > {mapStarRating:0.0}). Please make sure to use the online star rating!");
+            }
+            else
+            {
+                _lobby.SendMessage($"The beatmap you've picked is out of the lobby star range ({_lobby.Configuration.MinimumStarRating:.0#}* - {_lobby.Configuration.MaximumStarRating:.0#}*), please make sure to use the online star rating.");
+            }
         }
         
         RunViolationAutoSkip();

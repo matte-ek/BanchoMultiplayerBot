@@ -4,6 +4,7 @@ using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
 using Serilog;
 using System.Xml.Linq;
+using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Utilities;
 using MudBlazor.Services;
 
@@ -22,8 +23,12 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
     private bool _hasSkippedHost;
 
+    // Keep track of the last 5 players who left, and their queue position. We do this so we are able
+    // to restore people's queue position if they accidentally left and is rejoining within 30 seconds.
+    private List<PlayerQueueHistory> _recentLeaveHistory = new();
+    
     public List<string> Queue { get; } = new();
-
+    
     public void Setup(Lobby lobby)
     {
         _lobby = lobby;
@@ -36,6 +41,8 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
             if (_lobby.IsRecovering)
                 return;
+            
+            RestorePlayerQueuePosition(player);
 
             OnQueueUpdated();
         };
@@ -44,6 +51,8 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         {
             if (Queue.Contains(disconnectEventArgs.Player.Name))
             {
+                AddLeaveQueuePosition(disconnectEventArgs.Player.Name);
+                
                 Queue.Remove(disconnectEventArgs.Player.Name);
 
                 OnQueueUpdated();
@@ -87,6 +96,20 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         OnQueueUpdated();
     }
 
+    public void MovePlayer(MultiplayerPlayer player, int newPosition)
+    {
+        var name = player.Name;
+
+        if (Queue.Contains(name))
+        {
+            Queue.Remove(name);
+        }
+
+        Queue.Insert(newPosition, name);
+
+        OnQueueUpdated();
+    }
+
     private void OnUserMessage(IPrivateIrcMessage message)
     {
         if (message.Content.ToLower().Equals("!q") || message.Content.ToLower().Equals("!queue"))
@@ -107,7 +130,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
             return;
         }
 
-        if (message.Content.ToLower().StartsWith("!skip") || message.Content.ToLower().StartsWith("!s"))
+        if (message.Content.ToLower().StartsWith("!skip") || message.Content.ToLower().Equals("!s"))
         {
             // If the host is sending the message, just skip.
             if (_lobby.MultiplayerLobby.Host is not null)
@@ -161,6 +184,37 @@ public class AutoHostRotateBehaviour : IBotBehaviour
                 else
                 {
                     SetNewHost(player);
+                }
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+        }
+        
+        if (message.Content.StartsWith("!setqueuepos "))
+        {
+            try
+            {
+                var split = message.Content.Split(' ');
+                var targetName = split[1];
+                var targetQueuePosition = int.Parse(split[2]);
+                var targetPlayer = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name.ToIrcNameFormat().ToLower() == targetName.ToLower());
+
+                if (0 > targetQueuePosition || targetQueuePosition >= Queue.Count)
+                {
+                    _lobby.SendMessage("Target position is out of range.");
+                }
+                else
+                {
+                    if (targetPlayer is null)
+                    {
+                        _lobby.SendMessage("Failed to find player! Make sure to replace spaces with underscores.");
+                    }
+                    else
+                    {
+                        MovePlayer(targetPlayer, targetQueuePosition);
+                    }   
                 }
             }
             catch (Exception)
@@ -303,6 +357,50 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         _playerSkipVote.Reset();
     }
 
+    private void AddLeaveQueuePosition(string player)
+    {
+        _recentLeaveHistory.Insert(0, new PlayerQueueHistory()
+        {
+            Name = player,
+            QueuePosition = Queue.IndexOf(player),
+            Time = DateTime.Now
+        });
+                
+        if (_recentLeaveHistory.Count > 5)
+            _recentLeaveHistory.RemoveAt(_recentLeaveHistory.Count - 1);
+    }
+
+    private void RestorePlayerQueuePosition(MultiplayerPlayer player)
+    {
+        try
+        {
+            var previousQueuePosition = _recentLeaveHistory.Where(x => x.Name == player.Name)?.FirstOrDefault();
+            if (previousQueuePosition == null)
+                return;
+        
+            // Don't restore if the player was host
+            if (previousQueuePosition.QueuePosition == 0)
+                return;
+        
+            // Make sure this was recent, as what would happen if accidentally disconnected/crashed.
+            if (DateTime.Now >= previousQueuePosition.Time.AddSeconds(30))
+                return;
+
+            if (0 > previousQueuePosition.QueuePosition || previousQueuePosition.QueuePosition >= Queue.Count)
+                return;
+            
+            MovePlayer(player, previousQueuePosition.QueuePosition);
+            
+            Log.Information($"Restored re-connected player queue position to #{previousQueuePosition.QueuePosition + 1}");
+
+            _recentLeaveHistory.Remove(previousQueuePosition);
+        }
+        catch (Exception e)
+        {
+            // ignored.
+        }
+    }
+    
     private void SetHost(string playerName)
     {
         _lobby.SendMessage($"!mp host {_lobby.GetPlayerIdentifier(playerName)}");
