@@ -38,7 +38,7 @@ Then modify `appsettings.json` and fill out a username and a password as shown b
 Then run the bot, for example on Windows you may run the `BanchoMultiplayerBot.Host.Web.exe` file, or on Linux run `dotnet BanchoMultiplayerBot.Host.Web.dll`. Now while the bot application is running you can visit
 [http://localhost:5000/osu-bot](http://localhost:5000/osu-bot) where you should be greeted by a login page. Here you can login with the username and password that you picked earlier.
 
-Now you should open up the Authentication page (within Settings) and fill out your osu! IRC credentials which you can get from [here](https://osu.ppy.sh/p/irc). You also need an osu!api v1 key which you can get from [here](https://osu.ppy.sh/p/api/). (You can use localhost for the app URL).
+Now you should open up the Authentication page (within Settings) and fill out your osu! IRC credentials and osu!api v1 key, both of which you can get from the bottom of your osu! account settings page [here](https://osu.ppy.sh/home/account/edit) (You can use localhost for the app URL).
 
 After this is done you may go back to the Dashboard page and hit the "Connect" button, and after waiting a few seconds it should hopefully connect and the Bancho Connection label should say OK. If you encounter issues and you are sure that the credentials are correct, try hitting the Save Configuration button, then manually restart the bot and try again. If you still have issues check out the console window for any error messages which might point you in the right direction. If you still have issues feel free to open up an issue here or DM me on osu!
 
