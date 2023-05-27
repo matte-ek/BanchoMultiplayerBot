@@ -107,7 +107,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
             return;
         }
 
-        if (message.Content.ToLower().StartsWith("!skip"))
+        if (message.Content.ToLower().StartsWith("!skip") || message.Content.ToLower().StartsWith("!s"))
         {
             // If the host is sending the message, just skip.
             if (_lobby.MultiplayerLobby.Host is not null)
