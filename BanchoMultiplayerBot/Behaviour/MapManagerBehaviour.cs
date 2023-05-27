@@ -205,11 +205,11 @@ public class MapManagerBehaviour : IBotBehaviour
         {
             if (_lobby.Configuration.LimitStarRating && beatmap.DifficultyRating != null)
             {
-                var mapStarRating = float.Parse(beatmap.DifficultyRating, CultureInfo.InvariantCulture);
+                var mapStarRating = Math.Round(float.Parse(beatmap.DifficultyRating, CultureInfo.InvariantCulture), 2);
 
                 _lobby.SendMessage(mapStarRating >= _lobby.Configuration.MaximumStarRating
-                    ? $"The selected beatmap's star rating is too high for the lobby ({mapStarRating:0.0} > {_lobby.Configuration.MaximumStarRating:0.0}). Please make sure to use the online star rating!"
-                    : $"The selected beatmap's star rating is too low for the lobby ({_lobby.Configuration.MinimumStarRating:0.0} > {mapStarRating:0.0}). Please make sure to use the online star rating!");
+                    ? $"The selected beatmap's star rating is too high for the lobby ({mapStarRating:0.00} > {_lobby.Configuration.MaximumStarRating:0.0}). Please make sure to use the online star rating!"
+                    : $"The selected beatmap's star rating is too low for the lobby ({_lobby.Configuration.MinimumStarRating:0.0} > {mapStarRating:0.00}). Please make sure to use the online star rating!");
             }
             else
             {
@@ -242,7 +242,7 @@ public class MapManagerBehaviour : IBotBehaviour
                 {
                     if (beatmapModel.DifficultyRating != null)
                     {
-                        float starRating = float.Parse(beatmapModel.DifficultyRating, CultureInfo.InvariantCulture);
+                        var starRating = Math.Round(float.Parse(beatmapModel.DifficultyRating, CultureInfo.InvariantCulture), 2);
 
                         if (_lobby.Bot.PerformancePointCalculator == null)
                         {
@@ -298,7 +298,7 @@ public class MapManagerBehaviour : IBotBehaviour
             maxRating += config.StarRatingErrorMargin.Value;
         }
 
-        var mapStarRating = float.Parse(beatmap.DifficultyRating, CultureInfo.InvariantCulture);
+        var mapStarRating = Math.Round(float.Parse(beatmap.DifficultyRating, CultureInfo.InvariantCulture), 2);
 
         return maxRating >= mapStarRating && mapStarRating >= minRating;
     }
