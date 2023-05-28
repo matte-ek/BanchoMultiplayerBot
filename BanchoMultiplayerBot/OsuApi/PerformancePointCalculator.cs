@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
+using System.Runtime.InteropServices;
 using BanchoMultiplayerBot.Data;
 using Serilog;
 
@@ -66,7 +67,8 @@ public class PerformancePointCalculator
     /// </summary>
     private async Task<BeatmapPerformanceInfo?> CalculateBeatmapPerformancePoints(int beatmapId)
     {
-        var performanceCalcProcess = RunProcessAsync($"performance-calculator", $"{beatmapId}");
+        var appName = "performance-calculator" + (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".exe" : string.Empty);
+        var performanceCalcProcess = RunProcessAsync(appName, $"{beatmapId}");
 
         if (performanceCalcProcess == null)
         {
