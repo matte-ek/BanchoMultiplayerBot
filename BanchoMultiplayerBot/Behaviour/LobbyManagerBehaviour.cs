@@ -15,6 +15,7 @@ public class LobbyManagerBehaviour : IBotBehaviour
     private Lobby _lobby = null!;
     
     private DateTime _lastSettingsUpdateReceivedTime;
+    private DateTime _lastSettingsUpdateSentTime;
 
     // I really, really hate this but whatever.
     private int _mpSettingsAttempts = 0;
@@ -25,6 +26,8 @@ public class LobbyManagerBehaviour : IBotBehaviour
     public void Setup(Lobby lobby)
     {
         _lobby = lobby;
+
+        _lobby.Bot.Client.OnPrivateMessageSent += OnPrivateMessageSent;
 
         _lobby.MultiplayerLobby.OnMatchStarted += OnMatchStarted;
         _lobby.MultiplayerLobby.OnMatchFinished += OnMatchFinishedOrAborted;
@@ -54,6 +57,15 @@ public class LobbyManagerBehaviour : IBotBehaviour
 
             _lobby.MultiplayerLobby.Players.Remove(duplicatePlayer);
         };
+    }
+
+    private void OnPrivateMessageSent(IPrivateIrcMessage msg)
+    {
+        if (msg.Recipient != _lobby.Channel)
+            return;
+
+        if (msg.Content.StartsWith("!mp settings"))
+            _lastSettingsUpdateSentTime = DateTime.Now;
     }
 
     private void OnBanchoMessage(IPrivateIrcMessage message)
@@ -215,7 +227,23 @@ public class LobbyManagerBehaviour : IBotBehaviour
     {
         await Task.Delay(5000);
 
-        if (DateTime.Now - _lastSettingsUpdateReceivedTime > TimeSpan.FromSeconds(15))
+        // If this is true, we've still not sent the "!mp settings" message, we must be unlucky with the rate limiting.
+        // So we'll just wait an additional 5 seconds before checking it again.
+        if ((DateTime.Now - _lastSettingsUpdateSentTime).Duration().TotalSeconds > 5.1)
+        {
+            Log.Warning("Detected '!mp settings' still not being sent after 5 seconds, retrying...");
+            
+            if (_mpSettingsAttempts < 5)
+            {
+                _mpSettingsAttempts++;
+
+                _ = Task.Run(EnsureSettingsSent);
+                
+                return;
+            }
+        }
+        
+        if (_lastSettingsUpdateSentTime - _lastSettingsUpdateReceivedTime > TimeSpan.FromSeconds(15))
         {
             _lobby.SendMessage("!mp settings");
 

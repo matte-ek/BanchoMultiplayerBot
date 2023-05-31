@@ -176,7 +176,6 @@ public class Bot
 
         // Events for logging purposes
         Client.OnPrivateMessageReceived += e => { Log.Information($"[{e.Recipient}] {e.Sender}: {e.Content}"); };
-        Client.OnMessageReceived += e => { Log.Information($"MSG: {e.RawMessage}"); };
         Client.OnPrivateMessageSent += e => { Log.Information($"[{e.Recipient}] {e.Sender}: {e.Content}"); };
         Client.OnChannelJoined += e => { Log.Information($"Joined channel {e.ChannelName}"); };
         Client.OnChannelParted += e => { Log.Information($"Parted channel {e.ChannelName}"); };
@@ -498,7 +497,7 @@ public class Bot
                 }
                 
                 Log.Verbose($"Sending message '{message.Content}' from {message.Time} (current queue: {sentMessages.Count})");
-
+                
                 try
                 {
                     await Client.SendPrivateMessageAsync(message.Channel, message.Content);

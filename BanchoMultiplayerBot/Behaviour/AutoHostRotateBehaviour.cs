@@ -25,7 +25,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
     // Keep track of the last 5 players who left, and their queue position. We do this so we are able
     // to restore people's queue position if they accidentally left and is rejoining within 30 seconds.
-    private List<PlayerQueueHistory> _recentLeaveHistory = new();
+    private readonly List<PlayerQueueHistory> _recentLeaveHistory = new();
     
     public List<string> Queue { get; } = new();
     
