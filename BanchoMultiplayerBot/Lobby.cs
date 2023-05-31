@@ -31,6 +31,11 @@ public class Lobby
     /// If the lobby is recovering existing lobbies, after for example a restart or network connection issue.
     /// </summary>
     public bool IsRecovering { get; private set; }
+    
+    /// <summary>
+    /// If the lobby has been removed by bancho
+    /// </summary>
+    public bool IsParted { get; set; }
 
     /// <summary>
     /// List of the 300 recent messages in the lobby, primarily used within the WebUI

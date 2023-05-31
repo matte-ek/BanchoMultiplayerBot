@@ -101,6 +101,9 @@ public class Bot
 
         foreach (var lobby in Lobbies)
         {
+            if (lobby.IsParted)
+                continue;
+            
             string? queue = null;
 
             try
@@ -173,6 +176,7 @@ public class Bot
 
         // Events for logging purposes
         Client.OnPrivateMessageReceived += e => { Log.Information($"[{e.Recipient}] {e.Sender}: {e.Content}"); };
+        Client.OnMessageReceived += e => { Log.Information($"MSG: {e.RawMessage}"); };
         Client.OnPrivateMessageSent += e => { Log.Information($"[{e.Recipient}] {e.Sender}: {e.Content}"); };
         Client.OnChannelJoined += e => { Log.Information($"Joined channel {e.ChannelName}"); };
         Client.OnChannelParted += e => { Log.Information($"Parted channel {e.ChannelName}"); };
@@ -247,12 +251,17 @@ public class Bot
         OnLobbiesUpdated?.Invoke();
     }
 
-    // This does not currently work due to an issue in BanchoSharp
     private void OnChannelParted(IChatChannel channel)
     {
         if (WebhookConfigured && Configuration.WebhookNotifyLobbyTerminations == true)
         {
             _ = WebhookUtils.SendWebhookMessage(Configuration.WebhookUrl!, "Channel Closed", $"Channel {channel.ChannelName} was closed.");
+        }
+
+        var lobby = Lobbies.Where(x => x.Channel == channel.ChannelName)?.FirstOrDefault();
+        if (lobby != null)
+        {
+            lobby.IsParted = true;
         }
 
         Log.Warning($"Channel {channel.ChannelName} was parted.");
@@ -400,9 +409,9 @@ public class Bot
                 {
                     connectionAttempts++;
 
-                    Log.Information("Attempting to reconnect in 60 seconds");
+                    Log.Information("Attempting to reconnect in 45 seconds");
 
-                    await Task.Delay(60000);
+                    await Task.Delay(45000);
 
                     Client.Dispose();
                     Lobbies.Clear();
