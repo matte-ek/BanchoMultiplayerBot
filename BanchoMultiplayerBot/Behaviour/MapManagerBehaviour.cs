@@ -87,7 +87,7 @@ public class MapManagerBehaviour : IBotBehaviour
 
         _beatmapCheckEnabled = !_beatmapCheckEnabled;
 
-        _lobby.SendMessage(_beatmapCheckEnabled ? "Enabled" : "Disabled" + " beatmap checker!");
+        _lobby.SendMessage((_beatmapCheckEnabled ? "Enabled" : "Disabled") + " beatmap checker!");
     }
 
     private async void OnBeatmapChanged(BeatmapShell beatmap)
@@ -298,7 +298,7 @@ public class MapManagerBehaviour : IBotBehaviour
             maxRating += config.StarRatingErrorMargin.Value;
         }
 
-        var mapStarRating = Math.Round(float.Parse(beatmap.DifficultyRating, CultureInfo.InvariantCulture), 2);
+        var mapStarRating = float.Parse(beatmap.DifficultyRating, CultureInfo.InvariantCulture);
 
         return maxRating >= mapStarRating && mapStarRating >= minRating;
     }
