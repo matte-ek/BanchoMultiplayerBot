@@ -26,9 +26,11 @@ public class AutoHostRotateBehaviour : IBotBehaviour
     // Keep track of the last 5 players who left, and their queue position. We do this so we are able
     // to restore people's queue position if they accidentally left and is rejoining within 30 seconds.
     private readonly List<PlayerQueueHistory> _recentLeaveHistory = new();
+
+    private MapManagerBehaviour? _mapManagerBehaviour;
     
     public List<string> Queue { get; } = new();
-    
+
     public void Setup(Lobby lobby)
     {
         _lobby = lobby;
@@ -74,6 +76,12 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         _lobby.MultiplayerLobby.OnHostChanged += OnHostChanged;
         _lobby.OnUserMessage += OnUserMessage;
         _lobby.OnAdminMessage += OnAdminMessage;
+        
+        var mapManagerBehaviour = _lobby.Behaviours.Find(x => x.GetType() == typeof(MapManagerBehaviour));
+        if (mapManagerBehaviour != null)
+        {
+            _mapManagerBehaviour = ((MapManagerBehaviour)mapManagerBehaviour);
+        }
     }
 
     public void SkipCurrentHost()
@@ -226,6 +234,11 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
     private void OnSettingsUpdated()
     {
+        if (_mapManagerBehaviour?.IsValidatingMap == true)
+        {
+            return;
+        }
+        
         // Attempt to reload the old queue if we're recovering a previous session.
         if (_lobby.IsRecovering && _lobby.Configuration.PreviousQueue != null)
         {

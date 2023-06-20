@@ -22,6 +22,8 @@ public class LobbyManagerBehaviour : IBotBehaviour
 
     private int _mpPasswordAttempts = 0;
     private bool _mpPasswordSet = false;
+
+    private MapManagerBehaviour? _mapManagerBehaviour;
     
     public void Setup(Lobby lobby)
     {
@@ -57,6 +59,12 @@ public class LobbyManagerBehaviour : IBotBehaviour
 
             _lobby.MultiplayerLobby.Players.Remove(duplicatePlayer);
         };
+        
+        var mapManagerBehaviour = _lobby.Behaviours.Find(x => x.GetType() == typeof(MapManagerBehaviour));
+        if (mapManagerBehaviour != null)
+        {
+            _mapManagerBehaviour = ((MapManagerBehaviour)mapManagerBehaviour);
+        }
     }
 
     private void OnPrivateMessageSent(IPrivateIrcMessage msg)
@@ -108,6 +116,11 @@ public class LobbyManagerBehaviour : IBotBehaviour
 
     private void OnRoomSettingsUpdated()
     {
+        if (_mapManagerBehaviour?.IsValidatingMap == true)
+        {
+            return;
+        }
+        
         // At this point we should have received updated information
         // from "!mp settings"
         _lastSettingsUpdateReceivedTime = DateTime.Now;

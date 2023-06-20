@@ -121,6 +121,13 @@ public class Lobby
         {
             // At this point, all behaviours should have done their "recover" stuff, and we may reset the recover status. 
             IsRecovering = false;
+            
+            // We also need to reset the map manager's status here, since it needs to be at the last "OnSettingsUpdated" event listener.
+            var mapManagerBehaviour = Behaviours.Find(x => x.GetType() == typeof(MapManagerBehaviour));
+            if (mapManagerBehaviour != null)
+            {
+                ((MapManagerBehaviour)mapManagerBehaviour).IsValidatingMap = false;
+            }
         };
 
         Bot.Client.OnPrivateMessageReceived += ClientOnPrivateMessageReceived;

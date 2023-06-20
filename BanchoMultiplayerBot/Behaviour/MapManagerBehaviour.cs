@@ -23,8 +23,10 @@ public class MapManagerBehaviour : IBotBehaviour
     public int CurrentBeatmapId { get; private set; }
     public string CurrentBeatmapName { get; private set; } = string.Empty;
 
-    public bool ValidMapPicked { get; set; } = true;
+    public bool ValidMapPicked { get; private set; } = true;
 
+    public bool IsValidatingMap { get; set; } = false;
+    
     private Lobby _lobby = null!;
     private AutoHostRotateBehaviour? _autoHostRotateBehaviour;
 
@@ -46,6 +48,12 @@ public class MapManagerBehaviour : IBotBehaviour
 
         _lobby.MultiplayerLobby.OnBeatmapChanged += OnBeatmapChanged;
         _lobby.MultiplayerLobby.OnMatchStarted += OnMatchStarted;
+        
+        _lobby.MultiplayerLobby.OnMatchFinished += OnMatchFinished;
+        _lobby.MultiplayerLobby.OnMatchAborted += OnMatchFinished;
+        
+        _lobby.MultiplayerLobby.OnSettingsUpdated += OnSettingsUpdated;
+        
         _lobby.OnUserMessage += OnUserMessage;
         _lobby.OnAdminMessage += OnAdminMessage;
 
@@ -61,11 +69,68 @@ public class MapManagerBehaviour : IBotBehaviour
         }
     }
 
+    private async void OnSettingsUpdated()
+    {
+        if (!IsValidatingMap)
+        {
+            return;
+        }
+        
+        // If mods have been changed from Freemod, re-validate star rating with the new mods.
+        if (_lobby.MultiplayerLobby.Mods == Mods.Freemod)
+        {
+            return;
+        }
+        
+        try
+        {
+            // osu!api has different bits for each mod, so we need to "translate" it.
+            // We only really care about the difficulty increasing mods anyway.
+            ModsModel osuApiMods = 0;
+
+            if ((_lobby.MultiplayerLobby.Mods & Mods.DoubleTime) != 0 ||
+                (_lobby.MultiplayerLobby.Mods & Mods.Freemod) != 0)
+                osuApiMods |= ModsModel.DoubleTime;
+            if ((_lobby.MultiplayerLobby.Mods & Mods.Hidden) != 0)
+                osuApiMods |= ModsModel.Hidden;
+            if ((_lobby.MultiplayerLobby.Mods & Mods.HardRock) != 0)
+                osuApiMods |= ModsModel.HardRock;
+
+            var beatmapInformation = await _lobby.Bot.OsuApi.GetBeatmapInformation(CurrentBeatmapId, (int)osuApiMods);
+            if (beatmapInformation == null)
+            {
+                return;
+            }
+
+            if (!IsAllowedBeatmapStarRating(beatmapInformation))
+            {
+                Log.Error("Detected an attempt to play a map out of the lobby's star rating! Aborting...");
+
+                _lobby.SendMessage("Detected an attempt to play a map out of the lobby's star rating! Aborting...");
+                _lobby.SendMessage("!mp abort");
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Error($"Exception while re-validating map mods: {e}");
+        }
+    }
+
+    private void OnMatchFinished()
+    {
+        IsValidatingMap = false;
+    }
+
     private void OnMatchStarted()
     {
         _matchStartTime = DateTime.Now;
+
+        if (EnsureValidMap(true))
+            return;
+
+        IsValidatingMap = true;
         
-        EnsureValidMap(true);
+        _lobby.SendMessage("!mp settings");
     }
 
     private void OnUserMessage(IPrivateIrcMessage msg)
@@ -114,10 +179,6 @@ public class MapManagerBehaviour : IBotBehaviour
             
             return;
         }
-        
-        // TODO: Figure out some clever way to deal with double time, as it's
-        // the only global mod that should matter here. For now we're ignoring
-        // mods completely.
 
         try
         {
@@ -159,7 +220,7 @@ public class MapManagerBehaviour : IBotBehaviour
 
     private async Task EnsureBeatmapLimits(BeatmapModel beatmap, int id)
     {
-        bool hostIsAdministrator = false;//_lobby.MultiplayerLobby.Host is not null && _lobby.Bot.IsAdministrator(_lobby.MultiplayerLobby.Host.Name);
+        bool hostIsAdministrator = _lobby.MultiplayerLobby.Host is not null && _lobby.Bot.IsAdministrator(_lobby.MultiplayerLobby.Host.Name);
 
         if ((IsAllowedBeatmapLength(beatmap) && IsAllowedBeatmapStarRating(beatmap) && IsAllowedBeatmapGameMode(beatmap) && !IsBannedBeatmap(beatmap)) 
             || hostIsAdministrator
@@ -416,40 +477,42 @@ public class MapManagerBehaviour : IBotBehaviour
     /// the bot retrieves map info from the API.
     /// </summary>
     /// <param name="matchStart">If we're calling this from a match start event.</param>
-    private void EnsureValidMap(bool matchStart)
+    private bool EnsureValidMap(bool matchStart)
     {
         var now = DateTime.Now;
         
         if (_hostValidMapPicked)
         {
-            return;
+            return false;
         }
 
         if (matchStart)
         {
             if (3 < (now - _beatmapRejectTime).Duration().TotalSeconds)
             {
-                return;
+                return false;
             }
         }
         else
         {
             if (!_lobby.MultiplayerLobby.MatchInProgress)
             {
-                return;
+                return false;
             }
         
             // At this point we know that we got the API response, and the map is invalid, and the fact that we're playing.
             // If this is due to the API being suupper slow, we'll just let it fly.
             if ((now - _matchStartTime).TotalSeconds > 5)
             {
-                return;
+                return false;
             }
         }
 
-        Log.Error("Detected attempted to play of out of star range map! Aborting...");
+        Log.Error("Detected an attempt to play a map out of the lobby's star rating! Aborting...");
 
-        _lobby.SendMessage("Detected attempt to play of out of star range map! Aborting...");
+        _lobby.SendMessage("Detected an attempt to play a map out of the lobby's star rating! Aborting...");
         _lobby.SendMessage("!mp abort");
+
+        return true;
     }
 }
