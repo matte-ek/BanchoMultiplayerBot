@@ -23,6 +23,8 @@ public class MapManagerBehaviour : IBotBehaviour
     public int CurrentBeatmapId { get; private set; }
     public string CurrentBeatmapName { get; private set; } = string.Empty;
 
+    public bool ValidMapPicked { get; set; } = true;
+
     private Lobby _lobby = null!;
     private AutoHostRotateBehaviour? _autoHostRotateBehaviour;
 
@@ -33,12 +35,17 @@ public class MapManagerBehaviour : IBotBehaviour
     private bool _beatmapCheckEnabled = true;
 
     private int _hostViolationCount = 0;
+    private bool _hostValidMapPicked = true;
+
+    private DateTime _matchStartTime = DateTime.Now;
+    private DateTime _beatmapRejectTime = DateTime.Now;
 
     public void Setup(Lobby lobby)
     {
         _lobby = lobby;
 
         _lobby.MultiplayerLobby.OnBeatmapChanged += OnBeatmapChanged;
+        _lobby.MultiplayerLobby.OnMatchStarted += OnMatchStarted;
         _lobby.OnUserMessage += OnUserMessage;
         _lobby.OnAdminMessage += OnAdminMessage;
 
@@ -52,6 +59,13 @@ public class MapManagerBehaviour : IBotBehaviour
         {
             _autoHostRotateBehaviour = (AutoHostRotateBehaviour)autoHostRotateBehaviour;
         }
+    }
+
+    private void OnMatchStarted()
+    {
+        _matchStartTime = DateTime.Now;
+        
+        EnsureValidMap(true);
     }
 
     private void OnUserMessage(IPrivateIrcMessage msg)
@@ -96,6 +110,7 @@ public class MapManagerBehaviour : IBotBehaviour
         if (_botAppliedBeatmap && beatmap.Id == _lastBotAppliedBeatmap)
         {
             _botAppliedBeatmap = false;
+            ValidMapPicked = true;
             
             return;
         }
@@ -144,7 +159,7 @@ public class MapManagerBehaviour : IBotBehaviour
 
     private async Task EnsureBeatmapLimits(BeatmapModel beatmap, int id)
     {
-        bool hostIsAdministrator = _lobby.MultiplayerLobby.Host is not null && _lobby.Bot.IsAdministrator(_lobby.MultiplayerLobby.Host.Name);
+        bool hostIsAdministrator = false;//_lobby.MultiplayerLobby.Host is not null && _lobby.Bot.IsAdministrator(_lobby.MultiplayerLobby.Host.Name);
 
         if ((IsAllowedBeatmapLength(beatmap) && IsAllowedBeatmapStarRating(beatmap) && IsAllowedBeatmapGameMode(beatmap) && !IsBannedBeatmap(beatmap)) 
             || hostIsAdministrator
@@ -157,11 +172,15 @@ public class MapManagerBehaviour : IBotBehaviour
             CurrentBeatmapName = $"{beatmap.Artist} - {beatmap.Title}";
             CurrentBeatmapId = id;
             
+            ValidMapPicked = true;
+
             if (beatmap.BeatmapsetId != null)
                 CurrentBeatmapSetId = int.Parse(beatmap.BeatmapsetId);
 
             _botAppliedBeatmap = true;
             _lastBotAppliedBeatmap = CurrentBeatmapId;
+
+            _hostValidMapPicked = true;
             
             // By "setting" the map our self directly after the host picked it, 
             // it will automatically be set to the newest version, even if the host's one is outdated.
@@ -216,7 +235,13 @@ public class MapManagerBehaviour : IBotBehaviour
                 _lobby.SendMessage($"The beatmap you've picked is out of the lobby star range ({_lobby.Configuration.MinimumStarRating:.0#}* - {_lobby.Configuration.MaximumStarRating:.0#}*), please make sure to use the online star rating.");
             }
         }
+
+        ValidMapPicked = false;
         
+        _hostValidMapPicked = false;
+        _beatmapRejectTime = DateTime.Now;
+
+        EnsureValidMap(false);
         RunViolationAutoSkip();
     }
 
@@ -384,5 +409,47 @@ public class MapManagerBehaviour : IBotBehaviour
             
             _autoHostRotateBehaviour.SkipCurrentHost();
         }
+    }
+
+    /// <summary>
+    /// This is to prevent the host from cheating the system by starting the match within the small time window while
+    /// the bot retrieves map info from the API.
+    /// </summary>
+    /// <param name="matchStart">If we're calling this from a match start event.</param>
+    private void EnsureValidMap(bool matchStart)
+    {
+        var now = DateTime.Now;
+        
+        if (_hostValidMapPicked)
+        {
+            return;
+        }
+
+        if (matchStart)
+        {
+            if (3 < (now - _beatmapRejectTime).Duration().TotalSeconds)
+            {
+                return;
+            }
+        }
+        else
+        {
+            if (!_lobby.MultiplayerLobby.MatchInProgress)
+            {
+                return;
+            }
+        
+            // At this point we know that we got the API response, and the map is invalid, and the fact that we're playing.
+            // If this is due to the API being suupper slow, we'll just let it fly.
+            if ((now - _matchStartTime).TotalSeconds > 5)
+            {
+                return;
+            }
+        }
+
+        Log.Error("Detected attempted to play of out of star range map! Aborting...");
+
+        _lobby.SendMessage("Detected attempt to play of out of star range map! Aborting...");
+        _lobby.SendMessage("!mp abort");
     }
 }

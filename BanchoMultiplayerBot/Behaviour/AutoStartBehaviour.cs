@@ -19,6 +19,8 @@ public class AutoStartBehaviour : IBotBehaviour
     private bool _shouldSendWarningMessage;
     private bool _sentWarningMessage;
 
+    private MapManagerBehaviour? _mapManagerBehaviour;
+
     ~AutoStartBehaviour()
     {
         _startTimerTaskActive = false;
@@ -64,7 +66,8 @@ public class AutoStartBehaviour : IBotBehaviour
         var mapManagerBehaviour = _lobby.Behaviours.Find(x => x.GetType() == typeof(MapManagerBehaviour));
         if (mapManagerBehaviour != null)
         {
-            ((MapManagerBehaviour)mapManagerBehaviour).OnNewAllowedMap += OnNewAllowedMap;
+            _mapManagerBehaviour = ((MapManagerBehaviour)mapManagerBehaviour);
+            _mapManagerBehaviour.OnNewAllowedMap += OnNewAllowedMap;
         }
     }
 
@@ -103,7 +106,7 @@ public class AutoStartBehaviour : IBotBehaviour
                         // start the match immediately.
                         if (message.Content.ToLower().Equals("!start") || message.Content.ToLower().Equals("!mp start"))
                         {
-                            _lobby.SendMessage("!mp start");
+                            StartGame();
                             return;
                         }
                         
@@ -211,7 +214,18 @@ public class AutoStartBehaviour : IBotBehaviour
 
             _startTimerActive = false;
 
-            _lobby.SendMessage("!mp start");
+            StartGame();
         }
+    }
+
+    private void StartGame()
+    {
+        if (_mapManagerBehaviour?.ValidMapPicked == false)
+        {
+            Log.Warning("Ignoring automatic map start due to invalid map.");
+            return;
+        }
+        
+        _lobby.SendMessage("!mp start");
     }
 }
