@@ -164,6 +164,8 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
                     OnQueueUpdated();
 
+                    _lobby.Statistics.HostSkipCount++;
+
                     return;
                 }
             }
@@ -176,6 +178,8 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         {
             SkipCurrentPlayer();
             OnQueueUpdated();
+            
+            _lobby.Statistics.HostSkipCount++;
         }
 
         if (message.Content.StartsWith("!sethost "))

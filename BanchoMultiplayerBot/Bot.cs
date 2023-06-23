@@ -149,7 +149,7 @@ public class Bot
 
         Configuration = config ?? throw new Exception("Failed to read configuration file.");
         Client = new BanchoClient(new BanchoClientConfig(new IrcCredentials(Configuration.Username, Configuration.Password), LogLevel.Trace, false));
-        OsuApi = new OsuApiWrapper(Configuration.ApiKey);
+        OsuApi = new OsuApiWrapper(this, Configuration.ApiKey);
     }
 
     /// <summary>
@@ -175,8 +175,18 @@ public class Bot
         Client.OnPrivateMessageReceived += OnPrivateMessageReceived;
 
         // Events for logging purposes
-        Client.OnPrivateMessageReceived += e => { Log.Information($"[{e.Recipient}] {e.Sender}: {e.Content}"); };
-        Client.OnPrivateMessageSent += e => { Log.Information($"[{e.Recipient}] {e.Sender}: {e.Content}"); };
+        Client.OnPrivateMessageReceived += e =>
+        {
+            RuntimeInfo.MessagesReceived++;
+            Log.Information($"[{e.Recipient}] {e.Sender}: {e.Content}");
+        };
+        
+        Client.OnPrivateMessageSent += e =>
+        {
+            RuntimeInfo.MessagesSent++;
+            Log.Information($"[{e.Recipient}] {e.Sender}: {e.Content}");
+        };
+        
         Client.OnChannelJoined += e => { Log.Information($"Joined channel {e.ChannelName}"); };
         Client.OnChannelParted += e => { Log.Information($"Parted channel {e.ChannelName}"); };
 

@@ -12,20 +12,26 @@ public class OsuApiWrapper
 {
     private static readonly HttpClient Client = new();
     private readonly string _osuApiKey;
+    private readonly Bot _bot;
 
-    public OsuApiWrapper(string osuApiKey)
+    public OsuApiWrapper(Bot bot, string osuApiKey)
     {
+        _bot = bot;
         _osuApiKey = osuApiKey;
     }
 
     public async Task<BeatmapModel?> GetBeatmapInformation(int beatmapId, int mods = 0)
     {
+        _bot.RuntimeInfo.ApiRequests++;
+        
         var result = await Client.GetAsync($"https://osu.ppy.sh/api/get_beatmaps?k={_osuApiKey}&b={beatmapId}&mods={mods}");
         
         if (!result.IsSuccessStatusCode)
         {
             Log.Error($"Error code {result.StatusCode} while getting beatmap details for id {beatmapId}!");
 
+            _bot.RuntimeInfo.ApiErrors++;
+            
             return result.StatusCode switch
             {
                 HttpStatusCode.Unauthorized => throw new ApiKeyInvalidException(),
@@ -41,11 +47,13 @@ public class OsuApiWrapper
 
             if (maps != null && !maps.Any())
                 throw new BeatmapNotFoundException(); // the API does not return 404 for some reason, just an empty list.
-            
+
             return maps?.FirstOrDefault();
         }
         catch (Exception e)
         {
+            _bot.RuntimeInfo.ApiErrors++;
+
             Log.Error($"Error while parsing JSON from osu!api: {e.Message}, beatmap: {beatmapId}");
 
             throw;

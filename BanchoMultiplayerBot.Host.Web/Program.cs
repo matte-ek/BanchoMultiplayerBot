@@ -37,14 +37,12 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<BotService>();
 builder.Services.AddSingleton<BannerCacheService>();
-builder.Services.AddSingleton<StatisticsTrackerService>();
 builder.Services.AddMudServices();
 builder.Services.AddScoped<AuthenticationStateProvider, TemporaryAuthStateProvider>();
 builder.Services.AddFeatureManagement();
 
 var app = builder.Build();
 
-app.Services.GetService<StatisticsTrackerService>()?.Start();
 app.Services.GetService<BotService>()?.Start();
 
 app.UsePathBase("/osu-bot");

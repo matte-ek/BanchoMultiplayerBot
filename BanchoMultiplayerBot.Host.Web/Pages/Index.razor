@@ -133,7 +133,7 @@
 
             Bot.Lobbies.ForEach(x => _playerCount += x.MultiplayerLobby.Players.Count);
             Bot.Lobbies.ForEach(x => _maxPlayerCount += (x.Configuration.Size.HasValue == true ? x.Configuration.Size.Value : 0));
-            Bot.Lobbies.ForEach(x => _gamesPlayed += x.GamesPlayed);
+            Bot.Lobbies.ForEach(x => _gamesPlayed += x.Statistics.GamesPlayed);
 
             UpdateBanchoConnection();
 

@@ -5,6 +5,7 @@ using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
 using Serilog;
 using System.Linq;
+using BanchoMultiplayerBot.Data;
 
 namespace BanchoMultiplayerBot;
 
@@ -41,13 +42,8 @@ public class Lobby
     /// List of the 300 recent messages in the lobby, primarily used within the WebUI
     /// </summary>
     public List<IPrivateIrcMessage> RecentMessages { get; } = new();
-    
-    public int GamesPlayed { get; private set; }
 
-    public int PerformanceCalculationSuccessCount { get; set; }
-    public int PerformanceCalculationErrorCount { get; set; }
-
-    public int HostViolationCount { get; set; }
+    public LobbyStatistics Statistics { get; } = new();
 
     public event Action? OnLobbyChannelJoined;
     public event Action<IPrivateIrcMessage>? OnUserMessage;
@@ -114,8 +110,13 @@ public class Lobby
         
         MultiplayerLobby.OnMatchFinished += () =>
         {
-            GamesPlayed++;
+            Statistics.GamesPlayed++;
         };
+
+        MultiplayerLobby.OnMatchAborted += () =>
+        {
+            Statistics.GamesAborted++;
+        }; 
 
         MultiplayerLobby.OnSettingsUpdated += () =>
         {
