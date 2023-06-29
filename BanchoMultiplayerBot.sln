@@ -9,8 +9,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BanchoMultiplayerBot.Host.C
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BanchoMultiplayerBot.Host.Web", "BanchoMultiplayerBot.Host.Web\BanchoMultiplayerBot.Host.Web.csproj", "{A152675A-71B1-4F4A-ACB2-79248EF39E78}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BanchoMultiplayerBot.Status", "BanchoMultiplayerBot.Status\BanchoMultiplayerBot.Status.csproj", "{42E250EB-2555-4B04-B91F-731A38145174}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BanchoMultiplayerBot.Database", "BanchoMultiplayerBot.Database\BanchoMultiplayerBot.Database.csproj", "{8CE6D749-46FE-4DFB-B3EB-2D06F6492FA6}"
 EndProject
 Global
@@ -31,10 +29,6 @@ Global
 		{A152675A-71B1-4F4A-ACB2-79248EF39E78}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A152675A-71B1-4F4A-ACB2-79248EF39E78}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A152675A-71B1-4F4A-ACB2-79248EF39E78}.Release|Any CPU.Build.0 = Release|Any CPU
-		{42E250EB-2555-4B04-B91F-731A38145174}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{42E250EB-2555-4B04-B91F-731A38145174}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{42E250EB-2555-4B04-B91F-731A38145174}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{42E250EB-2555-4B04-B91F-731A38145174}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8CE6D749-46FE-4DFB-B3EB-2D06F6492FA6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8CE6D749-46FE-4DFB-B3EB-2D06F6492FA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8CE6D749-46FE-4DFB-B3EB-2D06F6492FA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
