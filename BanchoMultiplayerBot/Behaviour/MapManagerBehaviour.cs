@@ -91,6 +91,8 @@ public class MapManagerBehaviour : IBotBehaviour
             if ((_lobby.MultiplayerLobby.Mods & Mods.DoubleTime) != 0 ||
                 (_lobby.MultiplayerLobby.Mods & Mods.Freemod) != 0)
                 osuApiMods |= ModsModel.DoubleTime;
+            if ((_lobby.MultiplayerLobby.Mods & Mods.HardRock) != 0)
+                osuApiMods |= ModsModel.HardRock;
 
             var beatmapInformation = await _lobby.Bot.OsuApi.GetBeatmapInformation(CurrentBeatmapId, (int)osuApiMods);
             if (beatmapInformation == null)
