@@ -43,6 +43,12 @@ public class Bot
     private readonly BlockingCollection<QueuedMessage> _messageQueue = new(20);
 
     /// <summary>
+    /// List of messages the message pump will internally ignore, we do this because there is no way
+    /// of safely removing messages in the message queue.
+    /// </summary>
+    private readonly List<Guid> _ignoredMessages = new();
+    
+    /// <summary>
     /// All lobbies created through CreateLobby, awaiting Bancho to create the room. Gets processed by
     /// OnTournamentLobbyCreated
     /// </summary>
@@ -52,6 +58,8 @@ public class Bot
 
     private bool _exitRequested;
 
+    private string _lastSentMessage = string.Empty;
+    
     private bool WebhookConfigured => Configuration.EnableWebhookNotifications == true && Configuration.WebhookUrl?.Any() == true;
 
     public Bot(string configurationFile)
@@ -153,15 +161,72 @@ public class Bot
     }
 
     /// <summary>
-    /// Sends a message to the channel (may also be username), will also handle rate limiting automatically.
+    /// Sends a message to the channel (may also be username), will also handle rate limiting and anti-spam automatically.
     /// </summary>
     public void SendMessage(string channel, string message)
     {
+        // This kind of sucks, since it's designed to circumvent Bancho's spam protection, notably the "same message" block.
+        // Not doing this will just cause Bancho to silently drop messages, and the bot more or less have to spam the same message
+        // until it finally goes through. However it's not perfect, and caused some issues here and there.
+        //
+        // While I personally would have no issues using a bot account for what it's intended for, and could therefore avoid this,
+        // I don't really have any choice as I'm (or anyone using this bot for that matter) not allowed to request a bot account
+        // due to some policy. It is what it is. In most cases however this code should just use an alternative message,
+        // and will just "spam" BanchoBot if required.
+        if (_lastSentMessage == message)
+        {
+            var alternativeMessage = new QueuedMessage()
+            {
+                Channel = "BanchoBot",
+                Content = $"alt-msg {DateTime.Now}"
+            };
+            
+            var ignoredChannels = new List<string> { channel };
+            
+            // Attempt to find an alternative message we can send instead
+            foreach (var msg in _messageQueue.ToArray())
+            {
+                // Since message order could matter
+                if (ignoredChannels.Contains(msg.Channel))
+                {
+                    continue;
+                }
+                
+                // If it's the same message, it's of no use
+                if (msg.Content == message)
+                {
+                    ignoredChannels.Add(channel);
+                    continue;
+                }
+
+                alternativeMessage = new QueuedMessage()
+                {
+                    Id = msg.Id,
+                    Channel = msg.Channel,
+                    Content = msg.Content
+                };
+            }
+
+            // Make sure the message pump doesn't send duplicate messages, I don't think there's 
+            // a way to remove messages from a BlockingCollection.
+            if (alternativeMessage.Channel != "BanchoBot")
+            {
+                _ignoredMessages.Add(alternativeMessage.Id);
+            }
+
+            // Give the new message a new id so it doesn't have the same one as the old message.
+            alternativeMessage.Id = new Guid();
+
+            _messageQueue.Add(alternativeMessage);
+        }
+        
         _messageQueue.Add(new QueuedMessage()
         {
             Channel = channel,
             Content = message
         });
+
+        _lastSentMessage = message;
     }
 
     public async Task RunAsync()
@@ -482,6 +547,12 @@ public class Bot
             {
                 var message = _messageQueue.Take();
 
+                if (_ignoredMessages.Contains(message.Id))
+                {
+                    _ignoredMessages.Remove(message.Id);
+                    continue;
+                }
+                
                 bool shouldThrottle;
 
                 do
@@ -505,7 +576,7 @@ public class Bot
                     Log.Warning($"Ignoring message '{message.Content}', message is too long.");
                     continue;
                 }
-                
+
                 Log.Verbose($"Sending message '{message.Content}' from {message.Time} (current queue: {sentMessages.Count})");
                 
                 try
