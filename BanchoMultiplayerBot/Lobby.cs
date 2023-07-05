@@ -222,7 +222,7 @@ public class Lobby
 
     private void AddMessageToHistory(IPrivateIrcMessage message)
     {
-        if (RecentMessages.Count >= 300)
+        if (RecentMessages.Count >= 600)
             RecentMessages.RemoveAt(0);
         
         RecentMessages.Add(message);
