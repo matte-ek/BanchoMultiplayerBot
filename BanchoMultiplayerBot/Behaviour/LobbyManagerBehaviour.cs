@@ -244,7 +244,7 @@ public class LobbyManagerBehaviour : IBotBehaviour
         // So we'll just wait an additional 5 seconds before checking it again.
         if ((DateTime.Now - _lastSettingsUpdateSentTime).Duration().TotalSeconds > 5.1)
         {
-            Log.Warning("Detected '!mp settings' still not being sent after 5 seconds, retrying...");
+            //Log.Warning("Detected '!mp settings' still not being sent after 5 seconds, retrying...");
             
             if (_mpSettingsAttempts < 5)
             {
