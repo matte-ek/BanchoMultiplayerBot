@@ -17,7 +17,7 @@ namespace BanchoMultiplayerBot.Database.Bot.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.5");
 
-            modelBuilder.Entity("BanchoMultiplayerBot.Database.Bot.Models.User", b =>
+            modelBuilder.Entity("BanchoMultiplayerBot.Database.Models.User", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()

@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BanchoMultiplayerBot.Database.Bot.Models;
+﻿using BanchoMultiplayerBot.Database.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace BanchoMultiplayerBot.Database.Bot.Repositories
+namespace BanchoMultiplayerBot.Database.Repositories
 {
     public class UserRepository : IDisposable
     {
