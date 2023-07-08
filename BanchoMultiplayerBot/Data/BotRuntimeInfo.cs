@@ -16,11 +16,7 @@ public class BotRuntimeInfo
     /// Time when bot last had networking issues
     /// </summary>
     public DateTime LastConnectionIssueTime { get; set; }
-    
-    public int MessagesSent { get; set; }
-    public int MessagesReceived { get; set; }
-    
-    public int ApiRequests { get; set; }
-    public int ApiErrors { get; set; }
+
+    public BotStatistics Statistics { get; } = new();
     
 }

@@ -21,6 +21,7 @@ public class MapManagerBehaviour : IBotBehaviour
 
     public int CurrentBeatmapSetId { get; private set; }
     public int CurrentBeatmapId { get; private set; }
+    public int CurrentBeatmapLength { get; private set; }
     public string CurrentBeatmapName { get; private set; } = string.Empty;
 
     public bool ValidMapPicked { get; private set; } = true;
@@ -40,6 +41,7 @@ public class MapManagerBehaviour : IBotBehaviour
     private bool _hostValidMapPicked = true;
 
     private DateTime _matchStartTime = DateTime.Now;
+    private DateTime _matchFinishTime = DateTime.Now;
     private DateTime _beatmapRejectTime = DateTime.Now;
 
     private Mods _roomMods;
@@ -119,6 +121,10 @@ public class MapManagerBehaviour : IBotBehaviour
     private void OnMatchFinished()
     {
         IsValidatingMap = false;
+        
+        _matchFinishTime = DateTime.Now;
+
+        _lobby.Bot.RuntimeInfo.Statistics.MapLength.WithLabels(_lobby.LobbyLabel).Observe(CurrentBeatmapLength);
     }
 
     private void OnMatchStarted()
@@ -232,6 +238,11 @@ public class MapManagerBehaviour : IBotBehaviour
 
             CurrentBeatmapName = $"{beatmap.Artist} - {beatmap.Title}";
             CurrentBeatmapId = id;
+            CurrentBeatmapLength = beatmap.TotalLength == null
+                ? 0
+                : int.Parse(beatmap.TotalLength, CultureInfo.InvariantCulture);
+            
+            _lobby.Bot.RuntimeInfo.Statistics.MapPickTime.WithLabels(_lobby.LobbyLabel).Observe((DateTime.Now - _matchFinishTime).TotalSeconds);
             
             ValidMapPicked = true;
 
@@ -254,7 +265,7 @@ public class MapManagerBehaviour : IBotBehaviour
         
         SetBeatmap(_beatmapFallbackId);
 
-        _lobby.Statistics.MapViolationCount++;
+        _lobby.Bot.RuntimeInfo.Statistics.MapViolations.WithLabels(_lobby.LobbyLabel).Inc();
 
         if (IsBannedBeatmap(beatmap))
         {
@@ -441,7 +452,7 @@ public class MapManagerBehaviour : IBotBehaviour
         
         var mapLength = int.Parse(beatmap.TotalLength, CultureInfo.InvariantCulture);
         
-        return _lobby.Configuration.MaximumMapLength >= mapLength && mapLength >= _lobby.Configuration.MinimumMapLength ;
+        return _lobby.Configuration.MaximumMapLength >= mapLength && mapLength >= _lobby.Configuration.MinimumMapLength;
     }
 
     private bool IsAllowedBeatmapGameMode(BeatmapModel beatmap)

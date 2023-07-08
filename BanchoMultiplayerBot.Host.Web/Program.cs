@@ -2,7 +2,6 @@ using BanchoMultiplayerBot.Host.Web;
 using BanchoMultiplayerBot.Host.Web.Auth;
 using BanchoMultiplayerBot.Host.Web.Extra;
 using BanchoMultiplayerBot.Host.Web.Log;
-using BanchoMultiplayerBot.Host.Web.Statistics;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -11,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 using Serilog;
 using Microsoft.FeatureManagement;
+using Prometheus;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
@@ -65,6 +65,11 @@ app.MapBlazorHub(configureOptions: options =>
 {
     options.Transports = HttpTransportType.WebSockets;
 });
+
+if (app.Configuration.GetSection("FeatureManagement").GetValue<bool>("StatisticsController", false))
+{
+    app.UseMetricServer("/api/statistics/metrics");
+}
 
 app.MapFallbackToPage("/_Host");
 

@@ -42,15 +42,15 @@ public class Lobby
     /// List of the 300 recent messages in the lobby, primarily used within the WebUI
     /// </summary>
     public List<IPrivateIrcMessage> RecentMessages { get; } = new();
-
-    public LobbyStatistics Statistics { get; } = new();
-
+    
     public event Action? OnLobbyChannelJoined;
     public event Action<IPrivateIrcMessage>? OnUserMessage;
     public event Action<IPrivateIrcMessage>? OnAdminMessage;
     public event Action<IPrivateIrcMessage>? OnBanchoMessage;
     
     public string Channel { get; set; }
+
+    internal string LobbyLabel = string.Empty;
     
     public Lobby(Bot bot, LobbyConfiguration configuration, string channel)
     {
@@ -76,6 +76,7 @@ public class Lobby
         AddBehaviour(new BanBehaviour());
         AddBehaviour(new DebugCommandsBehaviour());
         AddBehaviour(new ConfigBehaviour());
+        AddBehaviour(new StatisticsBehaviour());
 
         // Add user specified behaviours
         if (Configuration.Behaviours != null)
@@ -106,18 +107,11 @@ public class Lobby
             }   
         }
 
+        LobbyLabel = Bot.Lobbies.FindIndex(x => x == this).ToString();
+
         Behaviours.ForEach(x => x.Setup(this));
         
-        MultiplayerLobby.OnMatchFinished += () =>
-        {
-            Statistics.GamesPlayed++;
-        };
-
-        MultiplayerLobby.OnMatchAborted += () =>
-        {
-            Statistics.GamesAborted++;
-        }; 
-
+        
         MultiplayerLobby.OnSettingsUpdated += () =>
         {
             // At this point, all behaviours should have done their "recover" stuff, and we may reset the recover status. 

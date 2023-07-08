@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Text.Json;
 using BanchoMultiplayerBot.OsuApi.Exceptions;
+using Prometheus;
 using Serilog;
 
 namespace BanchoMultiplayerBot.OsuApi;
@@ -22,7 +23,9 @@ public class OsuApiWrapper
 
     public async Task<BeatmapModel?> GetBeatmapInformation(int beatmapId, int mods = 0)
     {
-        _bot.RuntimeInfo.ApiRequests++;
+        using var _ = _bot.RuntimeInfo.Statistics.ApiRequestTime.NewTimer();
+        
+        _bot.RuntimeInfo.Statistics.ApiRequests.Inc();
         
         var result = await Client.GetAsync($"https://osu.ppy.sh/api/get_beatmaps?k={_osuApiKey}&b={beatmapId}&mods={mods}");
         
@@ -30,7 +33,7 @@ public class OsuApiWrapper
         {
             Log.Error($"Error code {result.StatusCode} while getting beatmap details for id {beatmapId}!");
 
-            _bot.RuntimeInfo.ApiErrors++;
+            _bot.RuntimeInfo.Statistics.ApiErrors.Inc();
             
             return result.StatusCode switch
             {
@@ -52,7 +55,8 @@ public class OsuApiWrapper
         }
         catch (Exception e)
         {
-            _bot.RuntimeInfo.ApiErrors++;
+            if (e is not BeatmapNotFoundException)
+                _bot.RuntimeInfo.Statistics.ApiErrors.Inc();
 
             Log.Error($"Error while parsing JSON from osu!api: {e.Message}, beatmap: {beatmapId}");
 

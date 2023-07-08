@@ -242,13 +242,13 @@ public class Bot
         // Events for logging purposes
         Client.OnPrivateMessageReceived += e =>
         {
-            RuntimeInfo.MessagesReceived++;
+            RuntimeInfo.Statistics.MessagesReceived.Inc();
             Log.Information($"[{e.Recipient}] {e.Sender}: {e.Content}");
         };
         
         Client.OnPrivateMessageSent += e =>
         {
-            RuntimeInfo.MessagesSent++;
+            RuntimeInfo.Statistics.MessagesSent.Inc();
             Log.Information($"[{e.Recipient}] {e.Sender}: {e.Content}");
         };
         
@@ -383,6 +383,8 @@ public class Bot
         OnBotReady?.Invoke();
 
         Task.Run(RunConnectionWatchdog);
+        
+        RuntimeInfo.Statistics.IsConnected.Set(1);
     }
 
     /// <summary>
@@ -476,6 +478,8 @@ public class Bot
 
                 RuntimeInfo.HadNetworkConnectionIssue = true;
                 RuntimeInfo.LastConnectionIssueTime = DateTime.Now;
+                
+                RuntimeInfo.Statistics.IsConnected.Set(0);
 
                 SaveBotState();
 
@@ -552,6 +556,8 @@ public class Bot
                     _ignoredMessages.Remove(message.Id);
                     continue;
                 }
+                
+                RuntimeInfo.Statistics.MessageSendQueue.Set(_messageQueue.Count);
                 
                 bool shouldThrottle;
 

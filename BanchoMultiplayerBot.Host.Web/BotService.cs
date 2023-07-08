@@ -1,6 +1,4 @@
-﻿using BanchoMultiplayerBot.Host.Web.Statistics;
-
-namespace BanchoMultiplayerBot.Host.Web
+﻿namespace BanchoMultiplayerBot.Host.Web
 {
     public class BotService : Bot, IDisposable
     {
