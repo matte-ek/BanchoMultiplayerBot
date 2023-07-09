@@ -16,6 +16,7 @@ An osu! multiplayer bot that will maintain a queue and pass the host around ever
 | !abort               | Vote to abort the currently on-going match |
 | !playtime / !pt      | Shows your current and total playtime. |
 | !playstats / !ps     | Shows your total matches played and #1's |
+| !mapstats / !ms      | Shows play stats of the currently picked map. |
 | !mirror              | Sends a download link to the map from a mirror. |
 | !help                | Sends a link to the command/help page. |
 
