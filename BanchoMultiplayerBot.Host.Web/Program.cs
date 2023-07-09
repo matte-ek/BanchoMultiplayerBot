@@ -1,3 +1,4 @@
+using BanchoMultiplayerBot.Database;
 using BanchoMultiplayerBot.Host.Web;
 using BanchoMultiplayerBot.Host.Web.Auth;
 using BanchoMultiplayerBot.Host.Web.Extra;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http.Connections;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 using Serilog;
@@ -42,6 +44,12 @@ builder.Services.AddScoped<AuthenticationStateProvider, TemporaryAuthStateProvid
 builder.Services.AddFeatureManagement();
 
 var app = builder.Build();
+
+{
+    using var context = new BotDbContext();
+
+    context.Database.Migrate();
+}
 
 app.Services.GetService<BotService>()?.Start();
 

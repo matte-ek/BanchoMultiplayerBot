@@ -1,4 +1,5 @@
-﻿using BanchoMultiplayerBot.Database.Repositories;
+﻿using BanchoMultiplayerBot.Database.Models;
+using BanchoMultiplayerBot.Database.Repositories;
 using BanchoMultiplayerBot.Extensions;
 using BanchoSharp.EventArgs;
 using BanchoSharp.Interfaces;
@@ -11,13 +12,25 @@ public class FunCommandsBehaviour : IBotBehaviour
     private Lobby _lobby = null!;
     private bool _flushedPlaytime = false;
 
+    private bool _hasGameData = false;
+    private int _startPlayerCount = 0;
+
+    private MapManagerBehaviour? _mapManagerBehaviour;
+
     public void Setup(Lobby lobby)
     {
         _lobby = lobby;
 
         _lobby.MultiplayerLobby.OnPlayerDisconnected += OnPlayerDisconnected;
+        _lobby.MultiplayerLobby.OnMatchStarted += OnMatchStarted;
         _lobby.MultiplayerLobby.OnMatchFinished += OnMatchFinished;
         _lobby.OnUserMessage += OnUserMessage;
+        
+        var mapManagerBehaviour = _lobby.Behaviours.Find(x => x.GetType() == typeof(MapManagerBehaviour));
+        if (mapManagerBehaviour != null)
+        {
+            _mapManagerBehaviour = (MapManagerBehaviour)mapManagerBehaviour;
+        }
     }
 
     public async Task FlushPlaytime()
@@ -54,6 +67,11 @@ public class FunCommandsBehaviour : IBotBehaviour
                 return;
             }
 
+            if (_mapManagerBehaviour == null)
+            {
+                return;
+            }
+
             if (msg.Content.ToLower().Equals("!playtime") || msg.Content.ToLower().Equals("!pt"))
             {
                 using var userRepository = new UserRepository();
@@ -75,6 +93,17 @@ public class FunCommandsBehaviour : IBotBehaviour
 
                 _lobby.SendMessage($"{msg.Sender} has played {user.MatchesPlayed} matches with a total of {user.NumberOneResults} #1's");
             }
+
+            if (msg.Content.ToLower().Equals("!mapstats") || msg.Content.ToLower().Equals("!ms"))
+            {
+                using var gameRepository = new GameRepository();
+
+                var beatmapId = _mapManagerBehaviour.CurrentBeatmapId;
+                var totalPlayCount = await gameRepository.GetGameCountByMapId(beatmapId, null);
+                var pastWeekPlayCount = await gameRepository.GetGameCountByMapId(beatmapId, DateTime.Now.AddDays(-7));
+             
+                _lobby.SendMessage($"This map has been played a total of {totalPlayCount} times! ({pastWeekPlayCount} times past week)");
+            }
         }
         catch (Exception)
         {
@@ -82,30 +111,25 @@ public class FunCommandsBehaviour : IBotBehaviour
         }
     }
 
+    private void OnMatchStarted()
+    {
+        try
+        {
+            _hasGameData = true;
+            _startPlayerCount = _lobby.MultiplayerLobby.Players.Count;
+        }
+        catch (Exception e)
+        {
+            Log.Error($"Exception at FunCommands.OnMatchStarted(): {e}");
+        }
+    }
+    
     private async void OnMatchFinished()
     {
         try
         {
-            using var userRepository = new UserRepository();
-
-            var highestScorePlayer = _lobby.MultiplayerLobby.Players.Where(x => x.Passed == true).MaxBy(x => x.Score);
-
-            if (_lobby.MultiplayerLobby.Players.Count >= 3 && highestScorePlayer is not null)
-            {
-                var user = await userRepository.FindUser(highestScorePlayer.Name) ?? await userRepository.CreateUser(highestScorePlayer.Name);
-
-                user.NumberOneResults++;
-            }
-
-            foreach (var player in _lobby.MultiplayerLobby.Players)
-            {
-                var user = await userRepository.FindUser(player.Name) ?? await userRepository.CreateUser(player.Name);
-
-                if (player.Score > 0)
-                    user.MatchesPlayed++;
-            }
-
-            await userRepository.Save();
+            await StoreGameData();
+            await StorePlayerFinishData();
         }
         catch (Exception e)
         {
@@ -131,5 +155,54 @@ public class FunCommandsBehaviour : IBotBehaviour
         {
             Log.Error($"Exception at FunCommands.OnPlayerDisconnected(): {e}");
         }
+    }
+
+    private async Task StoreGameData()
+    {
+        if (_mapManagerBehaviour == null ||
+            _hasGameData == false)
+        {
+            return;
+        }
+        
+        using var gameRepository = new GameRepository();
+
+        var playerFinishCount = _lobby.MultiplayerLobby.Players.Count(x => x.Score > 0);
+        var playerPassedCount = _lobby.MultiplayerLobby.Players.Count(x => x.Score > 0 && x.Passed == true);
+
+        var game = new Game()
+        {
+            BeatmapId = _mapManagerBehaviour.CurrentBeatmapId,
+            Time = DateTime.Now,
+            PlayerCount = _startPlayerCount,
+            PlayerFinishCount = playerFinishCount,
+            PlayerPassedCount = playerPassedCount
+        };
+
+        await gameRepository.AddGame(game);
+    }
+    
+    private async Task StorePlayerFinishData()
+    {
+        using var userRepository = new UserRepository();
+
+        var highestScorePlayer = _lobby.MultiplayerLobby.Players.Where(x => x.Passed == true).MaxBy(x => x.Score);
+
+        if (_lobby.MultiplayerLobby.Players.Count >= 3 && highestScorePlayer is not null)
+        {
+            var user = await userRepository.FindUser(highestScorePlayer.Name) ?? await userRepository.CreateUser(highestScorePlayer.Name);
+
+            user.NumberOneResults++;
+        }
+
+        foreach (var player in _lobby.MultiplayerLobby.Players)
+        {
+            var user = await userRepository.FindUser(player.Name) ?? await userRepository.CreateUser(player.Name);
+
+            if (player.Score > 0)
+                user.MatchesPlayed++;
+        }
+
+        await userRepository.Save();
     }
 }
