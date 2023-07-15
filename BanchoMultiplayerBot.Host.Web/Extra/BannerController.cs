@@ -81,7 +81,16 @@ namespace BanchoMultiplayerBot.Host.Web.Extra
                     if (mapName.Length > 35)
                         mapName = mapName[..35] + "...";
 
+                    var starRatingColor = GetOsuDifficultyColor(behaviour.CurrentBeatmapStarRating);
+                    var textColor = ((starRatingColor.Red * 255) * 0.299 + (starRatingColor.Green * 255) * 0.587 + (starRatingColor.Blue * 255) * 0.114) > 186
+                        ? new Color(35, 35, 35, 255)
+                        : new Color(240, 240, 240, 255);
+                    
                     svgFile = svgFile.Replace($"$MAP{i}", $"{HttpUtility.HtmlEncode(mapName)}");
+                    svgFile = svgFile.Replace($"$SR{i}", $"{behaviour.CurrentBeatmapStarRating:.00}");
+                    
+                    svgFile = svgFile.Replace($"$SR_CLR{i}", starRatingColor.ToCssString());
+                    svgFile = svgFile.Replace($"$SR_TXT{i}", textColor.ToCssString());
 
                     if (behaviour.CurrentBeatmapSetId == 0)
                     {
@@ -157,5 +166,26 @@ namespace BanchoMultiplayerBot.Host.Web.Extra
 
             return Redirect(lobby.Configuration.LobbyJoinLink);
         }
+
+        // See https://github.com/ppy/osu/blob/master/osu.Game/Graphics/OsuColour.cs#L26
+        private static Color GetOsuDifficultyColor(float starRating)
+        {
+            return Color.SampleFromLinearGradient(new[]
+            {
+                (0.1f, new Color(170, 170, 170, 255)),
+                    (0.1f, new Color(66, 144, 251, 255)),
+                (1.25f, new Color(79, 192, 255, 255)),
+                (2.0f, new Color(79, 255, 213, 255)),
+                (2.5f, new Color(124, 255, 79, 255)),
+                (3.3f, new Color(246, 240, 92, 255)),
+                (4.2f, new Color(255, 128, 104, 255)),
+                (4.9f, new Color(255, 78, 111, 255)),
+                (5.8f, new Color(198, 69, 184, 255)),
+                (6.7f, new Color(101, 99, 222, 255)),
+                (7.7f, new Color(24, 21, 142, 255)),
+                (9.0f, new Color(0, 0, 0, 255)),
+            }, (float)Math.Round(starRating, 2, MidpointRounding.AwayFromZero));
+        }
+        
     }
 }

@@ -22,6 +22,7 @@ public class MapManagerBehaviour : IBotBehaviour
     public int CurrentBeatmapSetId { get; private set; }
     public int CurrentBeatmapId { get; private set; }
     public int CurrentBeatmapLength { get; private set; }
+    public float CurrentBeatmapStarRating { get; private set; }
     public string CurrentBeatmapName { get; private set; } = string.Empty;
 
     public bool ValidMapPicked { get; private set; } = true;
@@ -241,6 +242,10 @@ public class MapManagerBehaviour : IBotBehaviour
             CurrentBeatmapLength = beatmap.TotalLength == null
                 ? 0
                 : int.Parse(beatmap.TotalLength, CultureInfo.InvariantCulture);
+
+            CurrentBeatmapStarRating = beatmap.DifficultyRating == null
+                ? 0
+                : float.Parse(beatmap.DifficultyRating, CultureInfo.InvariantCulture);
             
             _lobby.Bot.RuntimeInfo.Statistics.MapPickTime.WithLabels(_lobby.LobbyLabel).Observe((DateTime.Now - _matchFinishTime).TotalSeconds);
             
