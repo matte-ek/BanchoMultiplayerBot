@@ -173,7 +173,7 @@ public class Bot
         // I don't really have any choice as I'm (or anyone using this bot for that matter) not allowed to request a bot account
         // due to some policy. It is what it is. In most cases however this code should just use an alternative message,
         // and will just "spam" BanchoBot if required.
-        if (_lastSentMessage == message)
+        if (_lastSentMessage == message && RuntimeInfo.StartTime.AddMinutes(3) > DateTime.Now)
         {
             var alternativeMessage = new QueuedMessage()
             {
