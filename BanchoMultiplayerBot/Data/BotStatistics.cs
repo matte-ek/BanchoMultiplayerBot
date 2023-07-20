@@ -26,5 +26,6 @@ public class BotStatistics
     public Gauge HostSkipCount { get; } = Metrics.CreateGauge("HostSkipCount", "Total amount of host skips in each lobby", "Lobby");
     public Histogram MapLength { get; } = Metrics.CreateHistogram("MapLength", "Length of the last map played", "Lobby");
     public Histogram MapPickTime { get; } = Metrics.CreateHistogram("MapPickTime", "Time it took to pick a map", "Lobby");
+    public Histogram MapPlayTime { get; } = Metrics.CreateHistogram("MapPlayTime", "Time it took to start the match", "Lobby");
 
 }

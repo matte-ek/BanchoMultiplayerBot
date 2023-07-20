@@ -132,6 +132,8 @@ public class MapManagerBehaviour : IBotBehaviour
     {
         _matchStartTime = DateTime.Now;
 
+        _lobby.Bot.RuntimeInfo.Statistics.MapPlayTime.WithLabels(_lobby.LobbyLabel).Observe((DateTime.Now - _matchFinishTime).TotalSeconds);
+
         if (EnsureValidMap(true))
             return;
 
