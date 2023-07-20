@@ -27,5 +27,6 @@
         /// </summary>
         public int NumberOneResults { get; set; }
 
+        public ICollection<PlayerBan> Bans { get; } = null!;
     }
 }

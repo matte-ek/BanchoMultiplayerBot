@@ -5,6 +5,7 @@ using BanchoSharp.Multiplayer;
 using Serilog;
 using System.Xml.Linq;
 using BanchoMultiplayerBot.Data;
+using BanchoMultiplayerBot.Database.Repositories;
 using BanchoMultiplayerBot.Utilities;
 using MudBlazor.Services;
 
@@ -28,6 +29,10 @@ public class AutoHostRotateBehaviour : IBotBehaviour
     private readonly List<PlayerQueueHistory> _recentLeaveHistory = new();
 
     private MapManagerBehaviour? _mapManagerBehaviour;
+
+    // Players here are banned, and shouldn't be added to the queue.
+    // This list exists just to cache the names, to avoid having to do DB lookups all the time.
+    private readonly List<string> _queueIgnorePlayers = new();
     
     public List<string> Queue { get; } = new();
 
@@ -36,13 +41,23 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         _lobby = lobby;
         _playerSkipVote = new PlayerVote(_lobby, "Skip host vote");
 
-        _lobby.MultiplayerLobby.OnPlayerJoined += player =>
+        _lobby.MultiplayerLobby.OnPlayerJoined += async player =>
         {
+            if ((await BanBehaviour.GetActivePlayerBans(player.Name)).Any())
+            {
+                // To make sure they aren't added afterwards.
+                _queueIgnorePlayers.Add(player.Name);
+                
+                return;
+            }
+            
             if (!Queue.Contains(player.Name))
                 Queue.Add(player.Name);
 
             if (_lobby.IsRecovering)
+            {
                 return;
+            }
             
             RestorePlayerQueuePosition(player);
 
@@ -51,6 +66,11 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
         _lobby.MultiplayerLobby.OnPlayerDisconnected += disconnectEventArgs =>
         {
+            if (_queueIgnorePlayers.Contains(disconnectEventArgs.Player.Name))
+            {
+                _queueIgnorePlayers.Remove(disconnectEventArgs.Player.Name);
+            }
+            
             if (Queue.Contains(disconnectEventArgs.Player.Name))
             {
                 AddLeaveQueuePosition(disconnectEventArgs.Player.Name);
@@ -236,7 +256,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         }
     }
 
-    private void OnSettingsUpdated()
+    private async void OnSettingsUpdated()
     {
         if (_mapManagerBehaviour?.IsValidatingMap == true)
         {
@@ -258,14 +278,14 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
             Log.Information($"Recovered old queue: {string.Join(", ", Queue.Take(5))}");
         }
-
+        
         // In some rare cases, players which have already left remain in the queue, so 
         // go through the queue just in case.
         foreach (var player in Queue.ToList())
         {
             if (_lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name == player) is not null) 
                 continue;
-            
+
             Log.Warning($"Disconnected player {player} in queue!");
             Queue.Remove(player);
         }
@@ -273,6 +293,10 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         // Same deal here, but sometimes players aren't in the queue.
         foreach (var player in _lobby.MultiplayerLobby.Players)
         {
+            // Maybe they shouldn't?
+            if (_queueIgnorePlayers.Any(x => x == player.Name))
+                continue;
+            
             if (!Queue.Contains(player.Name))
                 Queue.Add(player.Name);
         }
@@ -367,7 +391,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
         Queue.RemoveAt(0);
 
-        // Re-add him back to the end of the queue
+        // Re-add the player to the end of the queue
         Queue.Add(playerName);
 
         _hasSkippedHost = false;

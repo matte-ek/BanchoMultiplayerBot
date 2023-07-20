@@ -1,5 +1,9 @@
-﻿using BanchoSharp.Interfaces;
+﻿using BanchoMultiplayerBot.Database.Models;
+using BanchoMultiplayerBot.Database.Repositories;
+using BanchoMultiplayerBot.Extensions;
+using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
+using Serilog;
 
 namespace BanchoMultiplayerBot.Behaviour;
 
@@ -14,90 +18,93 @@ public class BanBehaviour : IBotBehaviour
         _lobby.OnAdminMessage += OnAdminMessage;
         _lobby.MultiplayerLobby.OnPlayerJoined += OnPlayerJoined;
     }
-    
-    private void OnAdminMessage(IPrivateIrcMessage e)
+
+    public static async Task<IEnumerable<PlayerBan>> GetActivePlayerBans(string playerName)
     {
-        if (e.Content.StartsWith("!ban "))
+        try
         {
-            try
-            {
-                var nameSplit = e.Content.Split("!ban ")[1];
+            using var userRepository = new UserRepository();
+            
+            var user = await userRepository.FindUser(playerName);
 
-                if (_lobby.Bot.Configuration.BannedPlayers == null)
-                {
-                    _lobby.Bot.Configuration.BannedPlayers = new string[] { nameSplit };
-                }
-                else
-                {
-                    if (_lobby.Bot.Configuration.BannedPlayers.ToList().Contains(nameSplit))
-                    {
-                        // Player already exists.
-                        return;
-                    }
-
-                    var banList = _lobby.Bot.Configuration.BannedPlayers.ToList();
-                    
-                    banList.Add(nameSplit);
-
-                    _lobby.Bot.Configuration.BannedPlayers = banList.ToArray();
-                }
-            }
-            catch (Exception)
-            {
-                // ignored.
-            }
+            return user?.Bans.Where(x => x.Active && (x.Expire == null || x.Expire > DateTime.Now)).ToList() ?? Enumerable.Empty<PlayerBan>();
         }
-        
-        if (e.Content.StartsWith("!banmapset "))
+        catch (Exception e)
         {
-            try
-            {
-                var beatmapSetId = int.Parse(e.Content.Split("!banmapset ")[1]);
+            Log.Error($"Expcetion while querying player bans: {e}");
 
-                if (_lobby.Bot.Configuration.BannedBeatmaps == null)
-                {
-                    _lobby.Bot.Configuration.BannedBeatmaps = new int[] { beatmapSetId };
-                }
-                else
-                {
-                    if (_lobby.Bot.Configuration.BannedBeatmaps.ToList().Contains(beatmapSetId))
-                    {
-                        // Map set already exists.
-                        return;
-                    }
-
-                    var banList = _lobby.Bot.Configuration.BannedBeatmaps.ToList();
-                    
-                    banList.Add(beatmapSetId);
-
-                    _lobby.Bot.Configuration.BannedBeatmaps = banList.ToArray();
-                }
-            }
-            catch (Exception)
-            {
-                // ignored.
-            }
+            return Enumerable.Empty<PlayerBan>();
         }
     }
 
-    private void OnPlayerJoined(MultiplayerPlayer player)
+    private async void OnAdminMessage(IPrivateIrcMessage e)
     {
-        var name = player.Name;
-        var botConfiguration = _lobby.Bot.Configuration;
-
-        if (botConfiguration.BannedPlayers == null)
-            return;
-
         try
         {
-            if (botConfiguration.BannedPlayers.ToList().Contains(name))
+            using var userRepository = new UserRepository();
+            using var banRepository = new PlayerBanRepository();
+
+            if (e.Content.StartsWith("!ban "))
             {
-                _lobby.SendMessage($"!mp ban {name.Replace(' ', '_')}");
+                var args = e.Content.Split(' ');
+
+                var playerName = args[1];
+                var hostBanOnly = args[2];
+                var expireTime = args.Length >= 4 ? args[3] : null;
+                var reason = args.Length >= 5 ? e.Content[string.Join(' ', args, 0, 4).Length..].TrimStart() : null;
+
+                if (!playerName.Any())
+                {
+                    return;
+                }
+            
+                var user = await userRepository.FindUser(playerName);
+
+                if (user == null)
+                {
+                    _lobby.SendMessage("Cannot find user.");
+                    return;
+                }
+
+                await banRepository.CreateBan(
+                    user,
+                    hostBanOnly.ToLower() == "yes" || hostBanOnly.ToLower() == "true",
+                    reason,
+                    expireTime != null ? DateTime.Now.AddDays(int.Parse(expireTime)) : null);
+                
+                _lobby.SendMessage("Player was succesfully put on ban list.");
+            }
+
+            if (e.Content.StartsWith("!removeban "))
+            {
+                var args = e.Content.Split(' ');
+                var playerName = args[1];
+                
+                var user = await userRepository.FindUser(playerName);
+                var bans = user?.Bans.Where(x => x.Active && (x.Expire == null || x.Expire > DateTime.Now)).ToList() ?? Enumerable.Empty<PlayerBan>();
+
+                foreach (var ban in bans)
+                {
+                    ban.Active = false;
+                }
+
+                await userRepository.Save();
             }
         }
-        catch (Exception)
+        catch (Exception exception)
         {
-            // ignored.
+            _lobby.SendMessage("Usage: !ban <player> <host-ban-only> <expire-time> <reason>");
+            Log.Error($"BanBehaviour::OnAdminMessage(): {exception}");
+        }
+    }
+
+    private async void OnPlayerJoined(MultiplayerPlayer player)
+    {
+        var bans = await GetActivePlayerBans(player.Name);
+
+        if (bans.Any(x => !x.HostBan))
+        {
+            _lobby.SendMessage($"!mp ban {player.Name.ToIrcNameFormat()}");
         }
     }
 }

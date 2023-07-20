@@ -15,7 +15,9 @@ namespace BanchoMultiplayerBot.Database.Repositories
 
         public async Task<User?> FindUser(string username)
         {
-            return await _botDbContext.Users.Where(x => x.Name == username).FirstOrDefaultAsync();
+            return await _botDbContext.Users.Where(x => x.Name == username)
+                .Include(x => x.Bans)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<User> CreateUser(string username)
