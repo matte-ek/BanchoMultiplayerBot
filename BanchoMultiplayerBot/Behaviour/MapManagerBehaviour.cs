@@ -162,6 +162,13 @@ public class MapManagerBehaviour : IBotBehaviour
         {
             _lobby.SendMessage($"[https://beatconnect.io/b/{CurrentBeatmapSetId} BeatConnect Mirror] - [https://osu.direct/d/{CurrentBeatmapSetId} osu.direct Mirror]");
         }
+
+        if (msg.Content.ToLower().StartsWith("!timeleft") && _lobby.MultiplayerLobby.MatchInProgress)
+        {
+            var timeLeft = (_matchStartTime.AddSeconds(CurrentBeatmapLength) - DateTime.Now).ToString(@"mm\:ss");
+
+            _lobby.SendMessage($"Time left of current map: {timeLeft}");
+        }
     }
 
     private void OnAdminMessage(IPrivateIrcMessage msg)
