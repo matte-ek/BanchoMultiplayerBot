@@ -266,7 +266,7 @@ public class Bot
     {
         _lastMessageTime = DateTime.Now;
 
-        if (msg.Content.ToLower().Equals("!help") || msg.Content.ToLower().Equals("!info"))
+        if (msg.Content.ToLower().Equals("!help") || msg.Content.ToLower().Equals("!info") || msg.Content.ToLower().Equals("!commands"))
         {
             SendMessage(msg.IsDirect ? msg.Sender : msg.Recipient, $"osu! auto host rotation bot (v{Version}) [https://github.com/matte-ek/BanchoMultiplayerBot/blob/master/COMMANDS.md Help & Commands]");
         }
