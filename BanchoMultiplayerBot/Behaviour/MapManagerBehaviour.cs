@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using BanchoMultiplayerBot.Database.Repositories;
 using BanchoMultiplayerBot.Extensions;
 using BanchoMultiplayerBot.OsuApi;
 using BanchoMultiplayerBot.OsuApi.Exceptions;
@@ -235,8 +236,9 @@ public class MapManagerBehaviour : IBotBehaviour
     private async Task EnsureBeatmapLimits(BeatmapModel beatmap, int id)
     {
         var hostIsAdministrator = _lobby.MultiplayerLobby.Host is not null && await Bot.IsAdministrator(_lobby.MultiplayerLobby.Host.Name);
-
-        if ((IsAllowedBeatmapLength(beatmap) && IsAllowedBeatmapStarRating(beatmap) && IsAllowedBeatmapGameMode(beatmap) && !IsBannedBeatmap(beatmap)) 
+        var mapIsBanned = await IsBannedBeatmap(beatmap);
+        
+        if ((IsAllowedBeatmapLength(beatmap) && IsAllowedBeatmapStarRating(beatmap) && IsAllowedBeatmapGameMode(beatmap) && !mapIsBanned) 
             || hostIsAdministrator
             || !_beatmapCheckEnabled)
         {
@@ -279,7 +281,7 @@ public class MapManagerBehaviour : IBotBehaviour
 
         _lobby.Bot.RuntimeInfo.Statistics.MapViolations.WithLabels(_lobby.LobbyLabel).Inc();
 
-        if (IsBannedBeatmap(beatmap))
+        if (mapIsBanned)
         {
             _lobby.SendMessage(beatmap.Title != null
                 ? $"This map set ({beatmap.Title}) has been banned."
@@ -448,21 +450,21 @@ public class MapManagerBehaviour : IBotBehaviour
         };
     }
 
-    private bool IsBannedBeatmap(BeatmapModel beatmap)
+    private static async Task<bool> IsBannedBeatmap(BeatmapModel beatmap)
     {
-        var config = _lobby.Bot.Configuration;
-        
-        if (config.BannedBeatmaps == null)
-            return false;
-        if (beatmap.BeatmapsetId == null)
+        if (beatmap.BeatmapsetId == null ||
+            beatmap.BeatmapId == null)
             return false;
 
         try
         {
-            return int.TryParse(beatmap.BeatmapsetId, out int beatmapSetId) && config.BannedBeatmaps.ToList().Contains(beatmapSetId);
+            using var mapBanRepository = new MapBanRepository();
+
+            return await mapBanRepository.IsMapBanned(int.Parse(beatmap.BeatmapsetId), int.Parse(beatmap.BeatmapId));
         }
-        catch (Exception)
+        catch (Exception e)
         {
+            Log.Error($"Error while querying map ban status: {e}");
             return false;
         }
     }

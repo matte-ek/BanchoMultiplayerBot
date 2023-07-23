@@ -96,6 +96,32 @@ public class BanBehaviour : IBotBehaviour
             _lobby.SendMessage("Usage: !ban <player> <host-ban-only> <expire-time> <reason>");
             Log.Error($"BanBehaviour::OnAdminMessage(): {exception}");
         }
+
+        try
+        {
+            using var mapBanRepository = new MapBanRepository();
+            
+            if (e.Content.StartsWith("!banmapset "))
+            {
+                var args = e.Content.Split(' ');
+
+                await mapBanRepository.AddMapBan(int.Parse(args[1]), null);
+                await mapBanRepository.Save();
+            }
+            
+            if (e.Content.StartsWith("!banmap "))
+            {
+                var args = e.Content.Split(' ');
+
+                await mapBanRepository.AddMapBan(null, int.Parse(args[1]));
+                await mapBanRepository.Save();
+            }
+        }
+        catch (Exception exception)
+        {
+            _lobby.SendMessage("Usage: !banmap[set] <id>");
+            Log.Error($"BanBehaviour::OnAdminMessage(): {exception}");
+        }
     }
 
     private async void OnPlayerJoined(MultiplayerPlayer player)

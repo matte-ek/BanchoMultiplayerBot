@@ -8,6 +8,7 @@ namespace BanchoMultiplayerBot.Database
         public DbSet<User> Users { get; set; }
         public DbSet<Game> Games { get; set; }
         public DbSet<PlayerBan> PlayerBans { get; set; }
+        public DbSet<MapBan> MapBans { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options) => options.UseSqlite($"Data Source=bot.db");
     }
