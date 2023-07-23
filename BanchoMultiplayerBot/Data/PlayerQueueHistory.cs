@@ -2,7 +2,7 @@
 
 public class PlayerQueueHistory
 {
-    public string Name { get; set; } = string.Empty;
-    public DateTime Time { get; set; }
-    public int QueuePosition { get; set; } = -1;
+    public string Name { get; init; } = string.Empty;
+    public DateTime Time { get; init; }
+    public int QueuePosition { get; init; } = -1;
 }

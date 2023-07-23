@@ -220,7 +220,7 @@ public class AutoStartBehaviour : IBotBehaviour
 
     private void StartGame()
     {
-        if (_mapManagerBehaviour?.ValidMapPicked == false)
+        if (_mapManagerBehaviour?.HasValidMapPicked == false)
         {
             Log.Warning("Ignoring automatic map start due to invalid map.");
             return;

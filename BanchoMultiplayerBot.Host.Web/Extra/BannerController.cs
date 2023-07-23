@@ -60,7 +60,7 @@ namespace BanchoMultiplayerBot.Host.Web.Extra
                 var svgFile = await System.IO.File.ReadAllTextAsync("banner.svg");
                 var bannerDownloadList = new List<Task<BeatmapCoverData>>();
 
-                for (int i = 0; i < _bot.Lobbies.Count; i++)
+                for (var i = 0; i < _bot.Lobbies.Count; i++)
                 {
                     var lobby = _bot.Lobbies[i];
 
@@ -70,35 +70,35 @@ namespace BanchoMultiplayerBot.Host.Web.Extra
                     svgFile = svgFile.Replace($"$PLAYERS{i}", $"{lobby.MultiplayerLobby.Players.Count:00}/{lobby.Configuration.Size}");
 
                     var behaviour = (MapManagerBehaviour?)lobby.Behaviours.Find(x => x.GetType() == typeof(MapManagerBehaviour));
-                    if (behaviour == null)
+                    if (behaviour?.CurrentBeatmap == null)
                     {
                         continue;
                     }
 
                     // Clamp and apply map name
-                    var mapName = behaviour.CurrentBeatmapName;
+                    var mapName = behaviour.CurrentBeatmap.Name;
 
                     if (mapName.Length > 35)
                         mapName = mapName[..35] + "...";
 
-                    var starRatingColor = GetOsuDifficultyColor(behaviour.CurrentBeatmapStarRating);
+                    var starRatingColor = GetOsuDifficultyColor(behaviour.CurrentBeatmap.StarRating);
                     var textColor = ((starRatingColor.Red * 255) * 0.299 + (starRatingColor.Green * 255) * 0.587 + (starRatingColor.Blue * 255) * 0.114) > 186
                         ? new Color(35, 35, 35, 255)
                         : new Color(240, 240, 240, 255);
                     
                     svgFile = svgFile.Replace($"$MAP{i}", $"{HttpUtility.HtmlEncode(mapName)}");
-                    svgFile = svgFile.Replace($"$SR{i}", $"{behaviour.CurrentBeatmapStarRating:.00}");
+                    svgFile = svgFile.Replace($"$SR{i}", $"{behaviour.CurrentBeatmap.StarRating:.00}");
                     
                     svgFile = svgFile.Replace($"$SR_CLR{i}", starRatingColor.ToCssString());
                     svgFile = svgFile.Replace($"$SR_TXT{i}", textColor.ToCssString());
 
-                    if (behaviour.CurrentBeatmapSetId == 0)
+                    if (behaviour.CurrentBeatmap.SetId == 0)
                     {
                         continue;
                     }
 
                     // If we've already downloaded the banner image, re-use that instead.
-                    if (_bannerCacheService.BeatmapCoverCache[i]?.Id == behaviour.CurrentBeatmapSetId)
+                    if (_bannerCacheService.BeatmapCoverCache[i]?.Id == behaviour.CurrentBeatmap.SetId)
                     {
                         svgFile = svgFile.Replace($"$BANNER{i}", $"data:image/png;base64, {_bannerCacheService.BeatmapCoverCache[i]?.Data}");
 
@@ -111,11 +111,11 @@ namespace BanchoMultiplayerBot.Host.Web.Extra
                         Task.Run(async () =>
                         {
                             var bannerImageResponse = await _httpClient.GetAsync(
-                                $"https://assets.ppy.sh/beatmaps/{behaviour.CurrentBeatmapSetId}/covers/cover.jpg");
+                                $"https://assets.ppy.sh/beatmaps/{behaviour.CurrentBeatmap.SetId}/covers/cover.jpg");
 
                             var ret = new BeatmapCoverData
                             {
-                                Id = behaviour.CurrentBeatmapSetId,
+                                Id = behaviour.CurrentBeatmap.SetId,
                                 LobbyIndex = lobbyIndex,
                                 Data = bannerImageResponse.IsSuccessStatusCode ? Convert.ToBase64String(await bannerImageResponse.Content.ReadAsByteArrayAsync()) : _bannerCacheService.PlaceholderImage
                             };

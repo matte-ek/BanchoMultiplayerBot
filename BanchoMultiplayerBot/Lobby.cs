@@ -121,7 +121,7 @@ public class Lobby
             var mapManagerBehaviour = Behaviours.Find(x => x.GetType() == typeof(MapManagerBehaviour));
             if (mapManagerBehaviour != null)
             {
-                ((MapManagerBehaviour)mapManagerBehaviour).IsValidatingMap = false;
+                ((MapManagerBehaviour)mapManagerBehaviour).IsRunningMapValidation = false;
             }
         };
 

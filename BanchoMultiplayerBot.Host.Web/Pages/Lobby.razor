@@ -33,9 +33,9 @@
 <MudGrid Class="mt-0">
     <MudItem xs="12" sm="6">
         <MudCard>
-            <MudCardContent Style="@($"background-image: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%,rgba(0,0,0,0.6) 100%), url(https://assets.ppy.sh/beatmaps/{_mapManager?.CurrentBeatmapSetId}/covers/cover.jpg);background-position: center;")">
+            <MudCardContent Style="@($"background-image: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%,rgba(0,0,0,0.6) 100%), url(https://assets.ppy.sh/beatmaps/{_mapManager?.CurrentBeatmap?.SetId}/covers/cover.jpg);background-position: center;")">
                 <MudText Typo="Typo.body2">Beatmap</MudText>
-                <MudLink Href="@($"https://osu.ppy.sh/b/{_mapManager?.CurrentBeatmapId}")" Typo="Typo.h5" Color="Color.Default">@_mapManager?.CurrentBeatmapName</MudLink>
+                <MudLink Href="@($"https://osu.ppy.sh/b/{_mapManager?.CurrentBeatmap?.Id}")" Typo="Typo.h5" Color="Color.Default">@_mapManager?.CurrentBeatmap?.Name</MudLink>
             </MudCardContent>
         </MudCard>
     </MudItem>

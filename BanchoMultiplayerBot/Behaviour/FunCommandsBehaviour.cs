@@ -10,10 +10,10 @@ namespace BanchoMultiplayerBot.Behaviour;
 public class FunCommandsBehaviour : IBotBehaviour
 {
     private Lobby _lobby = null!;
-    private bool _flushedPlaytime = false;
+    private bool _flushedPlaytime;
 
-    private bool _hasGameData = false;
-    private int _startPlayerCount = 0;
+    private bool _hasGameData;
+    private int _startPlayerCount;
 
     private MapManagerBehaviour? _mapManagerBehaviour;
 
@@ -96,13 +96,16 @@ public class FunCommandsBehaviour : IBotBehaviour
 
             if (msg.Content.ToLower().Equals("!mapstats") || msg.Content.ToLower().Equals("!ms"))
             {
-                using var gameRepository = new GameRepository();
+                if (_mapManagerBehaviour.CurrentBeatmap != null)
+                {
+                    using var gameRepository = new GameRepository();
 
-                var beatmapId = _mapManagerBehaviour.CurrentBeatmapId;
-                var totalPlayCount = await gameRepository.GetGameCountByMapId(beatmapId, null);
-                var pastWeekPlayCount = await gameRepository.GetGameCountByMapId(beatmapId, DateTime.Now.AddDays(-7));
+                    var beatmapId = _mapManagerBehaviour.CurrentBeatmap.Id;
+                    var totalPlayCount = await gameRepository.GetGameCountByMapId(beatmapId, null);
+                    var pastWeekPlayCount = await gameRepository.GetGameCountByMapId(beatmapId, DateTime.Now.AddDays(-7));
              
-                _lobby.SendMessage($"This map has been played a total of {totalPlayCount} times! ({pastWeekPlayCount} times past week)");
+                    _lobby.SendMessage($"This map has been played a total of {totalPlayCount} times! ({pastWeekPlayCount} times past week)");   
+                }
             }
         }
         catch (Exception)
@@ -159,7 +162,7 @@ public class FunCommandsBehaviour : IBotBehaviour
 
     private async Task StoreGameData()
     {
-        if (_mapManagerBehaviour == null ||
+        if (_mapManagerBehaviour?.CurrentBeatmap == null ||
             _hasGameData == false)
         {
             return;
@@ -172,7 +175,7 @@ public class FunCommandsBehaviour : IBotBehaviour
 
         var game = new Game()
         {
-            BeatmapId = _mapManagerBehaviour.CurrentBeatmapId,
+            BeatmapId = _mapManagerBehaviour.CurrentBeatmap.Id,
             Time = DateTime.Now,
             PlayerCount = _startPlayerCount,
             PlayerFinishCount = playerFinishCount,

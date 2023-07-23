@@ -258,7 +258,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
     private async void OnSettingsUpdated()
     {
-        if (_mapManagerBehaviour?.IsValidatingMap == true)
+        if (_mapManagerBehaviour?.IsRunningMapValidation == true)
         {
             return;
         }
