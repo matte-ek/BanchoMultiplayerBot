@@ -45,8 +45,6 @@ public class MapManagerBehaviour : IBotBehaviour
     private DateTime _matchFinishTime = DateTime.Now;
     private DateTime _beatmapRejectTime = DateTime.Now;
 
-    private Mods _roomMods;
-
     public void Setup(Lobby lobby)
     {
         _lobby = lobby;
@@ -331,54 +329,6 @@ public class MapManagerBehaviour : IBotBehaviour
         RunViolationAutoSkip();
     }
 
-    private async void OnModsChanged(Mods mods)
-    {
-        _roomMods = mods;
-
-        if (_lobby.MultiplayerLobby.MatchInProgress)
-        {
-            return;
-        }
-
-        if (_lobby.MultiplayerLobby.Mods == Mods.Freemod)
-        {
-            return;
-        }
-        
-        try
-        {
-            // osu!api has different bits for each mod, so we need to "translate" it.
-            // We only really care about the difficulty increasing mods anyway.
-            ModsModel osuApiMods = 0;
-
-            if ((_lobby.MultiplayerLobby.Mods & Mods.DoubleTime) != 0 ||
-                (_lobby.MultiplayerLobby.Mods & Mods.Nightcore) != 0)
-                osuApiMods |= ModsModel.DoubleTime;
-            if ((_lobby.MultiplayerLobby.Mods & Mods.HardRock) != 0)
-                osuApiMods |= ModsModel.HardRock;
-
-            var beatmapInformation = await _lobby.Bot.OsuApi.GetBeatmapInformation(CurrentBeatmapId, (int)osuApiMods);
-            if (beatmapInformation == null)
-            {
-                return;
-            }
-
-            if (!IsAllowedBeatmapStarRating(beatmapInformation))
-            {
-                _lobby.SendMessage("!mp mods Freemod");
-                _lobby.SendMessage("Selected mods cannot be applied due to them exceeding the star rating."); // TODO: Possibly think of a better message.
-
-                _hostViolationCount++;
-                
-                RunViolationAutoSkip();
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error($"Exception while checking map mods: {e}");
-        }
-    }
-    
     private void SetBeatmap(int id)
     {
         _botAppliedBeatmap = true;
