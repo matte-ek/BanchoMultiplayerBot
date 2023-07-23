@@ -9,6 +9,7 @@ using BanchoSharp.Multiplayer;
 using BanchoMultiplayerBot.Behaviour;
 using Serilog;
 using BanchoMultiplayerBot.Data;
+using BanchoMultiplayerBot.Database.Repositories;
 using BanchoMultiplayerBot.Utilities;
 
 namespace BanchoMultiplayerBot;
@@ -607,14 +608,26 @@ public class Bot
     /// <summary>
     /// Checks if the osu! username specified is added as an bot administrator.
     /// </summary>
-    internal bool IsAdministrator(string username)
+    internal static async Task<bool> IsAdministrator(string username)
     {
-        if (Configuration.Username == username)
-            return true;
-        if (Configuration.Administrators != null && username.Any() && Configuration.Administrators.FirstOrDefault(x => x.Name == username) != null)
-            return true;
+        if (!username.Any())
+        {
+            return false;
+        }
 
-        return false;
+        try
+        {
+            using var userRepository = new UserRepository();
+
+            var user = await userRepository.FindUser(username);
+
+            return user != null && user.Administrator;
+        }
+        catch (Exception e)
+        {
+            Log.Error( $"Error while querying administrator status for user: {e}");
+            return false;
+        }
     }
 
     // See https://stackoverflow.com/a/6993334

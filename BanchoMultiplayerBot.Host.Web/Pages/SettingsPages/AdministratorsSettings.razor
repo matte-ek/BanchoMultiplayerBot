@@ -2,10 +2,11 @@
 @inject BotService Bot
 @inject IDialogService DialogService
 @page "/settings/admins"
-@using BanchoMultiplayerBot
-@using BanchoMultiplayerBot.Config
-@using BanchoMultiplayerBot.Data
+@using BanchoMultiplayerBot.Database
+@using BanchoMultiplayerBot.Database.Models
+@using BanchoMultiplayerBot.Database.Repositories
 @using BanchoMultiplayerBot.Host.Web.Pages.Dialogs;
+@using Microsoft.EntityFrameworkCore
 
 <PageTitle>Settings</PageTitle>
 
@@ -13,7 +14,7 @@
 
 <MudForm @ref="_form">
     <MudPaper Class="pa-8 ma-2">
-        <MudTable Class="pa-0 ma-2" Items="@Bot.Configuration.Administrators?.ToList()" T="AdministratorEntry" Hover="true" Breakpoint="Breakpoint.Sm">
+        <MudTable Class="pa-0 ma-2" Items="@_administrators" T="User" Hover="true" Breakpoint="Breakpoint.Sm">
             <ColGroup>
                 <col style="width: 70%;" />
                 <col style="width: 120px;" />
@@ -35,10 +36,11 @@
 
 @code {
     private MudForm? _form;
-    private BotConfiguration _configuration = null!;
     private DialogOptions _maxWidthOptions = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
-    private async Task OnRemoveEntryPressed(AdministratorEntry entry)
+    private List<User> _administrators = new(); 
+
+    private async Task OnRemoveEntryPressed(User entry)
     {
         var parameters = new DialogParameters { ["Message"] = $"Are you sure you want to remove {entry.Name} as an administrator?" };
         var dialog = DialogService.Show<ConfirmDialog>("ConfirmDialog", parameters);
@@ -47,35 +49,50 @@
         if (result.Cancelled)
             return;
 
-        var list = Bot.Configuration.Administrators?.ToList() ?? new List<AdministratorEntry>();
+        using var userRepository = new UserRepository();
+        var userEntity = await userRepository.FindUser(entry.Name);
 
-        list.Remove(entry);
+        if (userEntity == null)
+            return;
 
-        Bot.Configuration.Administrators = list.ToArray();
+        userEntity.Administrator = false;
+
+        await userRepository.Save();
+        await LoadAdministrators();
     }
 
     private async Task OnAddAdministratorPressed()
     {
-        var newAdministratorEntry = new AdministratorEntry();
-        var parameters = new DialogParameters { ["Administrator"] = newAdministratorEntry };
-        var dialog = DialogService.Show<AddAdministratorDialog>("NewAdministrator", parameters, _maxWidthOptions);
+        var dialog = DialogService.Show<AddAdministratorDialog>("NewAdministrator", _maxWidthOptions);
         var result = await dialog.Result;
 
         if (result.Cancelled)
             return;
 
-        newAdministratorEntry.TimeAdded = DateTime.Now;
+        var userName = (result.Data as string)!;
 
-        var list = Bot.Configuration.Administrators?.ToList() ?? new List<AdministratorEntry>();
+        using var userRepository = new UserRepository();
+        var user = await userRepository.FindUser(userName) ?? await userRepository.CreateUser(userName);
 
-        list.Add(newAdministratorEntry);
+        user.Administrator = true;
 
-        Bot.Configuration.Administrators = list.ToArray();
+        await userRepository.Save();
+        await LoadAdministrators();
     }
 
-    protected override void OnInitialized()
+    private async Task LoadAdministrators()
     {
-        _configuration = Bot.Configuration;
+        await using var context = new BotDbContext();
+
+        _administrators = await context.Users
+            .Where(x => x.Administrator)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+    
+    protected override async void OnInitialized()
+    {
+        await LoadAdministrators();
     }
 
     public void Dispose()

@@ -27,8 +27,6 @@ public class BotConfiguration
     public Announcement[]? Announcements { get; set; }
     
     public int[]? BannedBeatmaps { get; set; }
-
-    public AdministratorEntry[]? Administrators { get; set; } = Array.Empty<AdministratorEntry>();
     
     public bool? EnableWebhookNotifications { get; set; }
     public string? WebhookUrl { get; set; }

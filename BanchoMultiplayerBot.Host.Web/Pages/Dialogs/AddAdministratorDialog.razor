@@ -7,7 +7,7 @@
         </MudText>
     </TitleContent>
     <DialogContent>
-        <MudTextField @bind-Value="Administrator.Name" Label="Player Name" />
+        <MudTextField @bind-Value="Name" Label="Player Name" />
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
@@ -18,7 +18,7 @@
 @code {
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
-    [Parameter] public AdministratorEntry Administrator { get; set; } = null!;
+    public string Name { get; set; } = null!;
 
     private void Cancel()
     {
@@ -27,6 +27,6 @@
 
     private void OkButtonPressed()
     {
-        MudDialog.Close(DialogResult.Ok(Administrator));
+        MudDialog.Close(DialogResult.Ok(Name));
     }
 }

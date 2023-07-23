@@ -170,7 +170,7 @@ public class Lobby
         return playerId == null ? playerName.Replace(' ', '_') : $"#{playerId}";
     }
     
-    private void ClientOnPrivateMessageReceived(IPrivateIrcMessage message)
+    private async void ClientOnPrivateMessageReceived(IPrivateIrcMessage message)
     {
         if (message.Recipient == Channel)
         {
@@ -191,7 +191,7 @@ public class Lobby
             return;
         }
 
-        if (Bot.IsAdministrator(message.Sender))
+        if (await Bot.IsAdministrator(message.Sender))
         {
             OnAdminMessage?.Invoke(message);
         }
