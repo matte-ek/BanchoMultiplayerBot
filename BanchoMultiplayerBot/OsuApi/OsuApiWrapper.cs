@@ -19,6 +19,8 @@ public class OsuApiWrapper
     {
         _bot = bot;
         _osuApiKey = osuApiKey;
+        
+        Client.Timeout = TimeSpan.FromSeconds(5);
     }
 
     public async Task<BeatmapModel?> GetBeatmapInformation(int beatmapId, int mods = 0)
@@ -27,39 +29,42 @@ public class OsuApiWrapper
         
         _bot.RuntimeInfo.Statistics.ApiRequests.Inc();
         
-        var result = await Client.GetAsync($"https://osu.ppy.sh/api/get_beatmaps?k={_osuApiKey}&b={beatmapId}&mods={mods}");
-        
-        if (!result.IsSuccessStatusCode)
-        {
-            Log.Error($"Error code {result.StatusCode} while getting beatmap details for id {beatmapId}!");
-
-            _bot.RuntimeInfo.Statistics.ApiErrors.Inc();
-            
-            return result.StatusCode switch
-            {
-                HttpStatusCode.Unauthorized => throw new ApiKeyInvalidException(),
-                _ => null
-            };
-        }
-
-        string jsonStr = await result.Content.ReadAsStringAsync();
-
         try
         {
-            var maps = JsonSerializer.Deserialize<List<BeatmapModel>>(jsonStr);
+            var result =
+                await Client.GetAsync($"https://osu.ppy.sh/api/get_beatmaps?k={_osuApiKey}&b={beatmapId}&mods={mods}");
+
+            if (!result.IsSuccessStatusCode)
+            {
+                Log.Error($"Error code {result.StatusCode} while getting beatmap details for id {beatmapId}!");
+
+                _bot.RuntimeInfo.Statistics.ApiErrors.Inc();
+
+                return result.StatusCode switch
+                {
+                    HttpStatusCode.Unauthorized => throw new ApiKeyInvalidException(),
+                    _ => null
+                };
+            }
+
+            var json = await result.Content.ReadAsStringAsync();
+            var maps = JsonSerializer.Deserialize<List<BeatmapModel>>(json);
 
             if (maps != null && !maps.Any())
-                throw new BeatmapNotFoundException(); // the API does not return 404 for some reason, just an empty list.
+                throw new BeatmapNotFoundException(); // the API returns 200 even if it got no results.
 
             return maps?.FirstOrDefault();
         }
+        catch (BeatmapNotFoundException)
+        {
+            throw;
+        }
         catch (Exception e)
         {
-            if (e is not BeatmapNotFoundException)
-                _bot.RuntimeInfo.Statistics.ApiErrors.Inc();
-
-            Log.Error($"Error while parsing JSON from osu!api: {e.Message}, beatmap: {beatmapId}");
-
+            Log.Error($"Exception during osu!api request: {e.Message}, beatmap: {beatmapId}");
+            
+            _bot.RuntimeInfo.Statistics.ApiErrors.Inc();
+            
             throw;
         }
     }

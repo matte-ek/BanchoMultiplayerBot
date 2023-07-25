@@ -38,6 +38,8 @@ public class Bot
     public event Action? OnBotReady;
     public event Action? OnLobbiesUpdated;
 
+    public bool WebhookConfigured => Configuration.EnableWebhookNotifications == true && Configuration.WebhookUrl?.Any() == true;
+
     /// <summary>
     /// Message queue which is part of the message rate limiting system.
     /// </summary>
@@ -61,8 +63,6 @@ public class Bot
 
     private string _lastSentMessage = string.Empty;
     
-    private bool WebhookConfigured => Configuration.EnableWebhookNotifications == true && Configuration.WebhookUrl?.Any() == true;
-
     public Bot(string configurationFile)
     {
         LoadConfiguration(configurationFile);

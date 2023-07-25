@@ -212,20 +212,34 @@ public class MapManagerBehaviour : IBotBehaviour
                 // Not going to reset the map here, since in the rare case that the osu!api might have issues, I wouldn't
                 // want the lobby to be immediately killed since nobody can pick a new map. We'll just have to trust the hosts
                 // to be within limits, and if not, players can always "!skip".
-                _lobby.SendMessage($"osu!api error while getting beatmap information, star rating could not be validated.");
+                _lobby.SendMessage(
+                    $"osu!api error while getting beatmap information.");
             }
         }
         catch (BeatmapNotFoundException)
         {
             SetBeatmap(_beatmapFallbackId);
-            
+
             _lobby.SendMessage($"The beatmap picked is not submitted, please pick another one.");
         }
         catch (ApiKeyInvalidException)
         {
-            Log.Error("API Key invalid exception while trying to retrive map details.");
+            Log.Error("API Key invalid exception while trying to retrieve map details.");
 
-            _lobby.SendMessage($"Internal error while getting beatmap information, please try again.");
+            // This is ping worthy as it's probably something that needs my attention.
+            if (_lobby.Bot.WebhookConfigured)
+            {
+                _ = WebhookUtils.SendWebhookMessage(_lobby.Bot.Configuration.WebhookUrl!, "API Error",
+                    $"osu!api request failed due to invalid key");
+            }
+
+            _lobby.SendMessage($"Internal error while getting beatmap information.");
+        }
+        catch (HttpRequestException e)
+        {
+            Log.Error($"Exception while sending API request: {e.Message}");
+
+            _lobby.SendMessage($"osu!api timeout while getting beatmap information.");
         }
         catch (Exception e)
         {
