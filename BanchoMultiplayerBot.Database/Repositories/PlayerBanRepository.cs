@@ -28,6 +28,27 @@ public class PlayerBanRepository : IDisposable
         await _botDbContext.SaveChangesAsync();
     }
 
+    public async Task RemoveBan(PlayerBan ban)
+    {
+        var entity = await _botDbContext.PlayerBans.FirstOrDefaultAsync(x => x.Id == ban.Id);
+
+        if (entity == null)
+        {
+            return;
+        }
+
+        entity.Active = false;
+    }
+    
+    public async Task<IReadOnlyList<PlayerBan>> GetActiveBans()
+    {
+        return await _botDbContext.PlayerBans
+            .Where(x => x.Active && (x.Expire == null || x.Expire > DateTime.Now))
+            .Include(x => x.User)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
     public async Task Save()
     {
         await _botDbContext.SaveChangesAsync();

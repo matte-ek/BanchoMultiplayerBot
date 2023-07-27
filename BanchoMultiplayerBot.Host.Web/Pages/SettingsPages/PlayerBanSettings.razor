@@ -1,0 +1,110 @@
+@implements IDisposable
+@inject BotService Bot
+@inject IDialogService DialogService
+@inject IHostApplicationLifetime ApplicationLifetime
+@page "/settings/player-bans"
+@using BanchoMultiplayerBot.Database.Models
+@using BanchoMultiplayerBot.Database.Repositories
+@using BanchoMultiplayerBot.Host.Web.Models
+@using BanchoMultiplayerBot.Host.Web.Pages.Dialogs
+
+<PageTitle>Player Bans</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Player Bans</MudText>
+
+<MudForm @ref="_form">
+    <MudTable Class="pa-0 ma-2" Items="@_playerBans" Hover="true" Breakpoint="Breakpoint.Sm">
+        <ColGroup>
+            <col style="width: 30%;"/>
+            <col style="width: 40px;"/>
+            <col style="width: 80px;"/>
+            <col style="width: 150px;"/>
+            <col style="width: 120px;"/>
+        </ColGroup>
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Is Host Ban</MudTh>
+            <MudTh>Expire</MudTh>
+            <MudTh>Reason</MudTh>
+            <MudTh>Options</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Name">@context.User.Name</MudTd>
+            <MudTd DataLabel="Is Host Ban">@(context.HostBan ? "Yes" : "No")</MudTd>
+            <MudTd DataLabel="Expire">@(context.Expire?.ToLongDateString() ?? "N/A")</MudTd>
+            <MudTd DataLabel="Reason">@(context.Reason ?? "N/A")</MudTd>
+            <MudTd DataLabel="Options">
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Title="Remove" OnClick="(() => RemoveBan(context))"/>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+    <MudPaper Class="pa-2 ma-2">
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@AddBan">Add New</MudButton>
+    </MudPaper>
+</MudForm>
+
+@code {
+    private readonly DialogOptions _maxWidthOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    private MudForm? _form;
+    private List<PlayerBan>? _playerBans;
+
+    protected override async void OnInitialized()
+    {
+        await UpdatePlayerBans();
+    }
+
+    private async Task UpdatePlayerBans()
+    {
+        using var playerBanRepository = new PlayerBanRepository();
+
+        _playerBans = (await playerBanRepository.GetActiveBans()).ToList();
+    }
+
+    private async void AddBan()
+    {
+        var newPlayerBan = new AddPlayerBan();
+
+        var parameters = new DialogParameters { ["PlayerBan"] = newPlayerBan };
+        var dialog = DialogService.Show<AddPlayerBanDialog>("AddPlayerBan", parameters, _maxWidthOptions);
+        var result = await dialog.Result;
+
+        if (result.Cancelled)
+        {
+            return;
+        }
+
+        using var userRepository = new UserRepository();
+        using var playerBanRepository = new PlayerBanRepository();
+
+        var user = await userRepository.FindUser(newPlayerBan.Name);
+        if (user == null)
+        {
+            return;
+        }
+        
+        await playerBanRepository.CreateBan(user, newPlayerBan.HostBan, newPlayerBan.Reason, newPlayerBan.Expire);
+        await playerBanRepository.Save();
+        await UpdatePlayerBans();
+
+        // Force update the page in case Blazor doesn't update automatically
+        await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+    }
+
+    private async void RemoveBan(PlayerBan playerBan)
+    {
+        using var banRepository = new PlayerBanRepository();
+
+        await banRepository.RemoveBan(playerBan);
+        await banRepository.Save();
+        
+        await UpdatePlayerBans();
+
+        // Force update the page in case Blazor doesn't update automatically
+        await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+    }
+
+    public void Dispose()
+    {
+    }
+
+}

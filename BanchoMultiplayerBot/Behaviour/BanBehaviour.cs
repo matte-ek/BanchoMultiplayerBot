@@ -72,7 +72,7 @@ public class BanBehaviour : IBotBehaviour
                     reason,
                     expireTime != null ? DateTime.Now.AddDays(int.Parse(expireTime)) : null);
                 
-                _lobby.SendMessage("Player was succesfully put on ban list.");
+                _lobby.SendMessage("Player was successfully put on ban list.");
             }
 
             if (e.Content.StartsWith("!removeban "))
