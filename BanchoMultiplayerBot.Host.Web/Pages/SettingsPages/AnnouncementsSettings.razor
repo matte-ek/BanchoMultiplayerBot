@@ -49,7 +49,7 @@
 
     private string? _announcementMessage;
     
-    private DialogOptions _maxWidthOptions = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    private readonly DialogOptions _maxWidthOptions = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
     private async Task OnConfigureAnnouncementPressed(Announcement announcement)
     {
