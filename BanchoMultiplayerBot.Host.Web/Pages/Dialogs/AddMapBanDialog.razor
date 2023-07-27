@@ -1,0 +1,38 @@
+﻿@using BanchoMultiplayerBot.Data
+@using BanchoMultiplayerBot.Database.Models
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            Add Map Ban
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="MapBan.BeatmapId" Label="Map Id" Required="false"/>
+        <MudTextField @bind-Value="MapBan.BeatmapSetId" Label="Map Set Id" Required="false"/>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="OkButtonPressed">OK</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public MapBan MapBan { get; set; } = null!;
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void OkButtonPressed()
+    {
+        MudDialog.Close(DialogResult.Ok(MapBan));
+    }
+
+}

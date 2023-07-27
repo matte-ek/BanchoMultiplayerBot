@@ -42,6 +42,23 @@ public class MapBanRepository : IDisposable
             .AnyAsync();
     }
 
+    public async Task<IReadOnlyList<MapBan>> GetAll()
+    {
+        return await _botDbContext.MapBans.AsNoTracking().ToListAsync();
+    }
+
+    public async Task RemoveAsync(MapBan mapBan)
+    {
+        var entity = await _botDbContext.MapBans.FirstOrDefaultAsync(x => x.Id == mapBan.Id);
+
+        if (entity == null)
+        {
+            return;
+        }
+
+        _botDbContext.Remove(entity);
+    }
+    
     public async Task Save()
     {
         await _botDbContext.SaveChangesAsync();
