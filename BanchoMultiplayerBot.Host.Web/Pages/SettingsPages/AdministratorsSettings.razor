@@ -13,24 +13,24 @@
 <MudText Typo="Typo.h4" GutterBottom="true">Administrators</MudText>
 
 <MudForm @ref="_form">
-    <MudPaper Class="pa-8 ma-2">
-        <MudTable Class="pa-0 ma-2" Items="@_administrators" T="User" Hover="true" Breakpoint="Breakpoint.Sm">
-            <ColGroup>
-                <col style="width: 70%;" />
-                <col style="width: 120px;" />
-            </ColGroup>
-            <HeaderContent>
-                <MudTh>Name</MudTh>
-                <MudTh>Options</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Name">@context.Name</MudTd>
-                <MudTd DataLabel="Options"><MudIconButton Icon="@Icons.Material.Filled.Delete" Title="Remove" OnClick="(() => OnRemoveEntryPressed(context))" /></MudTd>
-            </RowTemplate>
-        </MudTable>
-        <MudPaper Class="pa-0 ma-2" Elevation="0">
-            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@OnAddAdministratorPressed">Add New</MudButton>
-        </MudPaper>
+    <MudTable Class="pa-0 ma-2" Items="@_administrators" T="User" Hover="true" Breakpoint="Breakpoint.Sm">
+        <ColGroup>
+            <col style="width: 70%;"/>
+            <col style="width: 120px;"/>
+        </ColGroup>
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Options</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Name">@context.Name</MudTd>
+            <MudTd DataLabel="Options">
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Title="Remove" OnClick="(() => OnRemoveEntryPressed(context))"/>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+    <MudPaper Class="pa-4 ma-2">
+        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@OnAddAdministratorPressed">Add New</MudButton>
     </MudPaper>
 </MudForm>
 
@@ -38,7 +38,7 @@
     private MudForm? _form;
     private DialogOptions _maxWidthOptions = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
-    private List<User> _administrators = new(); 
+    private List<User> _administrators = new();
 
     private async Task OnRemoveEntryPressed(User entry)
     {
@@ -89,7 +89,7 @@
             .AsNoTracking()
             .ToListAsync();
     }
-    
+
     protected override async void OnInitialized()
     {
         await LoadAdministrators();
@@ -98,4 +98,5 @@
     public void Dispose()
     {
     }
+
 }

@@ -9,12 +9,9 @@
 
 <PageTitle>Settings</PageTitle>
 
-<MudText Typo="Typo.h3" GutterBottom="true">Announcements</MudText>
-
+<MudText Typo="Typo.h4" GutterBottom="true">Announcements</MudText>
 <MudForm @ref="_form">
-    <MudPaper Class="pa-8 ma-2">
-        <MudText Typo="Typo.h6" GutterBottom="true">Scheduled Announcements</MudText>
-        <MudTable Class="pa-0 ma-2" Items="@Bot.AnnouncementManager.Announcements" Hover="true" Breakpoint="Breakpoint.Sm">
+    <MudTable Class="pa-0 ma-2" Items="@Bot.AnnouncementManager.Announcements" Hover="true" Breakpoint="Breakpoint.Sm">
             <ColGroup>
                 <col style="width: 50%;" />
                 <col style="width: 40px;" />
@@ -31,14 +28,12 @@
                 <MudTd DataLabel="Options"><MudIconButton Icon="@Icons.Material.Filled.Settings" Title="Configure" OnClick="(() => OnConfigureAnnouncementPressed(context))" /><MudIconButton Icon="@Icons.Material.Filled.Delete" Title="Remove" OnClick="(() => OnRemoveAnnouncementPressed(context))" /></MudTd>
             </RowTemplate>
         </MudTable>
-        <MudPaper Class="pa-0 ma-2" Elevation="0">
-            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@OnAddAnnouncementPressed">Add New</MudButton>
+        <MudPaper Class="pa-4 ma-2">
+            <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@OnAddAnnouncementPressed">Add New</MudButton>
         </MudPaper>
-    </MudPaper>
 </MudForm>
-
-<MudPaper Class="pa-8 ma-2">
-    <MudText Typo="Typo.h6" GutterBottom="true">Manual Announcement</MudText>
+<MudPaper Class="pa-8 ma-2 mt-8">
+    <MudText Typo="Typo.h5" GutterBottom="true">Manual Announcement</MudText>
     <MudTextField @bind-Value="_announcementMessage" T="string" Label="Message" Variant="Variant.Filled" Style="width: 50%"/>
     <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="mt-2" OnClick="@OnAnnouncementSendPressed">Send</MudButton>
 </MudPaper>

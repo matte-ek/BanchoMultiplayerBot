@@ -29,7 +29,7 @@
             <MudTh>Options</MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="Name">@context.User.Name</MudTd>
+            <MudTd DataLabel="Name"><MudLink Color="Color.Default" Href=@($"https://osu.ppy.sh/users/{context.User.Name}")>@context.User.Name</MudLink></MudTd>
             <MudTd DataLabel="Is Host Ban">@(context.HostBan ? "Yes" : "No")</MudTd>
             <MudTd DataLabel="Expire">@(context.Expire?.ToLongDateString() ?? "N/A")</MudTd>
             <MudTd DataLabel="Reason">@(context.Reason ?? "N/A")</MudTd>
@@ -38,8 +38,8 @@
             </MudTd>
         </RowTemplate>
     </MudTable>
-    <MudPaper Class="pa-2 ma-2">
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@AddBan">Add New</MudButton>
+    <MudPaper Class="pa-4 ma-2">
+        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@AddBan">Add New</MudButton>
     </MudPaper>
 </MudForm>
 
