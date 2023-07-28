@@ -11,7 +11,6 @@ namespace BanchoMultiplayerBot.OsuApi;
 /// </summary>
 public class OsuApiWrapper
 {
-    private static readonly HttpClient Client = new();
     private readonly string _osuApiKey;
     private readonly Bot _bot;
 
@@ -19,20 +18,20 @@ public class OsuApiWrapper
     {
         _bot = bot;
         _osuApiKey = osuApiKey;
-        
-        Client.Timeout = TimeSpan.FromSeconds(5);
     }
 
     public async Task<BeatmapModel?> GetBeatmapInformation(int beatmapId, int mods = 0)
     {
+        using var httpClient = new HttpClient();
         using var _ = _bot.RuntimeInfo.Statistics.ApiRequestTime.NewTimer();
         
         _bot.RuntimeInfo.Statistics.ApiRequests.Inc();
         
+        httpClient.Timeout = TimeSpan.FromSeconds(5);
+
         try
         {
-            var result =
-                await Client.GetAsync($"https://osu.ppy.sh/api/get_beatmaps?k={_osuApiKey}&b={beatmapId}&mods={mods}");
+            var result = await httpClient.GetAsync($"https://osu.ppy.sh/api/get_beatmaps?k={_osuApiKey}&b={beatmapId}&mods={mods}");
 
             if (!result.IsSuccessStatusCode)
             {
