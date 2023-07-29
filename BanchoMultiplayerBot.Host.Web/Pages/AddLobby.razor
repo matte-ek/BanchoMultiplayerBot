@@ -38,7 +38,7 @@
     private string? _name;
     private string? _channel;
 
-    private string? _preset;
+    private string? _preset = "Auto Host Rotate";
 
     private async void OnOkPressed()
     {
@@ -65,7 +65,7 @@
         {
             if (_preset == "Auto Host Rotate")
             {
-                defaultConfig.Behaviours = new string[]
+                defaultConfig.Behaviours = new[]
                 {
                     "AutoHostRotate",
                     "AntiAfk",
