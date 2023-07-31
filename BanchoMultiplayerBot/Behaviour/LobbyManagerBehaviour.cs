@@ -116,7 +116,7 @@ public class LobbyManagerBehaviour : IBotBehaviour
 
     private void OnRoomSettingsUpdated()
     {
-        if (_mapManagerBehaviour?.IsRunningMapValidation == true)
+        if (_mapManagerBehaviour?.MapValidationStatus != MapManagerBehaviour.MapValidation.None)
         {
             return;
         }

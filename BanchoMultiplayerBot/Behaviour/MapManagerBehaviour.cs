@@ -16,6 +16,8 @@ namespace BanchoMultiplayerBot.Behaviour;
 /// This behaviour will be responsible for making sure
 /// the map picked by the host is within the limit set
 /// in the configuration.
+///
+/// TODO: This class is in need of heavy refactoring, as it's getting quite messy with the new features hacked together.
 /// </summary>
 public class MapManagerBehaviour : IBotBehaviour
 {
@@ -23,7 +25,7 @@ public class MapManagerBehaviour : IBotBehaviour
     
     public event Action? OnNewAllowedMap;
 
-    internal bool IsRunningMapValidation { get; set; }
+    internal MapValidation MapValidationStatus { get; set; } = MapValidation.None;
     internal bool HasValidMapPicked { get; private set; } = true;
 
     private bool _botAppliedBeatmap;
@@ -38,6 +40,11 @@ public class MapManagerBehaviour : IBotBehaviour
     private DateTime _matchStartTime = DateTime.Now;
     private DateTime _matchFinishTime = DateTime.Now;
     private DateTime _beatmapRejectTime = DateTime.Now;
+
+    private MapValidator _mapValidator = null!;
+    
+    private BeatmapModel? _currentValidationBeatmap;
+    private BeatmapModel? _currentValidationBeatmapDt;
 
     private Lobby _lobby = null!;
     private AutoHostRotateBehaviour? _autoHostRotateBehaviour;
@@ -67,44 +74,68 @@ public class MapManagerBehaviour : IBotBehaviour
         {
             _autoHostRotateBehaviour = (AutoHostRotateBehaviour)autoHostRotateBehaviour;
         }
+
+        _mapValidator = new MapValidator(lobby);
     }
 
     private async void OnSettingsUpdated()
     {
-        if (IsRunningMapValidation == false||
-            CurrentBeatmap == null ||
-            _lobby.MultiplayerLobby.Mods == Mods.Freemod)
+        if (MapValidationStatus == MapValidation.None)
         {
             return;
         }
         
         try
         {
-            // osu!api has different bits for each mod, so we need to "translate" it.
-            // We only really care about the difficulty increasing mods anyway.
-            ModsModel osuApiMods = 0;
-
-            if ((_lobby.MultiplayerLobby.Mods & Mods.DoubleTime) != 0 ||
-                (_lobby.MultiplayerLobby.Mods & Mods.Nightcore) != 0)
-                osuApiMods |= ModsModel.DoubleTime;
-            if ((_lobby.MultiplayerLobby.Mods & Mods.HardRock) != 0)
-                osuApiMods |= ModsModel.HardRock;
-
-            var beatmapInformation = await _lobby.Bot.OsuApi.GetBeatmapInformation(CurrentBeatmap.Id, (int)osuApiMods);
-            if (beatmapInformation == null)
+            if (MapValidationStatus == MapValidation.PostStart)
             {
-                return;
-            }
+                if (CurrentBeatmap == null)
+                {
+                    return;
+                }
+                
+                // osu!api has different bits for each mod, so we need to "translate" it.
+                // We only really care about the difficulty increasing mods anyway.
+                ModsModel osuApiMods = 0;
 
-            if (IsAllowedBeatmapStarRating(beatmapInformation))
-            {
-                return;
-            }
+                if ((_lobby.MultiplayerLobby.Mods & Mods.DoubleTime) != 0 ||
+                    (_lobby.MultiplayerLobby.Mods & Mods.Nightcore) != 0)
+                    osuApiMods |= ModsModel.DoubleTime;
+                if ((_lobby.MultiplayerLobby.Mods & Mods.HardRock) != 0)
+                    osuApiMods |= ModsModel.HardRock;
+
+                var beatmapInformation = await _lobby.Bot.OsuApi.GetBeatmapInformation(CurrentBeatmap.Id, (int)osuApiMods);
+                if (beatmapInformation == null)
+                {
+                    return;
+                }
+
+                if (await _mapValidator.ValidateBeatmap(beatmapInformation) == MapValidator.MapStatus.Ok)
+                {
+                    return;
+                }
             
-            Log.Error("Detected an attempt to play a map out of the lobby's star rating! Aborting...");
+                Log.Error("Detected an attempt to play a map out of the lobby's star rating! Aborting...");
 
-            _lobby.SendMessage("Detected an attempt to play a map out of the lobby's star rating! Aborting...");
-            _lobby.SendMessage("!mp abort");
+                _lobby.SendMessage("Detected an attempt to play a map out of the lobby's star rating! Aborting...");
+                _lobby.SendMessage("!mp abort");
+            }
+            else
+            {
+                // Should never happen, hopefully.
+                if (_currentValidationBeatmap == null ||
+                    _currentValidationBeatmapDt == null)
+                {
+                    Log.Error("Beatmap information null during beatmap validation.");
+                    return;
+                }
+                
+                var doubleTimeEnabled = 
+                    (_lobby.MultiplayerLobby.Mods & Mods.DoubleTime) != 0 ||
+                    (_lobby.MultiplayerLobby.Mods & Mods.Nightcore) != 0;
+
+                await EnforceBeatmapLimits(_currentValidationBeatmap, doubleTimeEnabled ? MapValidator.MapStatus.Ok : MapValidator.MapStatus.StarRating);
+            }
         }
         catch (Exception e)
         {
@@ -114,7 +145,7 @@ public class MapManagerBehaviour : IBotBehaviour
 
     private void OnMatchFinished()
     {
-        IsRunningMapValidation = false;
+        MapValidationStatus = MapValidation.None;
         
         _matchFinishTime = DateTime.Now;
 
@@ -133,7 +164,7 @@ public class MapManagerBehaviour : IBotBehaviour
         if (EnsureValidMap(true))
             return;
 
-        IsRunningMapValidation = true;
+        MapValidationStatus = MapValidation.PostStart;
         
         _lobby.SendMessage("!mp settings");
     }
@@ -204,8 +235,36 @@ public class MapManagerBehaviour : IBotBehaviour
 
             if (beatmapInfo != null)
             {
-                // Make sure we're within limits
-                await EnsureBeatmapLimits(beatmapInfo, beatmap.Id);
+                var mapStatus = await _mapValidator.ValidateBeatmap(beatmapInfo);
+
+                // If we're below the star rating, the user might have tried to play DT, so if the map is in within the star rating limit
+                // with DT enabled, we'll do an extra "!mp settings" check and go from there.
+                if (mapStatus == MapValidator.MapStatus.StarRating &&
+                    beatmapInfo.DifficultyRating != null &&
+                    float.TryParse(beatmapInfo.DifficultyRating, NumberStyles.Float, new CultureInfo("en-US"), out var diffRating) &&
+                    _lobby.Configuration.MinimumStarRating >= Math.Round(diffRating, 2))
+                {
+                    var dtBeatmapInfo = await _lobby.Bot.OsuApi.GetBeatmapInformation(beatmap.Id, (int)ModsModel.DoubleTime);
+                    
+                    if (dtBeatmapInfo != null && 
+                        await _mapValidator.ValidateBeatmap(dtBeatmapInfo) == MapValidator.MapStatus.Ok)
+                    {
+                        _currentValidationBeatmap = beatmapInfo;
+                        _currentValidationBeatmapDt = dtBeatmapInfo;
+                        
+                        MapValidationStatus = MapValidation.MapPick;
+
+                        _lobby.SendMessage("!mp settings");   
+                    }
+                    else
+                    {
+                        await EnforceBeatmapLimits(beatmapInfo, mapStatus);
+                    }
+                }
+                else
+                {
+                    await EnforceBeatmapLimits(beatmapInfo, mapStatus);   
+                }
             }
             else
             {
@@ -249,15 +308,12 @@ public class MapManagerBehaviour : IBotBehaviour
         }
     }
 
-    private async Task EnsureBeatmapLimits(BeatmapModel beatmap, int id)
+    private async Task EnforceBeatmapLimits(BeatmapModel beatmap, MapValidator.MapStatus mapStatus)
     {
-        var hostIsAdministrator = _lobby.MultiplayerLobby.Host is not null && await Bot.IsAdministrator(_lobby.MultiplayerLobby.Host.Name);
-        var mapIsBanned = await IsBannedBeatmap(beatmap);
-        
-        if ((IsAllowedBeatmapLength(beatmap) && IsAllowedBeatmapStarRating(beatmap) && IsAllowedBeatmapGameMode(beatmap) && !mapIsBanned) 
-            || hostIsAdministrator
-            || !_beatmapCheckEnabled)
+        if (mapStatus == MapValidator.MapStatus.Ok)
         {
+            var id = int.Parse(beatmap.BeatmapId!);
+            
             CurrentBeatmap = new BeatmapInfo()
             {
                 Id = id,
@@ -287,13 +343,13 @@ public class MapManagerBehaviour : IBotBehaviour
         
         SetBeatmap(_beatmapFallbackId);
         
-        if (mapIsBanned)
+        if (mapStatus == MapValidator.MapStatus.Banned)
         {
             _lobby.SendMessage(beatmap.Title != null
                 ? $"This map set ({beatmap.Title}) has been banned."
                 : "This map set has been banned.");
         }
-        else if (!IsAllowedBeatmapGameMode(beatmap))
+        else if (mapStatus == MapValidator.MapStatus.GameMode)
         {
             var modeName = _lobby.Configuration.Mode switch
             {
@@ -306,7 +362,7 @@ public class MapManagerBehaviour : IBotBehaviour
 
             _lobby.SendMessage($"Please only pick beatmaps from the game mode {modeName}.");
         }
-        else if (!IsAllowedBeatmapLength(beatmap))
+        else if (mapStatus == MapValidator.MapStatus.Length)
         {
             var configuredMaxMapLength = TimeSpan.FromSeconds(_lobby.Configuration.MaximumMapLength);
                 
@@ -385,90 +441,7 @@ public class MapManagerBehaviour : IBotBehaviour
         
         _lobby.SendMessage($"!mp map {id} 0");
     }
-    
-    private bool IsAllowedBeatmapStarRating(BeatmapModel beatmap)
-    {
-        if (!_lobby.Configuration.LimitStarRating)
-            return true;
-        if (beatmap.DifficultyRating == null)
-            return false;
-        
-        var config = _lobby.Configuration;
-        var minRating = config.MinimumStarRating;
-        var maxRating = config.MaximumStarRating;
-        
-        if (config.StarRatingErrorMargin != null)
-        {
-            minRating -= config.StarRatingErrorMargin.Value;
-            maxRating += config.StarRatingErrorMargin.Value;
-        }
 
-        var mapStarRating = float.Parse(beatmap.DifficultyRating, CultureInfo.InvariantCulture);
-
-        return maxRating >= mapStarRating && mapStarRating >= minRating;
-    }
-
-    private bool IsAllowedBeatmapLength(BeatmapModel beatmap)
-    {
-        if (!_lobby.Configuration.LimitMapLength)
-            return true;
-        if (beatmap.TotalLength == null)
-            return false;
-        
-        var mapLength = int.Parse(beatmap.TotalLength, CultureInfo.InvariantCulture);
-        
-        return _lobby.Configuration.MaximumMapLength >= mapLength && mapLength >= _lobby.Configuration.MinimumMapLength;
-    }
-
-    private bool IsAllowedBeatmapGameMode(BeatmapModel beatmap)
-    {
-        if (_lobby.Configuration.Mode == null)
-            return true;
-        
-        // Game modes are defined in the API as:
-        // 0 - osu!standard
-        // 1 - osu!taiko
-        // 2 - osu!catch
-        // 3 - osu!mania
-        
-        var beatmapMode = beatmap.Mode;
-
-        if (beatmapMode != null)
-        {
-            return _lobby.Configuration.Mode switch
-            {
-                GameMode.osu => beatmapMode == "0",
-                GameMode.osuTaiko => beatmapMode == "1",
-                GameMode.osuCatch => beatmapMode == "2",
-                GameMode.osuMania => beatmapMode == "3",
-                _ => false
-            };
-        }
-        
-        Log.Error($"No beatmap mode for map {beatmap.BeatmapId}");
-        
-        return false;
-    }
-
-    private static async Task<bool> IsBannedBeatmap(BeatmapModel beatmap)
-    {
-        if (beatmap.BeatmapsetId == null ||
-            beatmap.BeatmapId == null)
-            return false;
-
-        try
-        {
-            using var mapBanRepository = new MapBanRepository();
-
-            return await mapBanRepository.IsMapBanned(int.Parse(beatmap.BeatmapsetId), int.Parse(beatmap.BeatmapId));
-        }
-        catch (Exception e)
-        {
-            Log.Error($"Error while querying map ban status: {e}");
-            return false;
-        }
-    }
-    
     private void RunViolationAutoSkip()
     {
         if (_lobby.Configuration.AutomaticallySkipAfterViolations == null ||
@@ -534,5 +507,12 @@ public class MapManagerBehaviour : IBotBehaviour
         _lobby.SendMessage("!mp abort");
 
         return true;
+    }
+
+    public enum MapValidation
+    {
+        None,
+        PostStart,
+        MapPick
     }
 }
