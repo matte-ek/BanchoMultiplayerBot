@@ -6,7 +6,7 @@
 
 <PageTitle>Configure Lobby</PageTitle>
 
-<MudText Typo="Typo.h3" GutterBottom="true">@($"{_lobby?.Configuration.Name} Config")</MudText>
+<MudText Typo="Typo.h4" GutterBottom="true">@($"{_lobby?.Configuration.Name} Config")</MudText>
 
 <MudForm @ref="_form">
     <MudGrid>
@@ -42,11 +42,9 @@
                         <MudSelectItem T="string" Value="@mod">@mod</MudSelectItem>
                     }
                 </MudSelect>
+                <MudText Typo="Typo.h6" Class="py-2">Host Rotation</MudText>
                 <MudSwitch @bind-Checked="_configuration!.AutomaticallySkipAfterViolations" Label="Auto skip after violations" Color="Color.Primary" />
                 <MudNumericField @bind-Value="_configuration.ViolationSkipCount" Label="Violation Count" Variant="Variant.Filled" Min="1" Max="10" />
-                <MudTooltip Text="This is not required for normal operation.">
-                    <MudTextField @bind-Value="_configuration.LobbyJoinLink" T="string" Label="Join Link" Required="false" Variant="Variant.Filled"/>
-                </MudTooltip>
             </MudPaper>
             <MudPaper Class="pa-8 ma-2">
                 <MudText Typo="Typo.h6" GutterBottom="true">Behaviours</MudText>

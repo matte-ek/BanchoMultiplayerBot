@@ -33,7 +33,7 @@
 <MudGrid Class="mt-0">
     <MudItem xs="12" sm="6">
         <MudCard>
-            <MudCardContent Style="@($"background-image: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%,rgba(0,0,0,0.6) 100%), url(https://assets.ppy.sh/beatmaps/{_mapManager?.CurrentBeatmap?.SetId}/covers/cover.jpg);background-position: center;")">
+            <MudCardContent Style="@($"background-image: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%,rgba(0,0,0,0.6) 100%), url(https://assets.ppy.sh/beatmaps/{_mapManager?.CurrentBeatmap?.SetId}/covers/cover.jpg);background-position: center;background-size: cover;")">
                 <MudText Typo="Typo.body2">Beatmap</MudText>
                 <MudLink Href="@($"https://osu.ppy.sh/b/{_mapManager?.CurrentBeatmap?.Id}")" Typo="Typo.h5" Color="Color.Default">@_mapManager?.CurrentBeatmap?.Name</MudLink>
             </MudCardContent>
@@ -62,11 +62,11 @@
             <MudPaper Class="pa-2 ma-0" MaxHeight="440px" Style="overflow: auto;display: flex;flex-direction: column-reverse;" Elevation="0">
                 @foreach (var message in _chatMessages)
                 {
-                    <MudPaper Class="d-flex flex-row flex-grow-1 gap-1" Elevation="0">
+                    <div class="d-flex flex-row flex-grow-1 gap-1">
                         <MudText Typo="Typo.body2" Style="color: #919191;white-space: nowrap;">@message.Time.AddHours(1).ToString("HH:mm:ss")</MudText>
                         <MudText Typo="Typo.body2" Style="white-space: nowrap;" Color="@message.Color"><b>@message.Author</b></MudText>
                         <MudText Typo="Typo.body2">@message.Content</MudText>
-                    </MudPaper>
+                    </div>
                 }
             </MudPaper>
         </MudPaper>
