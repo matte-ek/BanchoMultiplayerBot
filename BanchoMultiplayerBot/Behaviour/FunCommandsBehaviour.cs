@@ -25,6 +25,7 @@ public class FunCommandsBehaviour : IBotBehaviour
         _lobby.MultiplayerLobby.OnMatchStarted += OnMatchStarted;
         _lobby.MultiplayerLobby.OnMatchFinished += OnMatchFinished;
         _lobby.OnUserMessage += OnUserMessage;
+        _lobby.OnAdminMessage += OnAdminMessage;
         
         var mapManagerBehaviour = _lobby.Behaviours.Find(x => x.GetType() == typeof(MapManagerBehaviour));
         if (mapManagerBehaviour != null)
@@ -83,7 +84,7 @@ public class FunCommandsBehaviour : IBotBehaviour
                 _lobby.SendMessage(
                     _lobby.Bot.RuntimeInfo.StartTime.AddMinutes(2) >= player.JoinTime
                         ? $"{msg.Sender} has been here since last bot restart, {currentPlaytime:h' hours 'm' minutes 's' seconds'} ({totalPlaytime:d' days 'h' hours 'm' minutes 's' seconds'} in total)"
-                        : $"{msg.Sender} has been here for {currentPlaytime:h' hours 'm' minutes 's' seconds'} ({totalPlaytime:d' days 'h' hours 'm' minutes 's' seconds'} in total)");
+                        : $"{msg.Sender} has been here for {currentPlaytime:h' hours 'm' minutes 's' seconds'} ({totalPlaytime:d' days 'h' hours 'm' minutes 's' seconds'} [{totalPlaytime.TotalHours:F1}h] in total)");
             }
 
             if (msg.Content.ToLower().Equals("!playstats") || msg.Content.ToLower().Equals("!ps"))
@@ -109,6 +110,44 @@ public class FunCommandsBehaviour : IBotBehaviour
             }
         }
         catch (Exception)
+        {
+            // ignored
+        }
+    }
+    
+    private async void OnAdminMessage(IPrivateIrcMessage msg)
+    {
+        try
+        {
+            if (msg.Content.StartsWith("!mvname "))
+            {
+                using var userRepository = new UserRepository();
+                var args = msg.Content.Split(' ');
+
+                var sourceUser = await userRepository.FindUser(args[1]);
+                var targetUser = await userRepository.FindUser(args[2]);
+
+                if (sourceUser == null ||
+                    targetUser == null)
+                {
+                    _lobby.SendMessage("Failed to find source/target player.");
+                    return;
+                }
+
+                targetUser.MatchesPlayed += sourceUser.MatchesPlayed;
+                targetUser.NumberOneResults += sourceUser.NumberOneResults;
+                targetUser.Playtime += sourceUser.Playtime;
+
+                sourceUser.MatchesPlayed = 0;
+                sourceUser.NumberOneResults = 0;
+                sourceUser.Playtime = 0;
+                
+                await userRepository.Save();
+                
+                _lobby.SendMessage("Successfully moved player stats.");
+            }
+        }
+        catch (Exception e)
         {
             // ignored
         }
