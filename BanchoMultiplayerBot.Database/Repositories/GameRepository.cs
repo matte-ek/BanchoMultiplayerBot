@@ -34,6 +34,15 @@ namespace BanchoMultiplayerBot.Database.Repositories
                 .CountAsync();
         }
 
+        public async Task<IReadOnlyList<Game>> GetRecentGames(int mapId, int count = 5)
+        {
+            return await _botDbContext.Games
+                .Where(x => x.BeatmapId == mapId)
+                .OrderByDescending(x => x.Time)
+                .Take(count)
+                .ToListAsync();
+        }
+
         public async Task AddGame(Game game)
         {
             await _botDbContext.AddAsync(game);

@@ -26,7 +26,7 @@ public class FunCommandsBehaviour : IBotBehaviour
         _lobby.MultiplayerLobby.OnMatchFinished += OnMatchFinished;
         _lobby.OnUserMessage += OnUserMessage;
         _lobby.OnAdminMessage += OnAdminMessage;
-        
+
         var mapManagerBehaviour = _lobby.Behaviours.Find(x => x.GetType() == typeof(MapManagerBehaviour));
         if (mapManagerBehaviour != null)
         {
@@ -95,17 +95,34 @@ public class FunCommandsBehaviour : IBotBehaviour
                 _lobby.SendMessage($"{msg.Sender} has played {user.MatchesPlayed} matches with a total of {user.NumberOneResults} #1's");
             }
 
-            if (msg.Content.ToLower().Equals("!mapstats") || msg.Content.ToLower().Equals("!ms"))
+            if ((msg.Content.ToLower().Equals("!mapstats") || msg.Content.ToLower().Equals("!ms")) && _mapManagerBehaviour.CurrentBeatmap != null)
             {
-                if (_mapManagerBehaviour.CurrentBeatmap != null)
-                {
-                    using var gameRepository = new GameRepository();
+                using var gameRepository = new GameRepository();
 
-                    var beatmapId = _mapManagerBehaviour.CurrentBeatmap.Id;
-                    var totalPlayCount = await gameRepository.GetGameCountByMapId(beatmapId, null);
-                    var pastWeekPlayCount = await gameRepository.GetGameCountByMapId(beatmapId, DateTime.Now.AddDays(-7));
-             
-                    _lobby.SendMessage($"This map has been played a total of {totalPlayCount} times! ({pastWeekPlayCount} times past week)");   
+                var beatmapId = _mapManagerBehaviour.CurrentBeatmap.Id;
+                var totalPlayCount = await gameRepository.GetGameCountByMapId(beatmapId, null);
+                var pastWeekPlayCount = await gameRepository.GetGameCountByMapId(beatmapId, DateTime.Now.AddDays(-7));
+                var recentGames = await gameRepository.GetRecentGames(beatmapId, 10);
+
+                if (recentGames.Count >= 5)
+                {
+                    List<float> leaveRatio = new();
+                    List<float> passRatio = new();
+
+                    foreach (var game in recentGames)
+                    {
+                        leaveRatio.Add((float)game.PlayerFinishCount / game.PlayerCount);
+                        passRatio.Add((float)game.PlayerFinishCount / game.PlayerPassedCount);
+                    }
+
+                    var avgLeavePercentage = 100f - MathF.Min(leaveRatio.Average() * 100f, 100f);
+                    var avgPassPercentage = 100f - MathF.Min(passRatio.Average() * 100f, 100f);
+
+                    _lobby.SendMessage($"This map has been played a total of {totalPlayCount} times ({pastWeekPlayCount} past week)! {avgLeavePercentage:0}% usually leave the lobby, and {avgPassPercentage:0}% pass the map!");
+                }
+                else
+                {
+                    _lobby.SendMessage($"This map has been played a total of {totalPlayCount} times ({pastWeekPlayCount} past week)!");
                 }
             }
         }
@@ -114,7 +131,7 @@ public class FunCommandsBehaviour : IBotBehaviour
             // ignored
         }
     }
-    
+
     private async void OnAdminMessage(IPrivateIrcMessage msg)
     {
         try
@@ -141,9 +158,9 @@ public class FunCommandsBehaviour : IBotBehaviour
                 sourceUser.MatchesPlayed = 0;
                 sourceUser.NumberOneResults = 0;
                 sourceUser.Playtime = 0;
-                
+
                 await userRepository.Save();
-                
+
                 _lobby.SendMessage("Successfully moved player stats.");
             }
         }
@@ -165,7 +182,7 @@ public class FunCommandsBehaviour : IBotBehaviour
             Log.Error($"Exception at FunCommands.OnMatchStarted(): {e}");
         }
     }
-    
+
     private async void OnMatchFinished()
     {
         try
@@ -185,7 +202,7 @@ public class FunCommandsBehaviour : IBotBehaviour
         {
             if (_flushedPlaytime)
                 return;
-            
+
             using var userRepository = new UserRepository();
             var user = await userRepository.FindUser(args.Player.Name) ?? await userRepository.CreateUser(args.Player.Name);
 
@@ -206,7 +223,7 @@ public class FunCommandsBehaviour : IBotBehaviour
         {
             return;
         }
-        
+
         using var gameRepository = new GameRepository();
 
         var playerFinishCount = _lobby.MultiplayerLobby.Players.Count(x => x.Score > 0);
@@ -223,7 +240,7 @@ public class FunCommandsBehaviour : IBotBehaviour
 
         await gameRepository.AddGame(game);
     }
-    
+
     private async Task StorePlayerFinishData()
     {
         using var userRepository = new UserRepository();
