@@ -84,7 +84,7 @@ public class FunCommandsBehaviour : IBotBehaviour
                 _lobby.SendMessage(
                     _lobby.Bot.RuntimeInfo.StartTime.AddMinutes(2) >= player.JoinTime
                         ? $"{msg.Sender} has been here since last bot restart, {currentPlaytime:h' hours 'm' minutes 's' seconds'} ({totalPlaytime:d' days 'h' hours 'm' minutes 's' seconds'} in total)"
-                        : $"{msg.Sender} has been here for {currentPlaytime:h' hours 'm' minutes 's' seconds'} ({totalPlaytime:d' days 'h' hours 'm' minutes 's' seconds'} [{totalPlaytime.TotalHours:F1}h] in total)");
+                        : $"{msg.Sender} has been here for {currentPlaytime:h' hours 'm' minutes 's' seconds'} ({totalPlaytime:d' days 'h' hours 'm' minutes 's' seconds'} [{totalPlaytime.TotalHours:F0}h] in total)");
             }
 
             if (msg.Content.ToLower().Equals("!playstats") || msg.Content.ToLower().Equals("!ps"))
@@ -112,17 +112,17 @@ public class FunCommandsBehaviour : IBotBehaviour
                     foreach (var game in recentGames)
                     {
                         leaveRatio.Add((float)game.PlayerFinishCount / game.PlayerCount);
-                        passRatio.Add((float)game.PlayerFinishCount / game.PlayerPassedCount);
+                        passRatio.Add((float)game.PlayerPassedCount / game.PlayerFinishCount);
                     }
 
                     var avgLeavePercentage = 100f - MathF.Min(leaveRatio.Average() * 100f, 100f);
-                    var avgPassPercentage = 100f - MathF.Min(passRatio.Average() * 100f, 100f);
+                    var avgPassPercentage = MathF.Min(passRatio.Average() * 100f, 100f);
 
-                    _lobby.SendMessage($"This map has been played a total of {totalPlayCount} times ({pastWeekPlayCount} past week)! {avgLeavePercentage:0}% usually leave the lobby, and {avgPassPercentage:0}% pass the map!");
+                    _lobby.SendMessage($"This map has been played a total of {totalPlayCount} times! ({pastWeekPlayCount} times past week), {avgLeavePercentage:0}% of the players usually leave the lobby, and {avgPassPercentage:0}% will pass the map!");
                 }
                 else
                 {
-                    _lobby.SendMessage($"This map has been played a total of {totalPlayCount} times ({pastWeekPlayCount} past week)!");
+                    _lobby.SendMessage($"This map has been played a total of {totalPlayCount} times ({pastWeekPlayCount} times past week)!");
                 }
             }
         }

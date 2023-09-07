@@ -219,6 +219,11 @@ public class MapManagerBehaviour : IBotBehaviour
 
     private async void OnBeatmapChanged(BeatmapShell beatmap)
     {
+        if (_lobby.IsRecovering)
+        {
+            return;
+        }
+        
         // Ignore the beatmap change made by the bot.
         if (_botAppliedBeatmap && beatmap.Id == _lastBotAppliedBeatmap)
         {
