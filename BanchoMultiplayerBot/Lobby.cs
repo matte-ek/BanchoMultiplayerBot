@@ -6,6 +6,8 @@ using BanchoSharp.Multiplayer;
 using Serilog;
 using System.Linq;
 using BanchoMultiplayerBot.Data;
+using BanchoMultiplayerBot.Extensions;
+using BanchoSharp.Messaging.ChatMessages;
 
 namespace BanchoMultiplayerBot;
 
@@ -44,8 +46,8 @@ public class Lobby
     public List<IPrivateIrcMessage> RecentMessages { get; } = new();
     
     public event Action? OnLobbyChannelJoined;
-    public event Action<IPrivateIrcMessage>? OnUserMessage;
-    public event Action<IPrivateIrcMessage>? OnAdminMessage;
+    public event Action<PlayerMessage>? OnUserMessage;
+    public event Action<PlayerMessage>? OnAdminMessage;
     public event Action<IPrivateIrcMessage>? OnBanchoMessage;
     
     public string Channel { get; set; }
@@ -185,18 +187,32 @@ public class Lobby
             
             return;
         }
+        
+        var playerMessage = new PlayerMessage(message.RawMessage, this);
 
         if (message.Recipient != Channel)
         {
+            if (message.IsDirect)
+            {
+                // If the player is in this current lobby, we'll try to handle the command anyway,
+                // since a lot of people tend to try to use some of these commands in DMs.
+                if (MultiplayerLobby.Players.Any(x => x.Name.ToIrcNameFormat() == message.Sender.ToIrcNameFormat()))
+                {
+                    OnUserMessage?.Invoke(playerMessage);
+
+                    return;
+                }
+            }
+            
             return;
         }
 
         if (await Bot.IsAdministrator(message.Sender))
         {
-            OnAdminMessage?.Invoke(message);
+            OnAdminMessage?.Invoke(playerMessage);
         }
         
-        OnUserMessage?.Invoke(message);
+        OnUserMessage?.Invoke(playerMessage);
     }
     
     private void ClientOnPrivateMessageSent(IPrivateIrcMessage e)
@@ -207,11 +223,13 @@ public class Lobby
         }
         
         AddMessageToHistory(e);
+
+        var playerMessage = new PlayerMessage(e.RawMessage, this);
         
         // We do this so messages sent from example the WebUI are
         // also processed.
-        OnUserMessage?.Invoke(e);
-        OnAdminMessage?.Invoke(e);
+        OnUserMessage?.Invoke(playerMessage);
+        OnAdminMessage?.Invoke(playerMessage);
     }
 
     private void AddMessageToHistory(IPrivateIrcMessage message)

@@ -169,7 +169,7 @@ public class MapManagerBehaviour : IBotBehaviour
         _lobby.SendMessage("!mp settings");
     }
 
-    private void OnUserMessage(IPrivateIrcMessage msg)
+    private void OnUserMessage(PlayerMessage msg)
     {
         if (msg.Content.ToLower().EndsWith("!r") || msg.Content.ToLower().StartsWith("!regulations"))
         {
@@ -184,7 +184,7 @@ public class MapManagerBehaviour : IBotBehaviour
                 _ => "Any Mode"
             };
 
-            _lobby.SendMessage($"Star rating: {_lobby.Configuration.MinimumStarRating:.0#}* - {_lobby.Configuration.MaximumStarRating:.0#}* | Max length: {timeSpan.ToString(@"mm\:ss")} | {requiredModeName}");
+            msg.Reply($"Star rating: {_lobby.Configuration.MinimumStarRating:.0#}* - {_lobby.Configuration.MaximumStarRating:.0#}* | Max length: {timeSpan.ToString(@"mm\:ss")} | {requiredModeName}");
         }
 
         if (CurrentBeatmap == null)
@@ -194,18 +194,18 @@ public class MapManagerBehaviour : IBotBehaviour
         
         if (msg.Content.ToLower().Equals("!mirror"))
         {
-            _lobby.SendMessage($"[https://beatconnect.io/b/{CurrentBeatmap.SetId} BeatConnect Mirror] - [https://osu.direct/d/{CurrentBeatmap.SetId} osu.direct Mirror]");
+            msg.Reply($"[https://beatconnect.io/b/{CurrentBeatmap.SetId} BeatConnect Mirror] - [https://osu.direct/d/{CurrentBeatmap.SetId} osu.direct Mirror]");
         }
 
         if (msg.Content.ToLower().StartsWith("!timeleft") && _lobby.MultiplayerLobby.MatchInProgress)
         {
             var timeLeft = (_matchStartTime.Add(CurrentBeatmap.Length) - DateTime.Now).ToString(@"mm\:ss");
-
-            _lobby.SendMessage($"Time left of current map: {timeLeft}");
+            
+            msg.Reply($"Time left of current map: {timeLeft}");
         }
     }
 
-    private void OnAdminMessage(IPrivateIrcMessage msg)
+    private void OnAdminMessage(PlayerMessage msg)
     {
         if (!msg.Content.StartsWith("!togglemapcheck"))
         {
@@ -214,7 +214,7 @@ public class MapManagerBehaviour : IBotBehaviour
 
         _beatmapCheckEnabled = !_beatmapCheckEnabled;
 
-        _lobby.SendMessage((_beatmapCheckEnabled ? "Enabled" : "Disabled") + " beatmap checker!");
+        msg.Reply((_beatmapCheckEnabled ? "Enabled" : "Disabled") + " beatmap checker!");
     }
 
     private async void OnBeatmapChanged(BeatmapShell beatmap)

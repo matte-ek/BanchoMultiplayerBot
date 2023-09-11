@@ -138,11 +138,11 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         OnQueueUpdated();
     }
 
-    private void OnUserMessage(IPrivateIrcMessage message)
+    private void OnUserMessage(PlayerMessage message)
     {
         if (message.Content.ToLower().Equals("!q") || message.Content.ToLower().Equals("!queue"))
         {
-            SendCurrentQueue();
+            message.Reply(GetCurrentQueueMessage());
 
             return;
         }
@@ -151,7 +151,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         {
             var queuePosition = Queue.FindIndex(x => x.ToIrcNameFormat().Equals(message.Sender));
 
-            _lobby.SendMessage(queuePosition == -1
+            message.Reply(queuePosition == -1
                 ? "Couldn't find player in queue."
                 : $"Queue position for {message.Sender}: #{(queuePosition + 1).ToString()}");
 
@@ -178,7 +178,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
             var player = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name.ToIrcNameFormat() == message.Sender);
             if (player is not null)
             {
-                if (_playerSkipVote.Vote(player))
+                if (_playerSkipVote.Vote(message, player))
                 {
                     SkipCurrentPlayer();
 
@@ -192,7 +192,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         }
     }
 
-    private void OnAdminMessage(IPrivateIrcMessage message)
+    private void OnAdminMessage(PlayerMessage message)
     {
         if (message.Content.StartsWith("!forceskip"))
         {
@@ -313,7 +313,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         }
 
         OnQueueUpdated();
-        SendCurrentQueue(true);
+        _lobby.SendMessage(GetCurrentQueueMessage(true));
 
         _matchInProgress = false;
     }
@@ -352,7 +352,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
     /// Send the first 5 people in the queue in the lobby chat. The player names will include a 
     /// zero width space to avoid tagging people.
     /// </summary>
-    private void SendCurrentQueue(bool tagHost = false)
+    private string GetCurrentQueueMessage(bool tagHost = false)
     {
         var queueStr = "";
         var cleanPlayerNamesQueue = new List<string>();
@@ -377,7 +377,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
             queueStr += name + (name != cleanPlayerNamesQueue.Last() ? ", " : string.Empty);
         }
 
-        _lobby.SendMessage($"Queue: {queueStr}");
+        return $"Queue: {queueStr}";
     }
 
     /// <summary>

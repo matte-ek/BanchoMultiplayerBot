@@ -1,4 +1,5 @@
-﻿using BanchoSharp.Interfaces;
+﻿using BanchoMultiplayerBot.Data;
+using BanchoSharp.Interfaces;
 
 namespace BanchoMultiplayerBot.Behaviour;
 
@@ -13,7 +14,7 @@ public class DebugCommandsBehaviour : IBotBehaviour
         _lobby.OnUserMessage += OnUserMessage;
     }
 
-    private void OnUserMessage(IPrivateIrcMessage msg)
+    private void OnUserMessage(PlayerMessage msg)
     {
         try
         {
@@ -21,26 +22,26 @@ public class DebugCommandsBehaviour : IBotBehaviour
             {
                 var time = DateTime.Now - _lobby.Bot.RuntimeInfo.StartTime;
                 
-                _lobby.SendMessage($"{msg.Sender}, current uptime: {time:d' days 'h' hours 'm' minutes 's' seconds'}");
+                msg.Reply($"{msg.Sender}, current uptime: {time:d' days 'h' hours 'm' minutes 's' seconds'}");
             }
             
             if (msg.Content.Equals("!issuetime"))
             {
                 if (!_lobby.Bot.RuntimeInfo.HadNetworkConnectionIssue)
                 {
-                    _lobby.SendMessage($"{msg.Sender}, no recent connection issues.");
+                    msg.Reply($"{msg.Sender}, no recent connection issues.");
                 }
                 else
                 {
                     var time = DateTime.Now - _lobby.Bot.RuntimeInfo.LastConnectionIssueTime;
 
-                    _lobby.SendMessage($"{msg.Sender}, last connection issue: {time:d' days 'h' hours 'm' minutes 's' seconds'}");   
+                    msg.Reply($"{msg.Sender}, last connection issue: {time:d' days 'h' hours 'm' minutes 's' seconds'}");   
                 }
             }
 
             if (msg.Content.Equals("!version"))
             {
-                _lobby.SendMessage($"{msg.Sender}, current version: {Bot.Version}");
+                msg.Reply($"{msg.Sender}, current version: {Bot.Version}");
             }
         }
         catch (Exception)

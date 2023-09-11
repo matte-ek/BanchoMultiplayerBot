@@ -1,4 +1,5 @@
-﻿using BanchoSharp.Multiplayer;
+﻿using BanchoMultiplayerBot.Data;
+using BanchoSharp.Multiplayer;
 using Serilog;
 
 namespace BanchoMultiplayerBot.Utilities;
@@ -24,7 +25,7 @@ public class PlayerVote
         };
     }
 
-    public bool Vote(MultiplayerPlayer player)
+    public bool Vote(PlayerMessage message, MultiplayerPlayer player)
     {
         int requiredVotes = Math.Max(Lobby.MultiplayerLobby.Players.Count / 2 + 1, 1);
 
@@ -37,12 +38,12 @@ public class PlayerVote
         
         if (Votes.Count < requiredVotes)
         {
-            Lobby.SendMessage($"{Question} ({Votes.Count}/{requiredVotes})");
+            message.Reply($"{Question} ({Votes.Count}/{requiredVotes})", true);
 
             return false;
         }
         
-        Lobby.SendMessage($"{Question} passed ({Votes.Count}/{requiredVotes})");
+        message.Reply($"{Question} passed ({Votes.Count}/{requiredVotes})", true);
 
         Log.Information($"Passed vote {Question} with ({Votes.Count}/{requiredVotes})");
 

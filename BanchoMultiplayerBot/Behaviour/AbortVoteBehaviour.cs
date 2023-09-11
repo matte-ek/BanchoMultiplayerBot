@@ -1,4 +1,5 @@
-﻿using BanchoMultiplayerBot.Extensions;
+﻿using BanchoMultiplayerBot.Data;
+using BanchoMultiplayerBot.Extensions;
 using BanchoMultiplayerBot.Utilities;
 using BanchoSharp.Interfaces;
 
@@ -30,7 +31,7 @@ public class AbortVoteBehaviour : IBotBehaviour
         _lobby.OnUserMessage += OnUserMessage;
     }
 
-    private void OnUserMessage(IPrivateIrcMessage message)
+    private void OnUserMessage(PlayerMessage message)
     {
         if (!message.Content.ToLower().StartsWith("!abort"))
             return;
@@ -40,7 +41,7 @@ public class AbortVoteBehaviour : IBotBehaviour
         if (player is null)
             return;
 
-        if (_playerAbortVote.Vote(player))
+        if (_playerAbortVote.Vote(message, player))
         {
             _lobby.SendMessage("!mp abort");
         }

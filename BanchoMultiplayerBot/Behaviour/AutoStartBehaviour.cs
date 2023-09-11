@@ -1,4 +1,5 @@
-﻿using BanchoMultiplayerBot.Extensions;
+﻿using BanchoMultiplayerBot.Data;
+using BanchoMultiplayerBot.Extensions;
 using BanchoMultiplayerBot.Utilities;
 using BanchoSharp;
 using BanchoSharp.Interfaces;
@@ -81,7 +82,7 @@ public class AutoStartBehaviour : IBotBehaviour
         StartTimer(_lobby.Bot.Configuration.AutoStartTimerTime.Value);
     }
 
-    private void OnAdminMessage(IPrivateIrcMessage message)
+    private void OnAdminMessage(PlayerMessage message)
     {
         if (message.Content.ToLower().StartsWith("!stop"))
         {
@@ -89,7 +90,7 @@ public class AutoStartBehaviour : IBotBehaviour
         }
     }
 
-    private void OnUserMessage(IPrivateIrcMessage message)
+    private void OnUserMessage(PlayerMessage message)
     {
         // Kind of a stupid fix to prevent loop backs
         bool isPlayer = message.Sender != _lobby.Bot.Configuration.Username;
@@ -126,7 +127,7 @@ public class AutoStartBehaviour : IBotBehaviour
                 var player = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name.ToIrcNameFormat() == message.Sender);
                 if (player is not null)
                 {
-                    if (_playerStartVote.Vote(player))
+                    if (_playerStartVote.Vote(message, player))
                     {
                         _lobby.SendMessage("!mp start");
 
@@ -136,7 +137,7 @@ public class AutoStartBehaviour : IBotBehaviour
             }
             catch (Exception)
             {
-                _lobby.SendMessage("Usage: !start [<seconds>]");
+                message.Reply("Usage: !start [<seconds>]");
             }
         }
 

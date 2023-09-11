@@ -1,4 +1,5 @@
-﻿using BanchoMultiplayerBot.Database.Models;
+﻿using BanchoMultiplayerBot.Data;
+using BanchoMultiplayerBot.Database.Models;
 using BanchoMultiplayerBot.Database.Repositories;
 using BanchoMultiplayerBot.Extensions;
 using BanchoSharp.EventArgs;
@@ -57,7 +58,7 @@ public class FunCommandsBehaviour : IBotBehaviour
         }
     }
 
-    private async void OnUserMessage(IPrivateIrcMessage msg)
+    private async void OnUserMessage(PlayerMessage msg)
     {
         try
         {
@@ -81,7 +82,7 @@ public class FunCommandsBehaviour : IBotBehaviour
                 var currentPlaytime = DateTime.Now - player.JoinTime;
                 var totalPlaytime = TimeSpan.FromSeconds(user.Playtime) + currentPlaytime; // We add current play-time since it's only appended after the player disconnects.
 
-                _lobby.SendMessage(
+                msg.Reply(
                     _lobby.Bot.RuntimeInfo.StartTime.AddMinutes(2) >= player.JoinTime
                         ? $"{msg.Sender} has been here since last bot restart, {currentPlaytime:h' hours 'm' minutes 's' seconds'} ({totalPlaytime:d' days 'h' hours 'm' minutes 's' seconds'} in total)"
                         : $"{msg.Sender} has been here for {currentPlaytime:h' hours 'm' minutes 's' seconds'} ({totalPlaytime:d' days 'h' hours 'm' minutes 's' seconds'} [{totalPlaytime.TotalHours:F0}h] in total)");
@@ -92,7 +93,7 @@ public class FunCommandsBehaviour : IBotBehaviour
                 using var userRepository = new UserRepository();
                 var user = await userRepository.FindUser(player.Name) ?? await userRepository.CreateUser(player.Name);
 
-                _lobby.SendMessage($"{msg.Sender} has played {user.MatchesPlayed} matches with a total of {user.NumberOneResults} #1's");
+                msg.Reply($"{msg.Sender} has played {user.MatchesPlayed} matches with a total of {user.NumberOneResults} #1's");
             }
 
             if ((msg.Content.ToLower().Equals("!mapstats") || msg.Content.ToLower().Equals("!ms")) && _mapManagerBehaviour.CurrentBeatmap != null)
@@ -118,11 +119,11 @@ public class FunCommandsBehaviour : IBotBehaviour
                     var avgLeavePercentage = 100f - MathF.Min(leaveRatio.Average() * 100f, 100f);
                     var avgPassPercentage = MathF.Min(passRatio.Average() * 100f, 100f);
 
-                    _lobby.SendMessage($"This map has been played a total of {totalPlayCount} times! ({pastWeekPlayCount} times past week), {avgLeavePercentage:0}% of the players usually leave the lobby, and {avgPassPercentage:0}% will pass the map!");
+                    msg.Reply($"This map has been played a total of {totalPlayCount} times! ({pastWeekPlayCount} times past week), {avgLeavePercentage:0}% of the players usually leave the lobby, and {avgPassPercentage:0}% will pass the map!");
                 }
                 else
                 {
-                    _lobby.SendMessage($"This map has been played a total of {totalPlayCount} times ({pastWeekPlayCount} times past week)!");
+                    msg.Reply($"This map has been played a total of {totalPlayCount} times ({pastWeekPlayCount} times past week)!");
                 }
             }
         }
