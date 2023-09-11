@@ -85,7 +85,7 @@ public class FunCommandsBehaviour : IBotBehaviour
                 msg.Reply(
                     _lobby.Bot.RuntimeInfo.StartTime.AddMinutes(2) >= player.JoinTime
                         ? $"{msg.Sender} has been here since last bot restart, {currentPlaytime:h' hours 'm' minutes 's' seconds'} ({totalPlaytime:d' days 'h' hours 'm' minutes 's' seconds'} in total)"
-                        : $"{msg.Sender} has been here for {currentPlaytime:h' hours 'm' minutes 's' seconds'} ({totalPlaytime:d' days 'h' hours 'm' minutes 's' seconds'} [{totalPlaytime.TotalHours:F0}h] in total)");
+                        : $"{msg.Sender} has been here for {currentPlaytime:h' hours 'm' minutes 's' seconds'} ({totalPlaytime:d' days 'h' hours 'm' minutes 's' seconds'} ({totalPlaytime.TotalHours:F0}h) in total)");
             }
 
             if (msg.Content.ToLower().Equals("!playstats") || msg.Content.ToLower().Equals("!ps"))
@@ -123,7 +123,9 @@ public class FunCommandsBehaviour : IBotBehaviour
                 }
                 else
                 {
-                    msg.Reply($"This map has been played a total of {totalPlayCount} times ({pastWeekPlayCount} times past week)!");
+                    msg.Reply(totalPlayCount != 0
+                        ? $"This map has been played a total of {totalPlayCount} times ({pastWeekPlayCount} times past week)!"
+                        : $"This map has been played a total of {totalPlayCount} times!");
                 }
             }
         }
