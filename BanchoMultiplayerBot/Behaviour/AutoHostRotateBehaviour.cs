@@ -138,6 +138,21 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         OnQueueUpdated();
     }
 
+    public async Task RefreshPlayerBanStates()
+    {
+        foreach (var player in _lobby.MultiplayerLobby.Players)
+        {
+            if (!(await BanBehaviour.GetActivePlayerBans(player.Name)).Any()) 
+                continue;
+            
+            // To make sure they aren't added afterwards.
+            _queueIgnorePlayers.Add(player.Name);
+            
+            if (Queue.Contains(player.Name))
+                Queue.Remove(player.Name);
+        }
+    }
+    
     private void OnUserMessage(PlayerMessage message)
     {
         if (message.Content.ToLower().Equals("!q") || message.Content.ToLower().Equals("!queue"))

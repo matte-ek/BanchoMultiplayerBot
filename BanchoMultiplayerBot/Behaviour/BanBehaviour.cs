@@ -66,11 +66,28 @@ public class BanBehaviour : IBotBehaviour
                     return;
                 }
 
+                var hostBan = hostBanOnly.ToLower() == "yes" || hostBanOnly.ToLower() == "true";
+                
                 await banRepository.CreateBan(
                     user,
-                    hostBanOnly.ToLower() == "yes" || hostBanOnly.ToLower() == "true",
+                    hostBan,
                     reason,
                     expireTime != null ? DateTime.Now.AddDays(int.Parse(expireTime)) : null);
+                
+                // If the user is banned from the lobby, we might as well ban him immediately
+                if (!hostBan)
+                {
+                    _lobby.SendMessage($"!mp ban {playerName.ToIrcNameFormat()}");
+                }
+                else
+                {
+                    // Or we'll have to make sure the AHR system gets notified of the news.
+                    if (_lobby.Behaviours.Find(x => x.GetType() == typeof(AutoHostRotateBehaviour)) is 
+                        AutoHostRotateBehaviour autoHostRotateBehaviour)
+                    {
+                        await autoHostRotateBehaviour.RefreshPlayerBanStates();
+                    }
+                }
                 
                 _lobby.SendMessage("Player was successfully put on ban list.");
             }
