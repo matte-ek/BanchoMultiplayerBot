@@ -166,7 +166,7 @@ public class MapManagerBehaviour : IBotBehaviour
 
         MapValidationStatus = MapValidation.PostStart;
         
-        _lobby.SendMessage("!mp settings");
+        _lobby.UpdateSettings();
     }
 
     private void OnUserMessage(PlayerMessage msg)
@@ -259,7 +259,7 @@ public class MapManagerBehaviour : IBotBehaviour
                         
                         MapValidationStatus = MapValidation.MapPick;
 
-                        _lobby.SendMessage("!mp settings");   
+                        _lobby.UpdateSettings();
                     }
                     else
                     {

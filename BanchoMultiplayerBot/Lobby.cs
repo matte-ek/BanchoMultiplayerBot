@@ -52,6 +52,7 @@ public class Lobby
     
     public string Channel { get; set; }
 
+    internal int LobbyIndex = 0;
     internal string LobbyLabel = string.Empty;
     
     public Lobby(Bot bot, LobbyConfiguration configuration, string channel)
@@ -109,10 +110,10 @@ public class Lobby
             }   
         }
 
+        LobbyIndex = Bot.Lobbies.FindIndex(x => x == this);
         LobbyLabel = Bot.Lobbies.FindIndex(x => x == this).ToString();
 
         Behaviours.ForEach(x => x.Setup(this));
-        
         
         MultiplayerLobby.OnSettingsUpdated += () =>
         {
@@ -159,6 +160,14 @@ public class Lobby
     public void SendMessage(string message)
     {
         Bot.SendMessage(Channel, message);
+    }
+
+    /// <summary>
+    /// Runs "!mp settings" as per usual, but adds zero width spaces to avoid stupid Bancho anti-spam stuff.
+    /// </summary>
+    public void UpdateSettings()
+    {
+        Bot.SendMessage(Channel,  $"!mp settings {string.Join("", Enumerable.Repeat("\u200B", LobbyIndex))}");
     }
 
     /// <summary>

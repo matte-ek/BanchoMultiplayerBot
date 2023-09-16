@@ -229,7 +229,7 @@ public class LobbyManagerBehaviour : IBotBehaviour
 
     private void RunSettingsCommand()
     {
-        _lobby.SendMessage("!mp settings");
+        _lobby.UpdateSettings();
 
         Task.Run(EnsureSettingsSent);
     }
@@ -258,7 +258,7 @@ public class LobbyManagerBehaviour : IBotBehaviour
         
         if (_lastSettingsUpdateSentTime - _lastSettingsUpdateReceivedTime > TimeSpan.FromSeconds(15))
         {
-            _lobby.SendMessage("!mp settings");
+            _lobby.UpdateSettings();
 
             // If we still have some attempts left, then check if it got ran successfully again
             // I hate the fact that I even have to do this but I have no clue as to why it doesn't get ran
