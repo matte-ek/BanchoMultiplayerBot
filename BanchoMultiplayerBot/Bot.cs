@@ -166,61 +166,6 @@ public class Bot
     /// </summary>
     public void SendMessage(string channel, string message)
     {
-        // This kind of sucks, since it's designed to circumvent Bancho's spam protection, notably the "same message" block.
-        // Not doing this will just cause Bancho to silently drop messages, and the bot more or less have to spam the same message
-        // until it finally goes through. However it's not perfect, and caused some issues here and there.
-        //
-        // While I personally would have no issues using a bot account for what it's intended for, and could therefore avoid this,
-        // I don't really have any choice as I'm (or anyone using this bot for that matter) not allowed to request a bot account
-        // due to some policy. It is what it is. In most cases however this code should just use an alternative message,
-        // and will just "spam" BanchoBot if required.
-        if (_lastSentMessage == message && RuntimeInfo.StartTime.AddMinutes(3) > DateTime.Now)
-        {
-            var alternativeMessage = new QueuedMessage()
-            {
-                Channel = "BanchoBot",
-                Content = $"alt-msg {DateTime.Now}"
-            };
-            
-            var ignoredChannels = new List<string> { channel };
-            
-            // Attempt to find an alternative message we can send instead
-            foreach (var msg in _messageQueue.ToArray())
-            {
-                // Since message order could matter
-                if (ignoredChannels.Contains(msg.Channel))
-                {
-                    continue;
-                }
-                
-                // If it's the same message, it's of no use
-                if (msg.Content == message)
-                {
-                    ignoredChannels.Add(channel);
-                    continue;
-                }
-
-                alternativeMessage = new QueuedMessage()
-                {
-                    Id = msg.Id,
-                    Channel = msg.Channel,
-                    Content = msg.Content
-                };
-            }
-
-            // Make sure the message pump doesn't send duplicate messages, I don't think there's 
-            // a way to remove messages from a BlockingCollection.
-            if (alternativeMessage.Channel != "BanchoBot")
-            {
-                _ignoredMessages.Add(alternativeMessage.Id);
-            }
-
-            // Give the new message a new id so it doesn't have the same one as the old message.
-            alternativeMessage.Id = new Guid();
-
-            _messageQueue.Add(alternativeMessage);
-        }
-        
         _messageQueue.Add(new QueuedMessage()
         {
             Channel = channel,
