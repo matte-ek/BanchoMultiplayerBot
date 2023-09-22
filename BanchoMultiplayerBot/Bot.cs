@@ -272,6 +272,14 @@ public class Bot
             SendMessage(msg.IsDirect ? msg.Sender : msg.Recipient, $"osu! auto host rotation bot (v{Version}) [https://github.com/matte-ek/BanchoMultiplayerBot/blob/master/COMMANDS.md Help & Commands]");
         }
 
+        if (msg.IsDirect &&
+            (msg.Content.StartsWith("!mp create") ||
+             msg.Content.StartsWith("!create") ||
+             msg.Content.StartsWith("!join")))
+        {
+            SendMessage(msg.Sender, "I cannot unfortunately join or create any new lobbies.");
+        }
+        
         try
         {
             if (msg.Recipient == "#osu" && 
