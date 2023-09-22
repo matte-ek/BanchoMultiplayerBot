@@ -201,7 +201,7 @@ public class MapManagerBehaviour : IBotBehaviour
         {
             var timeLeft = (_matchStartTime.Add(CurrentBeatmap.Length) - DateTime.Now).ToString(@"mm\:ss");
             
-            msg.Reply($"Time left of current map: {timeLeft}");
+            msg.Reply($"Estimated time left of current map: {timeLeft}");
         }
     }
 

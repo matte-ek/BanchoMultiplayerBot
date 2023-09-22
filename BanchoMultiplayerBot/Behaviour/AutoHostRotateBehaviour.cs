@@ -227,9 +227,9 @@ public class AutoHostRotateBehaviour : IBotBehaviour
                         user.AutoSkipEnabled = false;
                 }
                 
-                var status = user.AutoSkipEnabled ? "Enabled" : "Disabled";
+                var status = user.AutoSkipEnabled ? "enabled" : "disabled";
                 
-                message.Reply($"{message.BanchoPlayer.Name}, your auto-skip is currently {status}");
+                message.Reply($"{message.BanchoPlayer.Name}, your auto-skip is currently {status}.");
 
                 await userRepository.Save();
             }
