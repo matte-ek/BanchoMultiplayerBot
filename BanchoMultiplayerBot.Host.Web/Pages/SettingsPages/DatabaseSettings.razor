@@ -1,0 +1,57 @@
+﻿@implements IDisposable
+@inject BotService Bot
+@inject IDialogService DialogService
+@page "/settings/database"
+@using BanchoMultiplayerBot
+@using BanchoMultiplayerBot.Config
+@using BanchoMultiplayerBot.Data
+@using BanchoMultiplayerBot.Database.Repositories
+
+<PageTitle>Database Settings</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Database</MudText>
+
+<MudForm @ref="_form">
+    <MudGrid>
+        <MudItem xs="6">
+            <MudPaper Class="pa-8 ma-2">
+                <MudText Typo="Typo.h6" GutterBottom="true">General</MudText>
+                <MudText>Number of Users: @_userCount</MudText>
+                <MudText>Number of Games Played: @_gamesCount</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6">
+            <MudPaper Class="pa-8 ma-2">
+                <MudText Typo="Typo.h6" GutterBottom="true">Maintenance</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudForm>
+
+@code {
+    private MudForm? _form;
+    private BotConfiguration _configuration = null!;
+
+    private int _userCount = 0;
+    private int _gamesCount = 0;
+
+    private void CleanUsers()
+    {
+        // TODO: Figure out some strategy to remove stuff.
+    }
+    
+    protected override async void OnInitialized()
+    {
+        using var gameRepo = new GameRepository();
+        using var userRepo = new UserRepository();
+
+        _userCount = await userRepo.GetUsersCount();
+        _gamesCount = await gameRepo.GetGamesCount();
+        
+        _configuration = Bot.Configuration;
+    }
+
+    public void Dispose()
+    {
+    }
+}

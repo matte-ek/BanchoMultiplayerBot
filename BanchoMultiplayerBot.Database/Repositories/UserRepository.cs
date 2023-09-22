@@ -39,6 +39,11 @@ namespace BanchoMultiplayerBot.Database.Repositories
             return user;
         }
 
+        public async Task<int> GetUsersCount()
+        {
+            return await _botDbContext.Users.CountAsync();
+        }
+        
         public async Task Save()
         {
             await _botDbContext.SaveChangesAsync();

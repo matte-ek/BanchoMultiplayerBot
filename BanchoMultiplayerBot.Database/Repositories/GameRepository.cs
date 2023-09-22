@@ -49,6 +49,11 @@ namespace BanchoMultiplayerBot.Database.Repositories
             await _botDbContext.SaveChangesAsync();
         }
 
+        public async Task<int> GetGamesCount()
+        {
+            return await _botDbContext.Games.CountAsync();
+        }
+        
         public async Task Save()
         {
             await _botDbContext.SaveChangesAsync();
