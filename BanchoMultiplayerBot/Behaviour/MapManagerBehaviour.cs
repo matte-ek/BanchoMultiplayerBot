@@ -169,7 +169,7 @@ public class MapManagerBehaviour : IBotBehaviour
         _lobby.UpdateSettings();
     }
 
-    private void OnUserMessage(PlayerMessage msg)
+    private async void OnUserMessage(PlayerMessage msg)
     {
         if (msg.Content.ToLower().EndsWith("!r") || msg.Content.ToLower().StartsWith("!regulations"))
         {
@@ -199,9 +199,32 @@ public class MapManagerBehaviour : IBotBehaviour
 
         if (msg.Content.ToLower().StartsWith("!timeleft") && _lobby.MultiplayerLobby.MatchInProgress)
         {
-            var timeLeft = (_matchStartTime.Add(CurrentBeatmap.Length) - DateTime.Now).ToString(@"mm\:ss");
+            try
+            {
+                var finishTime = _matchStartTime.Add(CurrentBeatmap.Length);
+
+                // Add a few seconds to account for people loading/finishing the map
+                finishTime = finishTime.AddSeconds(15);
+                
+                // If we know where the map starts, we can be a bit more clever and try to account for that.
+                // This obviously assumes that the players skip, and skip at around 50% of that time.
+                var beginSkipTime = await BeatmapParser.GetBeatmapStartTime(CurrentBeatmap.Id);
+                if (beginSkipTime != null)
+                {
+                    finishTime = finishTime.Subtract(TimeSpan.FromSeconds(beginSkipTime.Value * 0.5));
+                }
             
-            msg.Reply($"Estimated time left of current map: {timeLeft}");
+                var timeLeft = (finishTime - DateTime.Now).ToString(@"mm\:ss");
+                
+                msg.Reply($"Estimated time left of current map: {timeLeft}");
+                
+                if (beginSkipTime == null)
+                    Log.Information("Unable to get map begin time during !timeleft estimation.");
+            }
+            catch (Exception)
+            {
+                // ignored.
+            }
         }
     }
 
@@ -325,6 +348,7 @@ public class MapManagerBehaviour : IBotBehaviour
                 SetId = int.Parse(beatmap.BeatmapsetId ?? "0"),
                 Name = $"{beatmap.Artist} - {beatmap.Title}",
                 Length = TimeSpan.FromSeconds(int.Parse(beatmap.TotalLength ?? "0", CultureInfo.InvariantCulture)),
+                DrainLength = TimeSpan.FromSeconds(int.Parse(beatmap.HitLength ?? "0", CultureInfo.InvariantCulture)),
                 StarRating = float.Parse(beatmap.DifficultyRating ?? "0", CultureInfo.InvariantCulture)
             };
             
