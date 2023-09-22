@@ -442,7 +442,7 @@ public class MapManagerBehaviour : IBotBehaviour
             if (_lobby.Bot.PerformancePointCalculator == null)
             {
                 _lobby.SendMessage($"(Star Rating: {starRating:.0#} | {beatmapModel.GetStatusString()} | Length: {CurrentBeatmap.Length:mm\\:ss} | BPM: {beatmapModel.Bpm})");
-                _lobby.SendMessage($"(AR: {beatmapModel.DiffApproach} | CS: {beatmapModel.DiffSize} | OD: {beatmapModel.DiffOverall})");
+                _lobby.SendMessage($"(AR: {beatmapModel.DiffApproach} | CS: {beatmapModel.DiffSize} | OD: {beatmapModel.DiffOverall} | HP: {beatmapModel.DiffDrain})");
             }
             else
             {
@@ -451,8 +451,8 @@ public class MapManagerBehaviour : IBotBehaviour
                 _lobby.SendMessage($"(Star Rating: {starRating:.0#} | {beatmapModel.GetStatusString()} | Length: {CurrentBeatmap.Length:mm\\:ss} | BPM: {beatmapModel.Bpm})");
 
                 _lobby.SendMessage(ppInfo != null
-                    ? $"(AR: {beatmapModel.DiffApproach} | CS: {beatmapModel.DiffSize} | OD: {beatmapModel.DiffOverall} | 100%: {ppInfo.Performance100}pp | 98%: {ppInfo.Performance98}pp | 95%: {ppInfo.Performance95}pp)"
-                    : $"(AR: {beatmapModel.DiffApproach} | CS: {beatmapModel.DiffSize} | OD: {beatmapModel.DiffOverall})");
+                    ? $"(AR: {beatmapModel.DiffApproach} | CS: {beatmapModel.DiffSize} | OD: {beatmapModel.DiffOverall} | HP: {beatmapModel.DiffDrain} | 100%: {ppInfo.Performance100}pp | 98%: {ppInfo.Performance98}pp | 95%: {ppInfo.Performance95}pp)"
+                    : $"(AR: {beatmapModel.DiffApproach} | CS: {beatmapModel.DiffSize} | OD: {beatmapModel.DiffOverall} | HP: {beatmapModel.DiffDrain})");
             }
             
             OnNewAllowedMap?.Invoke();
