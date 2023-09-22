@@ -13,6 +13,11 @@ namespace BanchoMultiplayerBot.Database.Repositories
             _botDbContext = new BotDbContext();
         }
 
+        public async Task<User> FindOrCreateUser(string username)
+        {
+            return await FindUser(username) ?? await CreateUser(username);
+        }
+        
         public async Task<User?> FindUser(string username)
         {
             return await _botDbContext.Users.Where(x => x.Name == username)

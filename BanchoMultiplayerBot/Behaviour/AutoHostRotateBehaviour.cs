@@ -153,7 +153,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         }
     }
     
-    private void OnUserMessage(PlayerMessage message)
+    private async void OnUserMessage(PlayerMessage message)
     {
         if (message.Content.ToLower().Equals("!q") || message.Content.ToLower().Equals("!queue"))
         {
@@ -203,6 +203,39 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
                     return;
                 }
+            }
+        }
+
+        if (message.Content.StartsWith("!autoskip"))
+        {
+            try
+            {
+                if (message.BanchoPlayer is null)
+                {
+                    return;
+                }
+                
+                using var userRepository = new UserRepository();
+
+                var user = await userRepository.FindOrCreateUser(message.BanchoPlayer.Name);
+
+                if (message.Content.StartsWith("!autoskip "))
+                {
+                    if (message.Content.EndsWith("enable") || message.Content.EndsWith("on"))
+                        user.AutoSkipEnabled = true;
+                    if (message.Content.EndsWith("disable") || message.Content.EndsWith("off"))
+                        user.AutoSkipEnabled = false;
+                }
+                
+                var status = user.AutoSkipEnabled ? "Enabled" : "Disabled";
+                
+                message.Reply($"{message.BanchoPlayer.Name}, your auto-skip is currently {status}");
+
+                await userRepository.Save();
+            }
+            catch (Exception)
+            {
+                // ignored
             }
         }
     }
@@ -328,6 +361,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         }
 
         OnQueueUpdated();
+        
         _lobby.SendMessage(GetCurrentQueueMessage(true));
 
         _matchInProgress = false;
@@ -346,11 +380,46 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         }
     }
 
-    private void OnQueueUpdated()
+    private async void OnQueueUpdated()
     {
         if (!Queue.Any()) 
             return;
 
+        try
+        {
+            using var userRepository = new UserRepository();
+            
+            // Create a backup as SkipCurrentPlayer() is going to be moving things around
+            var queue = Queue.ToArray(); 
+            
+            var user = await userRepository.FindOrCreateUser(queue[0]);
+            if (user.AutoSkipEnabled)
+            {
+                SkipCurrentPlayer();
+                
+                // This feels sort of stupid, but I would like to try to avoid doing any recursion here,
+                // and I also want to properly handle situations as in "what if everyone has auto-skip enabled?", or
+                // "what if three players in a row have auto skip enabled?", which should be fine here.
+                foreach (var player in queue.Skip(1))
+                {
+                    user = await userRepository.FindOrCreateUser(player);
+
+                    if (user.AutoSkipEnabled)
+                    {
+                        SkipCurrentPlayer();
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
+        
         if (_lobby.MultiplayerLobby.Host is null)
         {
             SetHost(Queue[0]);

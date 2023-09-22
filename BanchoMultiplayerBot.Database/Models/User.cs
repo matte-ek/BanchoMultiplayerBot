@@ -27,6 +27,8 @@
         /// </summary>
         public int NumberOneResults { get; set; }
 
+        public bool AutoSkipEnabled { get; set; } = false;
+        
         public bool Administrator { get; set; } = false;
         
         public ICollection<PlayerBan> Bans { get; } = null!;
