@@ -1,6 +1,6 @@
 ﻿namespace BanchoMultiplayerBot.Data;
 
-public class BeatmapPerformanceInfo
+public class BeatmapPerformanceInfo : IPerformanceInfo
 {
     
     public int Performance100 { get; init; }

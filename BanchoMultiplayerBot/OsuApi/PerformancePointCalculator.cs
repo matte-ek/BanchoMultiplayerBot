@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
+using System.Text;
 using BanchoMultiplayerBot.Data;
 using Serilog;
 
@@ -20,6 +21,51 @@ public class PerformancePointCalculator
     /// </summary>
     public async Task<BeatmapPerformanceInfo?> CalculatePerformancePoints(int beatmapId)
     {
+        if (!await PrepareBeatmapData(beatmapId))
+        {
+            return null;
+        }
+
+        try
+        {
+            return (BeatmapPerformanceInfo?)await CalculateBeatmapPerformancePoints(beatmapId);
+        }
+        catch (Exception e)
+        {
+            Log.Error($"Error while calculating pp for map for beatmap {beatmapId} ({e.Message})");
+            return null;
+        }
+    }
+    
+    /// <summary>
+    /// Calculates the pp for an individual score.
+    /// </summary>
+    public async Task<PlayPerformanceInfo?> CalculateScorePerformancePoints(int beatmapId, ScoreModel scoreModel)
+    {
+        if (!await PrepareBeatmapData(beatmapId))
+        {
+            return null;
+        }
+
+        try
+        {
+            return (PlayPerformanceInfo?)await CalculateBeatmapPerformancePoints(beatmapId,
+                int.Parse(scoreModel.EnabledMods!),
+                int.Parse(scoreModel.Count300!),
+                int.Parse(scoreModel.Count100!),
+                int.Parse(scoreModel.Count50!),
+                int.Parse(scoreModel.Countmiss!),
+                int.Parse(scoreModel.Maxcombo!));
+        }
+        catch (Exception e)
+        {
+            Log.Error($"Error while calculating pp for map from score {scoreModel.ScoreId ?? "N/A"} (beatmap {beatmapId}) ({e.Message})");
+            return null;
+        }
+    }
+
+    private async Task<bool> PrepareBeatmapData(int beatmapId)
+    {
         const string cacheDir = $"cache";
         var beatmapFilePath = $"{cacheDir}/{beatmapId}.osu";
         
@@ -27,7 +73,7 @@ public class PerformancePointCalculator
         if (!IsAvailable)
         {
             Log.Error("Failed to find osu tools directory.");
-            return null;
+            return false;
         }
         
         if (!Directory.Exists(cacheDir))
@@ -48,27 +94,32 @@ public class PerformancePointCalculator
             catch (Exception e)
             {
                 Log.Error($"Error while downloading beatmap {beatmapId} ({e.Message})");
+                return false;
             }
         }
 
-        try
-        {
-            return await CalculateBeatmapPerformancePoints(beatmapId);
-        }
-        catch (Exception e)
-        {
-            Log.Error($"Error while calculating pp for map for beatmap {beatmapId} ({e.Message})");
-            return null;
-        }
+        return true;
     }
 
     /// <summary>
     /// Calculates the pp for beatmap, has a 5 second timeout.  
     /// </summary>
-    private async Task<BeatmapPerformanceInfo?> CalculateBeatmapPerformancePoints(int beatmapId)
+    private async Task<IPerformanceInfo?> CalculateBeatmapPerformancePoints(int beatmapId,
+                                                                                  int mods = 0,
+                                                                                  int? n300 = null,
+                                                                                  int? n100 = null,
+                                                                                  int? n50 = null,
+                                                                                  int? nMisses = null,
+                                                                                  int? nMaxCombo = null)
     {
         var appName = "performance-calculator" + (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".exe" : string.Empty);
-        var performanceCalcProcess = RunProcessAsync(appName, $"{beatmapId}");
+        var individualPlayMode = nMaxCombo != null;
+
+        var arguments = individualPlayMode
+            ? $"{beatmapId} {n300} {n100} {n50} {nMisses} {nMaxCombo} {mods}"
+            : $"{beatmapId} {mods}";
+        
+        var performanceCalcProcess = RunProcessAsync(appName, arguments);
 
         if (performanceCalcProcess == null)
         {
@@ -87,12 +138,21 @@ public class PerformancePointCalculator
             }
 
             var values = output.Split('\n');
-            if (values.Length < 4)
+            if (values.Length < 2)
             {
                 Log.Error($"Failed to calculate pp for beatmap {beatmapId}: {output}");
                 return null;
             }
 
+            if (individualPlayMode)
+            {
+                return new PlayPerformanceInfo()
+                {
+                    PerformancePoints = (int)Math.Round(Convert.ToDouble(values[0], CultureInfo.InvariantCulture)),
+                    MaximumPerformancePoints = (int)Math.Round(Convert.ToDouble(values[1], CultureInfo.InvariantCulture)),
+                };
+            }
+            
             return new BeatmapPerformanceInfo()
             {
                 Performance100 = (int)Math.Round(Convert.ToDouble(values[0], CultureInfo.InvariantCulture)),

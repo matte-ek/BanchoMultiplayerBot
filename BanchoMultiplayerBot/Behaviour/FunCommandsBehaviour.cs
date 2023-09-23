@@ -1,9 +1,13 @@
-﻿using BanchoMultiplayerBot.Data;
+﻿using System.Text;
+using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Database.Models;
 using BanchoMultiplayerBot.Database.Repositories;
 using BanchoMultiplayerBot.Extensions;
+using BanchoMultiplayerBot.OsuApi;
 using BanchoSharp.EventArgs;
 using BanchoSharp.Interfaces;
+using BanchoSharp.Multiplayer;
+using Microsoft.Extensions.Primitives;
 using Serilog;
 
 namespace BanchoMultiplayerBot.Behaviour;
@@ -127,6 +131,67 @@ public class FunCommandsBehaviour : IBotBehaviour
                         ? $"This map has been played a total of {totalPlayCount} times ({pastWeekPlayCount} times past week)!"
                         : $"This map has been played a total of {totalPlayCount} times!");
                 }
+            }
+
+            if (msg.Content.ToLower().Equals("!rs"))
+            {
+                if (_lobby.Bot.PerformancePointCalculator == null)
+                {
+                    return;
+                }
+                
+                if (player.Id == null)
+                {
+                    msg.Reply("Unable to get recent score details.");
+                    return;
+                }
+  
+                var recentScore = await _lobby.Bot.OsuApi.GetRecentScore(player.Id.Value);
+                if (recentScore == null)
+                {
+                    msg.Reply("Unable to get recent score details.");
+                    return;
+                }
+
+                var beatmapInformation =
+                    await _lobby.Bot.OsuApi.GetBeatmapInformation(int.Parse(recentScore.BeatmapId!));
+                
+                if (beatmapInformation == null)
+                {
+                    msg.Reply("Unable to get beatmap information.");
+                    return;
+                }
+
+                var ppInformation = await _lobby.Bot.PerformancePointCalculator!.CalculateScorePerformancePoints(int.Parse(recentScore.BeatmapId!), recentScore);
+                if (ppInformation == null)
+                {
+                    msg.Reply("Unable to get calculate pp information.");
+                    return;
+                }
+
+                var acc = recentScore.CalculateAccuracy();
+                
+                var response = new StringBuilder();
+
+                response.Append($"Recent score for {player.Name}: {ppInformation.PerformancePoints} pp ");
+
+                if (recentScore.Perfect != "1")
+                {
+                    response.Append($"({ppInformation.MaximumPerformancePoints} pp if FC) ");
+                }
+
+                response.Append($"| {acc:0.00}% | ");
+                
+                response.Append($"x{recentScore.Maxcombo}/{beatmapInformation.MaxCombo} | {recentScore.Count300}/{recentScore.Count100}/{recentScore.Count50}/{recentScore.Countmiss}");
+                
+                response.Append($" | [https://osu.ppy.sh/b/{beatmapInformation.BeatmapId} {beatmapInformation.Artist} - {beatmapInformation.Title} [{beatmapInformation.Version ?? string.Empty}]] ");
+                
+                if (recentScore.EnabledMods != "0")
+                {
+                    response.Append($" + {((Mods)int.Parse(recentScore.EnabledMods!)).ToAbbreviatedForm()}");
+                }
+
+                msg.Reply(response.ToString());
             }
         }
         catch (Exception)

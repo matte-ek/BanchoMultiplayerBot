@@ -67,4 +67,52 @@ public class OsuApiWrapper
             throw;
         }
     }
+    
+    public async Task<ScoreModel?> GetRecentScore(int player)
+    {
+        using var httpClient = new HttpClient();
+        using var _ = _bot.RuntimeInfo.Statistics.ApiRequestTime.NewTimer();
+        
+        _bot.RuntimeInfo.Statistics.ApiRequests.Inc();
+        
+        httpClient.Timeout = TimeSpan.FromSeconds(5);
+
+        try
+        {
+            var result = await httpClient.GetAsync($"https://osu.ppy.sh/api/get_user_recent?k={_osuApiKey}&u={player}");
+
+            if (!result.IsSuccessStatusCode)
+            {
+                Log.Error($"Error code {result.StatusCode} while getting recent score for player {player}!");
+
+                _bot.RuntimeInfo.Statistics.ApiErrors.Inc();
+
+                return result.StatusCode switch
+                {
+                    HttpStatusCode.Unauthorized => throw new ApiKeyInvalidException(),
+                    _ => null
+                };
+            }
+
+            var json = await result.Content.ReadAsStringAsync();
+            var scores = JsonSerializer.Deserialize<List<ScoreModel>>(json);
+
+            if (scores != null && !scores.Any())
+                throw new BeatmapNotFoundException(); // the API returns 200 even if it got no results.
+
+            return scores?.FirstOrDefault();
+        }
+        catch (BeatmapNotFoundException)
+        {
+            throw;
+        }
+        catch (Exception e)
+        {
+            Log.Error($"Exception during osu!api request: {e.Message}, player: {player}");
+            
+            _bot.RuntimeInfo.Statistics.ApiErrors.Inc();
+            
+            throw;
+        }
+    }
 }
