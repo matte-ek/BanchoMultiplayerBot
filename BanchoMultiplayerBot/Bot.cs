@@ -34,6 +34,8 @@ public class Bot
     public List<Lobby> Lobbies { get; } = new();
 
     public BotRuntimeInfo RuntimeInfo { get; } = new();
+    
+    public GlobalCommands GlobalCommands { get; }
 
     public event Action? OnBotReady;
     public event Action? OnLobbiesUpdated;
@@ -73,6 +75,8 @@ public class Bot
             Log.Warning($"Could not find 'performance-calculator', pp calculations unavailable.");
 
         AnnouncementManager.Run(this);
+
+        GlobalCommands = new GlobalCommands(this);
 
         if (Client == null || Configuration == null || OsuApi == null)
             throw new Exception("Failed to read configuration file.");
@@ -203,6 +207,8 @@ public class Bot
 
         RuntimeInfo.StartTime = DateTime.Now;
 
+        GlobalCommands.Setup();
+        
         Lobbies.Clear();
 
         await Client.ConnectAsync();
@@ -212,18 +218,7 @@ public class Bot
     {
         _lastMessageTime = DateTime.Now;
 
-        if (msg.Content.ToLower().Equals("!help") || msg.Content.ToLower().Equals("!info") || msg.Content.ToLower().Equals("!commands"))
-        {
-            SendMessage(msg.IsDirect ? msg.Sender : msg.Recipient, $"osu! auto host rotation bot (v{Version}) [https://github.com/matte-ek/BanchoMultiplayerBot/blob/master/COMMANDS.md Help & Commands]");
-        }
 
-        if (msg.IsDirect &&
-            (msg.Content.StartsWith("!mp create") ||
-             msg.Content.StartsWith("!create") ||
-             msg.Content.StartsWith("!join")))
-        {
-            SendMessage(msg.Sender, "I cannot unfortunately join or create any new lobbies.");
-        }
         
         try
         {
@@ -403,7 +398,7 @@ public class Bot
             config.PreviousQueue = lobby.Queue;
 
             // Wait 4 seconds between each lobby, caused issues otherwise.
-            Task.Delay(1 + (lobbyIndex * 4000)).ContinueWith(async task => { await AddLobbyAsync(lobby.Channel, config); });
+            Task.Delay(lobbyIndex * 1000).ContinueWith(async task => { await AddLobbyAsync(lobby.Channel, config); });
 
             lobbyIndex++;
         }
@@ -441,9 +436,9 @@ public class Bot
                 {
                     connectionAttempts++;
 
-                    Log.Information("Attempting to reconnect in 45 seconds");
+                    Log.Information("Attempting to reconnect in 30 seconds");
 
-                    await Task.Delay(45000);
+                    await Task.Delay(30000);
 
                     Client.Dispose();
                     Lobbies.Clear();

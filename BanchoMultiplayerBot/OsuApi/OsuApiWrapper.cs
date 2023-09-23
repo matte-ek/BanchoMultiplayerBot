@@ -68,7 +68,7 @@ public class OsuApiWrapper
         }
     }
     
-    public async Task<ScoreModel?> GetRecentScore(int player)
+    public async Task<ScoreModel?> GetRecentScore(string player)
     {
         using var httpClient = new HttpClient();
         using var _ = _bot.RuntimeInfo.Statistics.ApiRequestTime.NewTimer();
