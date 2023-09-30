@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using BanchoMultiplayerBot.Extensions;
+using BanchoMultiplayerBot.OsuApi;
 using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
 using Serilog;
@@ -72,9 +73,21 @@ public class GlobalCommands
                 
                 var response = new StringBuilder();
 
-                response.Append($"Recent score for {msg.Sender}: {ppInformation.PerformancePoints} pp ");
+                response.Append($"Recent score for {msg.Sender}: ");
 
-                if (recentScore.Perfect != "1")
+                response.Append(
+                    $"[https://osu.ppy.sh/b/{beatmapInformation.BeatmapId} {beatmapInformation.Artist} - {beatmapInformation.Title} [{beatmapInformation.Version ?? string.Empty}]]");
+
+                if (recentScore.EnabledMods != "0")
+                {
+                    response.Append($" + {((ModsModel)int.Parse(recentScore.EnabledMods!)).ToAbbreviatedForm()}");
+                }
+
+                response.Append($" | {recentScore.Rank}");
+                
+                response.Append($" | {ppInformation.PerformancePoints} pp ");
+                
+                if (recentScore.Perfect != "1" && ppInformation.MaximumPerformancePoints != ppInformation.PerformancePoints)
                 {
                     response.Append($"({ppInformation.MaximumPerformancePoints} pp if FC) ");
                 }
@@ -82,13 +95,6 @@ public class GlobalCommands
                 response.Append($"| {acc:0.00}% | ");
                 
                 response.Append($"x{recentScore.Maxcombo}/{beatmapInformation.MaxCombo} | {recentScore.Count300}/{recentScore.Count100}/{recentScore.Count50}/{recentScore.Countmiss}");
-                
-                response.Append($" | [https://osu.ppy.sh/b/{beatmapInformation.BeatmapId} {beatmapInformation.Artist} - {beatmapInformation.Title} [{beatmapInformation.Version ?? string.Empty}]] ");
-                
-                if (recentScore.EnabledMods != "0")
-                {
-                    response.Append($" + {((Mods)int.Parse(recentScore.EnabledMods!)).ToAbbreviatedForm()}");
-                }
                 
                 _bot.SendMessage(msg.IsDirect ? msg.Sender : msg.Recipient, response.ToString());
             }
