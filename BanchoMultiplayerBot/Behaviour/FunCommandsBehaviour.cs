@@ -20,6 +20,8 @@ public class FunCommandsBehaviour : IBotBehaviour
     private bool _hasGameData;
     private int _startPlayerCount;
 
+    private int _lastPlayedBeatmapId = 0;
+    
     private MapManagerBehaviour? _mapManagerBehaviour;
 
     public void Setup(Lobby lobby)
@@ -109,21 +111,35 @@ public class FunCommandsBehaviour : IBotBehaviour
                 var pastWeekPlayCount = await gameRepository.GetGameCountByMapId(beatmapId, DateTime.Now.AddDays(-7));
                 var recentGames = await gameRepository.GetRecentGames(beatmapId, 10);
 
-                if (recentGames.Count >= 5)
+                if (recentGames.Count >= 3)
                 {
                     List<float> leaveRatio = new();
                     List<float> passRatio = new();
 
                     foreach (var game in recentGames)
                     {
+                        if (game.PlayerPassedCount == -1)
+                        {
+                            continue;
+                        }
+                        
                         leaveRatio.Add((float)game.PlayerFinishCount / game.PlayerCount);
                         passRatio.Add((float)game.PlayerPassedCount / game.PlayerFinishCount);
                     }
 
-                    var avgLeavePercentage = 100f - MathF.Min(leaveRatio.Average() * 100f, 100f);
-                    var avgPassPercentage = MathF.Min(passRatio.Average() * 100f, 100f);
+                    if (passRatio.Count < 3)
+                    {
+                        msg.Reply(totalPlayCount != 0
+                            ? $"This map has been played a total of {totalPlayCount} times ({pastWeekPlayCount} times past week)!"
+                            : $"This map has been played a total of {totalPlayCount} times!");
+                    }
+                    else
+                    {
+                        var avgLeavePercentage = 100f - MathF.Min(leaveRatio.Average() * 100f, 100f);
+                        var avgPassPercentage = MathF.Min(passRatio.Average() * 100f, 100f);
 
-                    msg.Reply($"This map has been played a total of {totalPlayCount} times! ({pastWeekPlayCount} times past week), {avgLeavePercentage:0}% of the players usually leave the lobby, and {avgPassPercentage:0}% will pass the map!");
+                        msg.Reply($"This map has been played a total of {totalPlayCount} times! ({pastWeekPlayCount} times past week), {avgLeavePercentage:0}% of the players usually leave the lobby, and {avgPassPercentage:0}% will pass the map!");   
+                    }
                 }
                 else
                 {
@@ -194,8 +210,15 @@ public class FunCommandsBehaviour : IBotBehaviour
     {
         try
         {
-            await StoreGameData();
-            await StorePlayerFinishData();
+            _lastPlayedBeatmapId = _mapManagerBehaviour!.CurrentBeatmap!.Id;
+            
+            // Give osu! some time to work out the scores.
+            await Task.Delay(TimeSpan.FromSeconds(5));
+            
+            var recentScores = await GetRecentScores();
+            
+            await StoreGameData(recentScores);
+            await StorePlayerFinishData(recentScores);
         }
         catch (Exception e)
         {
@@ -223,7 +246,7 @@ public class FunCommandsBehaviour : IBotBehaviour
         }
     }
 
-    private async Task StoreGameData()
+    private async Task StoreGameData(IReadOnlyList<PlayerScoreResult> recentScores)
     {
         if (_mapManagerBehaviour?.CurrentBeatmap == null ||
             _hasGameData == false)
@@ -233,8 +256,8 @@ public class FunCommandsBehaviour : IBotBehaviour
 
         using var gameRepository = new GameRepository();
 
-        var playerFinishCount = _lobby.MultiplayerLobby.Players.Count(x => x.Score > 0);
-        var playerPassedCount = _lobby.MultiplayerLobby.Players.Count(x => x.Score > 0 && x.Passed == true);
+        var playerFinishCount = recentScores.Count;
+        var playerPassedCount = recentScores.Count(x => x.Score?.Score != "F");
 
         var game = new Game()
         {
@@ -248,27 +271,35 @@ public class FunCommandsBehaviour : IBotBehaviour
         await gameRepository.AddGame(game);
     }
 
-    private async Task StorePlayerFinishData()
+    private async Task StorePlayerFinishData(IReadOnlyList<PlayerScoreResult> recentScores)
     {
         using var userRepository = new UserRepository();
 
-        var highestScorePlayer = _lobby.MultiplayerLobby.Players.Where(x => x.Passed == true).MaxBy(x => x.Score);
+        var highestScorePlayer = recentScores.Where(x => x.Score?.Score != "F").MaxBy(x => x.Player.Score);
 
         if (_lobby.MultiplayerLobby.Players.Count >= 3 && highestScorePlayer is not null)
         {
-            var user = await userRepository.FindUser(highestScorePlayer.Name) ?? await userRepository.CreateUser(highestScorePlayer.Name);
+            var user = await userRepository.FindUser(highestScorePlayer.Player.Name) ?? await userRepository.CreateUser(highestScorePlayer.Player.Name);
 
             user.NumberOneResults++;
         }
 
-        foreach (var player in _lobby.MultiplayerLobby.Players)
+        foreach (var result in recentScores)
         {
-            var user = await userRepository.FindUser(player.Name) ?? await userRepository.CreateUser(player.Name);
+            var user = await userRepository.FindUser(result.Player.Name) ?? await userRepository.CreateUser(result.Player.Name);
 
-            if (player.Score > 0)
+            if (result.Score?.Score != "F")
                 user.MatchesPlayed++;
         }
 
         await userRepository.Save();
+    }
+
+    private async Task<IReadOnlyList<PlayerScoreResult>> GetRecentScores()
+    {
+        var players = _lobby.MultiplayerLobby.Players.Where(x => x.Id != null && x.Score > 0).ToList();
+        var scores = await _lobby.Bot.OsuApi.GetRecentScoresBatch(players.Select(x => x.Id.ToString()).ToList());
+        
+        return players.Select((t, i) => new PlayerScoreResult(t, scores[i]?.BeatmapId == _lastPlayedBeatmapId.ToString() ? scores[i] : null)).ToList();
     }
 }

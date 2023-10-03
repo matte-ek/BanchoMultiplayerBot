@@ -79,7 +79,7 @@ public class OsuApiWrapper
 
         try
         {
-            var result = await httpClient.GetAsync($"https://osu.ppy.sh/api/get_user_recent?k={_osuApiKey}&u={player}");
+            var result = await httpClient.GetAsync($"https://osu.ppy.sh/api/get_user_recent?k={_osuApiKey}&u={player}&limit=1");
 
             if (!result.IsSuccessStatusCode)
             {
@@ -114,5 +114,27 @@ public class OsuApiWrapper
             
             throw;
         }
+    }
+    
+    public async Task<List<ScoreModel?>> GetRecentScoresBatch(List<string?> players)
+    {
+        try
+        {
+            var apiRequests = players.Select(player => Task.Run(() => GetRecentScore(player))).ToList();
+
+            Log.Information($"Running osu!api batch request for {apiRequests.Count} players");
+            
+            await Task.WhenAll(apiRequests);
+
+            return apiRequests.Select(x => x.Result).ToList();
+        }
+        catch (Exception e)
+        {
+            Log.Error($"Exception during batch osu!api request: {e.Message}");
+            
+            throw;
+        }
+
+        return new List<ScoreModel?>();
     }
 }
