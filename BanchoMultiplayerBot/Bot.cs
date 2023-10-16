@@ -16,7 +16,7 @@ namespace BanchoMultiplayerBot;
 
 public class Bot
 {
-    public static string Version => "1.5.3";
+    public static string Version => "1.5.4";
 
     public BanchoClient Client { get; private set; }
 
@@ -488,8 +488,8 @@ public class Bot
     /// </summary>
     private async Task RunMessagePump()
     {
-        int messageBurstCount = Configuration.IsBotAccount == true ? 300 : 10;
-        int messageAge = Configuration.IsBotAccount == true ? 60 : 5;
+        int messageBurstCount = Configuration.IsBotAccount == true ? 300 : 8;
+        int messageAge = Configuration.IsBotAccount == true ? 60 : 6;
         const int maxMessageLength = 400;
 
         List<QueuedMessage> sentMessages = new();
