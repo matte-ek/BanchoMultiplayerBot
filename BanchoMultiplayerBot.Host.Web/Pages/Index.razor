@@ -212,22 +212,6 @@
         if (result.Cancelled)
             return;
 
-        try
-        {
-            foreach (var lobby in Bot.Lobbies)
-            {
-                var funCommandsBehaviour = (FunCommandsBehaviour?)lobby.Behaviours.Find(x => x.GetType() == typeof(FunCommandsBehaviour));
-                if (funCommandsBehaviour == null)
-                    continue;
-
-                await funCommandsBehaviour.FlushPlaytime();
-            }
-        }
-        catch (Exception e)
-        {
-            // ignored
-        }
-
         await Bot.DisconnectAsync();
 
         ApplicationLifetime.StopApplication();

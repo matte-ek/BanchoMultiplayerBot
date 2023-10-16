@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using BanchoMultiplayerBot.Config;
+﻿using BanchoMultiplayerBot.Config;
 using BanchoMultiplayerBot.OsuApi;
 using BanchoSharp;
 using BanchoSharp.Interfaces;
@@ -11,6 +10,7 @@ using Serilog;
 using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Database.Repositories;
 using BanchoMultiplayerBot.Utilities;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace BanchoMultiplayerBot;
 
@@ -118,16 +118,18 @@ public class Bot
                 continue;
             
             string? queue = null;
+            List<PlaytimeRecord> playtimeRecords = new();
 
             try
             {
                 // Special case for AutoHostRotateBehaviour, this should be done differently if any more of these cases come up.
                 // This will save the queue, so that also gets recovered successfully.
-                var autoHostRotateBehaviour = lobby.Behaviours.Find(x => x.GetType() == typeof(AutoHostRotateBehaviour));
-                if (autoHostRotateBehaviour != null)
+                if (lobby.Behaviours.Find(x => x.GetType() == typeof(AutoHostRotateBehaviour)) is AutoHostRotateBehaviour autoHostRotateBehaviour)
                 {
-                    queue = string.Join(',', ((AutoHostRotateBehaviour)autoHostRotateBehaviour).Queue);
+                    queue = string.Join(',', autoHostRotateBehaviour.Queue);
                 }
+
+                playtimeRecords.AddRange(lobby.MultiplayerLobby.Players.Select(player => new PlaytimeRecord() { Name = player.Name, JoinTime = player.JoinTime.ToBinary()}));
             }
             catch (Exception)
             {
@@ -138,7 +140,8 @@ public class Bot
             {
                 Channel = lobby.MultiplayerLobby.ChannelName,
                 Name = lobby.Configuration.Name,
-                Queue = queue
+                Queue = queue,
+                PlayerPlaytime = playtimeRecords.ToArray()
             });
         }
 
@@ -217,8 +220,6 @@ public class Bot
     private void OnPrivateMessageReceived(IPrivateIrcMessage msg)
     {
         _lastMessageTime = DateTime.Now;
-
-
         
         try
         {
@@ -327,7 +328,7 @@ public class Bot
 
         Task.Run(RunMessagePump);
 
-        AutoRecoverExistingLobbies();
+        RecoverExistingLobbies();
 
         OnBotReady?.Invoke();
 
@@ -341,7 +342,7 @@ public class Bot
     /// restarts, network issues, bancho restarts and whatnot. If the previous lobbies were not found, 
     /// they will be created.
     /// </summary>
-    private bool AutoRecoverExistingLobbies()
+    private bool RecoverExistingLobbies()
     {
         // All previous lobby information is stored in lobby_states.json
         if (!File.Exists("lobby_states.json"))
@@ -394,8 +395,9 @@ public class Bot
 
                 return false;
             }
-
+            
             config.PreviousQueue = lobby.Queue;
+            config.PlayerPlaytime = lobby.PlayerPlaytime;
 
             // Wait 4 seconds between each lobby, caused issues otherwise.
             Task.Delay(lobbyIndex * 1000).ContinueWith(async task => { await AddLobbyAsync(lobby.Channel, config); });

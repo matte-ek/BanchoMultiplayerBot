@@ -15,7 +15,6 @@ namespace BanchoMultiplayerBot.Behaviour;
 public class FunCommandsBehaviour : IBotBehaviour
 {
     private Lobby _lobby = null!;
-    private bool _flushedPlaytime;
 
     private bool _hasGameData;
     private int _startPlayerCount;
@@ -31,6 +30,7 @@ public class FunCommandsBehaviour : IBotBehaviour
         _lobby.MultiplayerLobby.OnPlayerDisconnected += OnPlayerDisconnected;
         _lobby.MultiplayerLobby.OnMatchStarted += OnMatchStarted;
         _lobby.MultiplayerLobby.OnMatchFinished += OnMatchFinished;
+        _lobby.MultiplayerLobby.OnSettingsUpdated += OnSettingsUpdated;
         _lobby.OnUserMessage += OnUserMessage;
         _lobby.OnAdminMessage += OnAdminMessage;
 
@@ -41,26 +41,31 @@ public class FunCommandsBehaviour : IBotBehaviour
         }
     }
 
-    public async Task FlushPlaytime()
+    private void OnSettingsUpdated()
     {
-        try
+        if (!_lobby.IsRecovering)
         {
-            using var userRepository = new UserRepository();
-
-            foreach (var player in _lobby.MultiplayerLobby.Players)
-            {
-                var user = await userRepository.FindUser(player.Name) ?? await userRepository.CreateUser(player.Name);
-
-                user.Playtime += (int)(DateTime.Now - player.JoinTime).TotalSeconds;
-            }
-
-            await userRepository.Save();
-
-            _flushedPlaytime = true;
+            return;
         }
-        catch (Exception e)
+
+        if (_lobby.Configuration.PlayerPlaytime == null ||
+            _lobby.Configuration.PlayerPlaytime.Length == 0)
         {
-            Log.Error($"Exception at FunCommands.FlushPlaytime(): {e}");
+            Log.Warning("Unable to restore player playtime, no data.");
+            return;
+        }
+
+        foreach (var player in _lobby.Configuration.PlayerPlaytime)
+        {
+            var multiplayerPlayer = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name == player.Name);
+
+            if (multiplayerPlayer is null)
+            {
+                Log.Warning($"Failed to restore playtime for player {player.Name}, player doesn't exist.");
+                continue;
+            }
+            
+            multiplayerPlayer.JoinTime = DateTime.FromBinary(player.JoinTime);
         }
     }
 
@@ -88,10 +93,7 @@ public class FunCommandsBehaviour : IBotBehaviour
                 var currentPlaytime = DateTime.Now - player.JoinTime;
                 var totalPlaytime = TimeSpan.FromSeconds(user.Playtime) + currentPlaytime; // We add current play-time since it's only appended after the player disconnects.
 
-                msg.Reply(
-                    _lobby.Bot.RuntimeInfo.StartTime.AddMinutes(2) >= player.JoinTime
-                        ? $"{msg.Sender} has been here since last bot restart, {currentPlaytime:h' hours 'm' minutes 's' seconds'} ({totalPlaytime:d' days 'h' hours 'm' minutes 's' seconds'} in total)"
-                        : $"{msg.Sender} has been here for {currentPlaytime:h' hours 'm' minutes 's' seconds'} ({totalPlaytime:d' days 'h' hours 'm' minutes 's' seconds'} ({totalPlaytime.TotalHours:F0}h) in total)");
+                msg.Reply($"{msg.Sender} has been here for {currentPlaytime:h' hours 'm' minutes 's' seconds'} ({totalPlaytime:d' days 'h' hours 'm' minutes 's' seconds'} ({totalPlaytime.TotalHours:F0}h) in total)");
             }
 
             if (msg.Content.ToLower().Equals("!playstats") || msg.Content.ToLower().Equals("!ps"))
@@ -230,9 +232,6 @@ public class FunCommandsBehaviour : IBotBehaviour
     {
         try
         {
-            if (_flushedPlaytime)
-                return;
-
             using var userRepository = new UserRepository();
             var user = await userRepository.FindUser(args.Player.Name) ?? await userRepository.CreateUser(args.Player.Name);
 
