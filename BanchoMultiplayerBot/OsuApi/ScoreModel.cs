@@ -50,6 +50,18 @@ public class ScoreModel
     [JsonPropertyName("score_id")]
     public string? ScoreId { get; set; }
 
+    public string GetRankString()
+    {
+        return Rank switch
+        {
+            "X" => "SS",
+            "XS" => "SS",
+            "SH" => "SS",
+            "XH" => "SS",
+            _ => Rank ?? "N/A"
+        };
+    }
+
     public float CalculateAccuracy()
     {
         var n300 = int.Parse(Count300!);
