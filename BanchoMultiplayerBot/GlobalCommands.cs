@@ -83,7 +83,7 @@ public class GlobalCommands
                     response.Append($" + {((ModsModel)int.Parse(recentScore.EnabledMods!)).ToAbbreviatedForm()}");
                 }
 
-                response.Append($" | {recentScore.Rank}");
+                response.Append($" | [{recentScore.Rank}]");
                 
                 response.Append($" | {ppInformation.PerformancePoints} pp ");
                 
