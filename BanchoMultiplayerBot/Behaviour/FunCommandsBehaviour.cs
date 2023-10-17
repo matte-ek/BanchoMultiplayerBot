@@ -113,7 +113,7 @@ public class FunCommandsBehaviour : IBotBehaviour
                 var pastWeekPlayCount = await gameRepository.GetGameCountByMapId(beatmapId, DateTime.Now.AddDays(-7));
                 var recentGames = await gameRepository.GetRecentGames(beatmapId, 10);
 
-                if (recentGames.Count >= 3)
+                if (recentGames.Any())
                 {
                     List<float> leaveRatio = new();
                     List<float> passRatio = new();
@@ -129,7 +129,7 @@ public class FunCommandsBehaviour : IBotBehaviour
                         passRatio.Add((float)game.PlayerPassedCount / game.PlayerFinishCount);
                     }
 
-                    if (passRatio.Count < 3)
+                    if (!passRatio.Any())
                     {
                         msg.Reply(totalPlayCount != 0
                             ? $"This map has been played a total of {totalPlayCount} times ({pastWeekPlayCount} times past week)!"
@@ -256,7 +256,7 @@ public class FunCommandsBehaviour : IBotBehaviour
         using var gameRepository = new GameRepository();
 
         var playerFinishCount = recentScores.Count;
-        var playerPassedCount = recentScores.Count(x => x.Score?.Score != "F");
+        var playerPassedCount = recentScores.Count(x => x.Score?.Rank != "F");
 
         var game = new Game()
         {
@@ -274,7 +274,7 @@ public class FunCommandsBehaviour : IBotBehaviour
     {
         using var userRepository = new UserRepository();
 
-        var highestScorePlayer = recentScores.Where(x => x.Score?.Score != "F").MaxBy(x => x.Player.Score);
+        var highestScorePlayer = recentScores.Where(x => x.Score?.Rank != "F").MaxBy(x => x.Player.Score);
 
         if (_lobby.MultiplayerLobby.Players.Count >= 3 && highestScorePlayer is not null)
         {
@@ -287,7 +287,7 @@ public class FunCommandsBehaviour : IBotBehaviour
         {
             var user = await userRepository.FindUser(result.Player.Name) ?? await userRepository.CreateUser(result.Player.Name);
 
-            if (result.Score?.Score != "F")
+            if (result.Score?.Rank != "F")
                 user.MatchesPlayed++;
         }
 
