@@ -12,7 +12,6 @@ public class AntiAfkBehaviour : IBotBehaviour
     private Lobby _lobby = null!;
 
     private bool _afkTimerTaskActive = true;
-
     private bool _afkTimerActive;
     private DateTime _afkTimerTime;
 
@@ -25,7 +24,7 @@ public class AntiAfkBehaviour : IBotBehaviour
     {
         _lobby = lobby;
 
-         Task.Run(AfkTimerTask);
+        Task.Run(AfkTimerTask);
 
         _lobby.MultiplayerLobby.OnHostChanged += OnHostChanged;
         _lobby.MultiplayerLobby.OnHostChangingMap += OnHostChangingMap;
@@ -100,24 +99,26 @@ public class AntiAfkBehaviour : IBotBehaviour
         {
             await Task.Delay(100);
 
-            if (_afkTimerActive && DateTime.Now >= _afkTimerTime)
+            if (!_afkTimerActive || DateTime.Now < _afkTimerTime)
             {
-                _afkTimerActive = false;
-
-                if (_lobby.MultiplayerLobby.Players.Count == 0)
-                {
-                    continue;
-                }
-
-                var name = _lobby.MultiplayerLobby.Host?.Name;
-
-                if (name == null)
-                {
-                    continue;
-                }
-
-                _lobby.Bot.SendMessage("BanchoBot", $"!stat {name.Replace(' ', '_')}");
+                continue;
             }
+            
+            _afkTimerActive = false;
+
+            if (_lobby.MultiplayerLobby.Players.Count == 0)
+            {
+                continue;
+            }
+
+            var name = _lobby.MultiplayerLobby.Host?.Name;
+
+            if (name == null)
+            {
+                continue;
+            }
+
+            _lobby.Bot.SendMessage("BanchoBot", $"!stat {name.Replace(' ', '_')}");
         }
     }
 }

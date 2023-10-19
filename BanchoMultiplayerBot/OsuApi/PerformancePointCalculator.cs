@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
-using System.Text;
 using BanchoMultiplayerBot.Data;
 using Serilog;
 
@@ -203,7 +202,7 @@ public class PerformancePointCalculator
             
                     process.Dispose();
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     // ignored
                 }

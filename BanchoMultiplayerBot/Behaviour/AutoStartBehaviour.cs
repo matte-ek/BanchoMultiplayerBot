@@ -1,8 +1,6 @@
 ﻿using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Extensions;
 using BanchoMultiplayerBot.Utilities;
-using BanchoSharp;
-using BanchoSharp.Interfaces;
 using Serilog;
 
 namespace BanchoMultiplayerBot.Behaviour;

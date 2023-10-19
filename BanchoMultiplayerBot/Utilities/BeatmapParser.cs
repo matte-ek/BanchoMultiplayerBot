@@ -1,9 +1,14 @@
 namespace BanchoMultiplayerBot.Utilities;
 
+/// <summary>
+/// Utility class to parse beatmap files
+/// </summary>
 public class BeatmapParser
 {
 
-    // Attempt to find the first hit object in seconds, relies on the map being downloaded beforehand
+    /// <summary>
+    /// Attempt to find the first hit object in seconds, relies on the map being downloaded beforehand
+    /// </summary>
     public static async Task<int?> GetBeatmapStartTime(int beatmapId)
     {
         const string cacheDir = $"cache";

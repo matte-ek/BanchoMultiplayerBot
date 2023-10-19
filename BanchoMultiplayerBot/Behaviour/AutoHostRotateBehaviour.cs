@@ -1,13 +1,9 @@
 ﻿using BanchoMultiplayerBot.Extensions;
-using BanchoSharp;
-using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
 using Serilog;
-using System.Xml.Linq;
 using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Database.Repositories;
 using BanchoMultiplayerBot.Utilities;
-using MudBlazor.Services;
 
 namespace BanchoMultiplayerBot.Behaviour;
 
@@ -21,7 +17,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
     private PlayerVote _playerSkipVote = null!;
 
     private bool _matchInProgress;
-
+    
     private bool _hasSkippedHost;
 
     // Keep track of the last 5 players who left, and their queue position. We do this so we are able
@@ -304,13 +300,13 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         }
     }
 
-    private async void OnSettingsUpdated()
+    private void OnSettingsUpdated()
     {
         if (_mapManagerBehaviour?.MapValidationStatus != MapManagerBehaviour.MapValidation.None)
         {
             return;
         }
-        
+
         // Attempt to reload the old queue if we're recovering a previous session.
         if (_lobby.IsRecovering && _lobby.Configuration.PreviousQueue != null)
         {
@@ -326,29 +322,29 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
             Log.Information($"Recovered old queue: {string.Join(", ", Queue.Take(5))}");
         }
-        
+
         // In some rare cases, players which have already left remain in the queue, so 
         // go through the queue just in case.
         foreach (var player in Queue.ToList())
         {
-            if (_lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name == player) is not null) 
+            if (_lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name == player) is not null)
                 continue;
 
             Log.Warning($"Disconnected player {player} in queue!");
             Queue.Remove(player);
         }
-        
+
         // Same deal here, but sometimes players aren't in the queue.
         foreach (var player in _lobby.MultiplayerLobby.Players)
         {
             // Maybe they shouldn't?
             if (_queueIgnorePlayers.Any(x => x == player.Name))
                 continue;
-            
+
             if (!Queue.Contains(player.Name))
                 Queue.Add(player.Name);
         }
-        
+
         // Don't skip a player if we're just restoring a previous session.
         if (_lobby.IsRecovering)
         {
@@ -361,7 +357,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         }
 
         OnQueueUpdated();
-        
+
         _lobby.SendMessage(GetCurrentQueueMessage(true));
 
         _matchInProgress = false;
@@ -520,7 +516,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
             _recentLeaveHistory.Remove(previousQueuePosition);
         }
-        catch (Exception e)
+        catch (Exception)
         {
             // ignored.
         }

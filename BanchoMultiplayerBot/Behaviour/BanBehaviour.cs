@@ -31,7 +31,7 @@ public class BanBehaviour : IBotBehaviour
         }
         catch (Exception e)
         {
-            Log.Error($"Expcetion while querying player bans: {e}");
+            Log.Error($"Exception while querying player bans: {e}");
 
             return Enumerable.Empty<PlayerBan>();
         }

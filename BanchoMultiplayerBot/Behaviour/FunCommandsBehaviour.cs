@@ -1,13 +1,9 @@
-﻿using System.Text;
-using BanchoMultiplayerBot.Data;
+﻿using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Database.Models;
 using BanchoMultiplayerBot.Database.Repositories;
 using BanchoMultiplayerBot.Extensions;
-using BanchoMultiplayerBot.OsuApi;
 using BanchoSharp.EventArgs;
 using BanchoSharp.Interfaces;
-using BanchoSharp.Multiplayer;
-using Microsoft.Extensions.Primitives;
 using Serilog;
 
 namespace BanchoMultiplayerBot.Behaviour;
@@ -189,7 +185,7 @@ public class FunCommandsBehaviour : IBotBehaviour
                 _lobby.SendMessage("Successfully moved player stats.");
             }
         }
-        catch (Exception e)
+        catch (Exception)
         {
             // ignored
         }

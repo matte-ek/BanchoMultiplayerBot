@@ -1,7 +1,7 @@
 ﻿using BanchoMultiplayerBot.Data;
 using Serilog;
 
-namespace BanchoMultiplayerBot.Utilities
+namespace BanchoMultiplayerBot.Manager
 {
     public class AnnouncementManager
     {

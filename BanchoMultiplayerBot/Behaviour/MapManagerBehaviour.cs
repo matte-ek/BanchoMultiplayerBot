@@ -1,12 +1,9 @@
 ﻿using System.Globalization;
 using BanchoMultiplayerBot.Data;
-using BanchoMultiplayerBot.Database.Repositories;
 using BanchoMultiplayerBot.Extensions;
 using BanchoMultiplayerBot.OsuApi;
 using BanchoMultiplayerBot.OsuApi.Exceptions;
 using BanchoMultiplayerBot.Utilities;
-using BanchoSharp;
-using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
 using Serilog;
 
