@@ -6,7 +6,7 @@ namespace BanchoMultiplayerBot.Data;
 public class PlayerScoreResult
 {
     public MultiplayerPlayer Player { get; }
-    public ScoreModel? Score { get; } = null;
+    public ScoreModel? Score { get; }
 
     public PlayerScoreResult(MultiplayerPlayer player, ScoreModel? score)
     {

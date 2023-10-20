@@ -49,7 +49,7 @@ public class Lobby
     
     public string Channel { get; set; }
 
-    internal int LobbyIndex = 0;
+    internal int LobbyIndex;
     internal string LobbyLabel = string.Empty;
     
     public Lobby(Bot bot, LobbyConfiguration configuration, string channel)
@@ -74,7 +74,6 @@ public class Lobby
         AddBehaviour(new LobbyManagerBehaviour());
         AddBehaviour(new MapManagerBehaviour());
         AddBehaviour(new BanBehaviour());
-        AddBehaviour(new DebugCommandsBehaviour());
         AddBehaviour(new ConfigBehaviour());
         AddBehaviour(new StatisticsBehaviour());
 

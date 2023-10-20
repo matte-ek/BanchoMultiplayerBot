@@ -17,10 +17,10 @@ public class LobbyManagerBehaviour : IBotBehaviour
     private DateTime _lastSettingsUpdateSentTime;
 
     // I really, really hate this but whatever.
-    private int _mpSettingsAttempts = 0;
+    private int _mpSettingsAttempts;
 
-    private int _mpPasswordAttempts = 0;
-    private bool _mpPasswordSet = false;
+    private int _mpPasswordAttempts;
+    private bool _mpPasswordSet;
 
     private MapManagerBehaviour? _mapManagerBehaviour;
     
@@ -200,7 +200,6 @@ public class LobbyManagerBehaviour : IBotBehaviour
             }
 
             // This has to be one of the stupidest things I've written in a while
-
             var modsCommand = "";
             bool newMod = false;
 

@@ -9,7 +9,7 @@ namespace BanchoMultiplayerBot.Manager;
 public class ConnectionManager
 {
     private readonly Bot _bot;
-    private bool _exitRequested = false;
+    private bool _exitRequested;
 
     private DateTime _lastMessageTime = DateTime.Now;
 

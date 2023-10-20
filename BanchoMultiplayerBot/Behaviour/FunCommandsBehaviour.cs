@@ -15,7 +15,7 @@ public class FunCommandsBehaviour : IBotBehaviour
     private bool _hasGameData;
     private int _startPlayerCount;
 
-    private int _lastPlayedBeatmapId = 0;
+    private int _lastPlayedBeatmapId;
     
     private MapManagerBehaviour? _mapManagerBehaviour;
 

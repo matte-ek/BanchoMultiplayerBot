@@ -39,6 +39,11 @@ public class GlobalCommands
                 _bot.SendMessage(msg.Sender, "I cannot unfortunately join or create any new lobbies.");
             }
             
+            if (msg.Content.Equals("!version"))
+            {
+                _bot.SendMessage(msg.IsDirect ? msg.Sender : msg.Recipient, $"{msg.Sender}, current version: {Bot.Version}");
+            }
+            
             if (msg.Content.ToLower().Equals("!rs"))
             {
                 if (_bot.PerformancePointCalculator == null)
