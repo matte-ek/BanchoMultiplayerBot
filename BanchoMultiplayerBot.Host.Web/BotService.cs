@@ -4,15 +4,11 @@
     {
         private Task? _botRunTask;
 
-        public bool IsRunning { get { return _botRunTask != null; } }
-
-        public BotService() : base("config.json")
-        {
-        }
+        private bool IsRunning => _botRunTask != null;
 
         public void Start()
         {
-            if (_botRunTask != null && _botRunTask.IsFaulted)
+            if (_botRunTask is { IsFaulted: true })
             {
                 _botRunTask = null;
             }
@@ -22,7 +18,7 @@
             if (!HasValidConfiguration())
                 return;
 
-            LoadConfiguration("config.json");
+            ConfigurationManager.LoadConfiguration();
 
             _botRunTask = Task.Run(RunAsync);
         }

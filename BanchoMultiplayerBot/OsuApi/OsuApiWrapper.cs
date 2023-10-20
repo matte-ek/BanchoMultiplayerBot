@@ -134,7 +134,5 @@ public class OsuApiWrapper
             
             throw;
         }
-
-        return new List<ScoreModel?>();
     }
 }

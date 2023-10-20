@@ -495,7 +495,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
     {
         try
         {
-            var previousQueuePosition = _recentLeaveHistory.Where(x => x.Name == player.Name)?.FirstOrDefault();
+            var previousQueuePosition = _recentLeaveHistory.FirstOrDefault(x => x.Name == player.Name);
             if (previousQueuePosition == null)
                 return;
         

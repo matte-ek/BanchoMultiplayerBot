@@ -13,9 +13,9 @@
         <MudItem xs="6">
             <MudPaper Class="pa-8 ma-2">
                 <MudText Typo="Typo.h6" GutterBottom="true">General</MudText>
-                <MudTextField @bind-Value="_configuration.Name" T="string" Label="Name" Required="true" RequiredError="Name is required!" Variant="Variant.Filled"/>
-                <MudNumericField @bind-Value="_configuration.Size" Label="Size" Variant="Variant.Filled" Min="1" Max="16" />
-                <MudTextField @bind-Value="_configuration.Password" T="string" Label="Password" Variant="Variant.Filled"/>
+                <MudTextField @bind-Value="_configuration!.Name" T="string" Label="Name" Required="true" RequiredError="Name is required!" Variant="Variant.Filled"/>
+                <MudNumericField @bind-Value="_configuration!.Size" Label="Size" Variant="Variant.Filled" Min="1" Max="16" />
+                <MudTextField @bind-Value="_configuration!.Password" T="string" Label="Password" Variant="Variant.Filled"/>
                 <MudSelect @bind-Value="_selectedMode" T="string" Label="Game mode" Variant="Variant.Filled" AnchorOrigin="Origin.BottomCenter">
                     <MudSelectItem Value="@("osu!std")"/>
                     <MudSelectItem Value="@("osu!mania")" />
@@ -44,7 +44,7 @@
                 </MudSelect>
                 <MudText Typo="Typo.h6" Class="py-2">Host Rotation</MudText>
                 <MudSwitch @bind-Checked="_configuration!.AutomaticallySkipAfterViolations" Label="Auto skip after violations" Color="Color.Primary" />
-                <MudNumericField @bind-Value="_configuration.ViolationSkipCount" Label="Violation Count" Variant="Variant.Filled" Min="1" Max="10" />
+                <MudNumericField @bind-Value="_configuration!.ViolationSkipCount" Label="Violation Count" Variant="Variant.Filled" Min="1" Max="10" />
             </MudPaper>
             <MudPaper Class="pa-8 ma-2">
                 <MudText Typo="Typo.h6" GutterBottom="true">Behaviours</MudText>
@@ -60,15 +60,15 @@
             <MudPaper Class="pa-8 ma-2">
                 <MudText Typo="Typo.h6" GutterBottom="true">Star Rating</MudText>
                 <MudSwitch @bind-Checked="_configuration!.LimitStarRating" Label="Limit star rating" Color="Color.Primary" />
-                <MudNumericField @bind-Value="_configuration.MinimumStarRating" Label="Minimum star rating" Variant="Variant.Filled" Min="0" />
-                <MudNumericField @bind-Value="_configuration.MaximumStarRating" Label="Maximum star rating" Variant="Variant.Filled" Min="0" />
-                <MudNumericField @bind-Value="_configuration.StarRatingErrorMargin" Label="Star rating error margin" Variant="Variant.Filled" Min="0" Max="1" />
+                <MudNumericField @bind-Value="_configuration!.MinimumStarRating" Label="Minimum star rating" Variant="Variant.Filled" Min="0" />
+                <MudNumericField @bind-Value="_configuration!.MaximumStarRating" Label="Maximum star rating" Variant="Variant.Filled" Min="0" />
+                <MudNumericField @bind-Value="_configuration!.StarRatingErrorMargin" Label="Star rating error margin" Variant="Variant.Filled" Min="0" Max="1" />
             </MudPaper>
             <MudPaper Class="pa-8 ma-2">
                 <MudText Typo="Typo.h6" GutterBottom="true">Map Length</MudText>
                 <MudSwitch @bind-Checked="_configuration!.LimitMapLength" Label="Limit map length" Color="Color.Primary" />
-                <MudNumericField @bind-Value="_configuration.MinimumMapLength" Label="Minimum map length (s)" Variant="Variant.Filled" Min="0" />
-                <MudNumericField @bind-Value="_configuration.MaximumMapLength" Label="Maximum map length (s)" Variant="Variant.Filled" Min="0" />
+                <MudNumericField @bind-Value="_configuration!.MinimumMapLength" Label="Minimum map length (s)" Variant="Variant.Filled" Min="0" />
+                <MudNumericField @bind-Value="_configuration!.MaximumMapLength" Label="Maximum map length (s)" Variant="Variant.Filled" Min="0" />
             </MudPaper>
         </MudItem>
     </MudGrid>
@@ -161,7 +161,6 @@
         "AntiAfk",
         "AutoStart",
         "AbortVote",
-        "Help",
         "FunCommands"
     };
 }

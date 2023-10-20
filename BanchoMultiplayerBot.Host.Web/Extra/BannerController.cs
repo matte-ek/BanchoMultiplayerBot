@@ -1,13 +1,7 @@
 ﻿using BanchoMultiplayerBot.Behaviour;
-using BanchoMultiplayerBot.Host.Web.Pages;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.IO;
-using System.Net;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Web;
-using Serilog;
 using Microsoft.FeatureManagement.Mvc;
 
 namespace BanchoMultiplayerBot.Host.Web.Extra

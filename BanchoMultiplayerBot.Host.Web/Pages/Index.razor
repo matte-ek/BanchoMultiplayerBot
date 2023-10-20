@@ -3,13 +3,9 @@
 @inject IHostApplicationLifetime ApplicationLifetime
 @inject IDialogService DialogService
 @page "/"
-@using BanchoMultiplayerBot
-@using BanchoMultiplayerBot.Config
 @using System.Threading
-@using BanchoMultiplayerBot.Behaviour
 @using BanchoMultiplayerBot.Host.Web.Log
 @using BanchoMultiplayerBot.Host.Web.Pages.Dialogs;
-@using MudBlazor.Utilities
 @using Serilog.Events
 
 <PageTitle>Dashboard</PageTitle>
@@ -84,18 +80,17 @@
 
 @code {
     // Stats that are displayed in the dashboard
-    private int _lobbyCount = 0;
-    private int _playerCount = 0;
-    private int _maxPlayerCount = 0;
-    private int _gamesPlayed = 0;
-    private bool _isConnected = false;
+    private int _lobbyCount;
+    private int _playerCount;
+    private int _maxPlayerCount;
+    private bool _isConnected;
 
     // Manages the connect button
-    private bool _isConnecting = false;
+    private bool _isConnecting;
 
     // If an alert should be shown at the top of the page
-    private bool _showConnectionStatus = false;
-    private bool _connectionStatusError = false;
+    private bool _showConnectionStatus;
+    private bool _connectionStatusError;
     private string _connectionStatusText = "";
 
     // Runs the page's automatic update, every 5 seconds.
@@ -121,11 +116,9 @@
             _lobbyCount = Bot.Lobbies.Count;
             _playerCount = 0;
             _maxPlayerCount = 0;
-            _gamesPlayed = 0;
 
             Bot.Lobbies.ForEach(x => _playerCount += x.MultiplayerLobby.Players.Count);
-            Bot.Lobbies.ForEach(x => _maxPlayerCount += (x.Configuration.Size.HasValue == true ? x.Configuration.Size.Value : 0));
-            //Bot.Lobbies.ForEach(x => _gamesPlayed += x.Statistics.GamesPlayed);
+            Bot.Lobbies.ForEach(x => _maxPlayerCount += x.Configuration.Size ?? 0);
 
             UpdateBanchoConnection();
 
@@ -181,7 +174,7 @@
     {
         _isConnecting = true;
 
-        Bot.SaveConfiguration();
+        Bot.ConfigurationManager.SaveConfiguration();
         Bot.Start();
     }
 
@@ -197,7 +190,7 @@
 
         await Bot.DisconnectAsync();
 
-        Bot.LoadConfiguration("config.json");
+        Bot.ConfigurationManager.LoadConfiguration();
         
         Bot.Start();
     }
@@ -219,6 +212,6 @@
 
     private void SaveConfig()
     {
-        Bot.SaveBotState();
+        Bot.StateManager.SaveState();
     }
 }

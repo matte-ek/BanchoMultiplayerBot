@@ -128,7 +128,7 @@ public class StateManager
             config.PreviousQueue = lobby.Queue;
             config.PlayerPlaytime = lobby.PlayerPlaytime;
 
-            Task.Delay(lobbyIndex * 1000).ContinueWith(async task => { await _bot.AddLobbyAsync(lobby.Channel, config); });
+            Task.Delay(lobbyIndex * 1000).ContinueWith(async _ => { await _bot.AddLobbyAsync(lobby.Channel, config); });
 
             lobbyIndex++;
         }

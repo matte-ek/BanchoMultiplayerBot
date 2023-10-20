@@ -2,9 +2,7 @@
 @inject BotService Bot
 @inject IDialogService DialogService
 @page "/settings/database"
-@using BanchoMultiplayerBot
 @using BanchoMultiplayerBot.Config
-@using BanchoMultiplayerBot.Data
 @using BanchoMultiplayerBot.Database.Repositories
 
 <PageTitle>Database Settings</PageTitle>
@@ -32,8 +30,8 @@
     private MudForm? _form;
     private BotConfiguration _configuration = null!;
 
-    private int _userCount = 0;
-    private int _gamesCount = 0;
+    private int _userCount;
+    private int _gamesCount;
 
     private void CleanUsers()
     {

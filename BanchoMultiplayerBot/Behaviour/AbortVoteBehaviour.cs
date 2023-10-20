@@ -1,5 +1,4 @@
 ﻿using BanchoMultiplayerBot.Data;
-using BanchoMultiplayerBot.Extensions;
 using BanchoMultiplayerBot.Utilities;
 
 namespace BanchoMultiplayerBot.Behaviour;

@@ -36,7 +36,7 @@ public class StatisticsBehaviour : IBotBehaviour
             _lobby.Bot.RuntimeInfo.Statistics.UniquePlayers.WithLabels(_lobby.LobbyLabel).Set(_players.Count);
         }; 
         
-        _lobby.MultiplayerLobby.OnPlayerDisconnected += (e) =>
+        _lobby.MultiplayerLobby.OnPlayerDisconnected += (_) =>
         {
             _lobby.Bot.RuntimeInfo.Statistics.Players.WithLabels(_lobby.LobbyLabel).Set(_lobby.MultiplayerLobby.Players.Count);
         }; 

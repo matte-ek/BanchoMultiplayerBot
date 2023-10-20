@@ -61,7 +61,7 @@ public class MapManagerBehaviour : IBotBehaviour
         _lobby.OnUserMessage += OnUserMessage;
         _lobby.OnAdminMessage += OnAdminMessage;
 
-        _lobby.MultiplayerLobby.OnHostChanged += player =>
+        _lobby.MultiplayerLobby.OnHostChanged += _ =>
         {
             _hostViolationCount = 0;
         };

@@ -66,7 +66,7 @@ public class ConnectionManager
 
         _exitRequested = false;
 
-        _bot.Client.OnPrivateMessageReceived += msg => 
+        _bot.Client.OnPrivateMessageReceived += _ => 
         {
             _lastMessageTime = DateTime.Now;
         };

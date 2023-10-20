@@ -192,7 +192,7 @@ public class PerformancePointCalculator
                 EnableRaisingEvents = true
             };
 
-            process.Exited += (sender, args) =>
+            process.Exited += (_, _) =>
             {
                 try
                 {

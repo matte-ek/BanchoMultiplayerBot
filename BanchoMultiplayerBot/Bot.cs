@@ -151,7 +151,7 @@ public class Bot
             _ = WebhookUtils.SendWebhookMessage(Configuration.WebhookUrl!, "Channel Closed", $"Channel {channel.ChannelName} was closed.");
         }
 
-        var lobby = Lobbies.Where(x => x.Channel == channel.ChannelName)?.FirstOrDefault();
+        var lobby = Lobbies.FirstOrDefault(x => x.Channel == channel.ChannelName);
         if (lobby != null)
         {
             lobby.IsParted = true;

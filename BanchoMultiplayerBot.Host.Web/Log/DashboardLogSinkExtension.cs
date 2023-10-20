@@ -1,6 +1,5 @@
 using Serilog;
 using Serilog.Configuration;
-using Serilog.Formatting;
 using Serilog.Formatting.Display;
 
 namespace BanchoMultiplayerBot.Host.Web.Log;
