@@ -29,7 +29,6 @@ namespace BanchoMultiplayerBot.Database.Repositories
         {
             var user = new User()
             {
-                Id = Guid.NewGuid(),
                 Name = username
             };
 

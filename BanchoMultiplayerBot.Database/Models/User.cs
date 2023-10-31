@@ -3,7 +3,7 @@
     public class User
     {
 
-        public Guid Id { get; set; }
+        public int Id { get; set; }
 
         /// <summary>
         /// osu! user id
