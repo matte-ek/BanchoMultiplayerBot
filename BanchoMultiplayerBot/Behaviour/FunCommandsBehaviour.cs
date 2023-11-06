@@ -268,6 +268,8 @@ public class FunCommandsBehaviour : IBotBehaviour
         };
 
         await gameRepository.AddGame(game);
+        
+        await StoreScoreData(recentScores, game);
     }
 
     private async Task StorePlayerFinishData(IReadOnlyList<PlayerScoreResult> recentScores)
@@ -292,6 +294,52 @@ public class FunCommandsBehaviour : IBotBehaviour
         }
 
         await userRepository.Save();
+    }
+
+    private async Task StoreScoreData(IReadOnlyList<PlayerScoreResult> recentScores, Game game)
+    {
+        using var userRepository = new UserRepository();
+        using var scoreRepository = new ScoreRepository();
+
+        try
+        {
+            foreach (var result in recentScores)
+            {
+                if (result.Score == null)
+                {
+                    continue;
+                }
+            
+                var score = result.Score;
+                var user = await userRepository.FindUser(result.Player.Name) ?? await userRepository.CreateUser(result.Player.Name);
+
+                var newScore = new Score()
+                {
+                    UserId = user.Id,
+                    PlayerId = result.Player.Id,
+                    LobbyId = _lobby.LobbyIndex,
+                    GameId = game.Id,
+                    OsuScoreId = score.ScoreId == null ? null : long.Parse(score.ScoreId),
+                    BeatmapId = long.Parse(score.BeatmapId!),
+                    TotalScore = long.Parse(score.Score!),
+                    Rank = score.GetRankId(),
+                    MaxCombo = int.Parse(score.Maxcombo!),
+                    Count300 = int.Parse(score.Count300!),
+                    Count100 = int.Parse(score.Count100!),
+                    Count50 = int.Parse(score.Count50!),
+                    CountMiss = int.Parse(score.Countmiss!),
+                    Mods = int.Parse(score.EnabledMods!),
+                };
+
+                await scoreRepository.Add(newScore);
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Error($"Exception at StoreScoreData(): {e}");
+        }
+        
+        await scoreRepository.Save();
     }
 
     private async Task<IReadOnlyList<PlayerScoreResult>> GetRecentScores()

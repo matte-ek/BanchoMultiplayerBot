@@ -7,6 +7,8 @@ namespace BanchoMultiplayerBot.Database
     {
         public DbSet<User> Users { get; set; }
         public DbSet<Game> Games { get; set; }
+        public DbSet<Score> Scores { get; set; }
+        
         public DbSet<PlayerBan> PlayerBans { get; set; }
         public DbSet<MapBan> MapBans { get; set; }
 
