@@ -16,6 +16,7 @@
                 <MudText Typo="Typo.h6" GutterBottom="true">General</MudText>
                 <MudText>Number of Users: @_userCount</MudText>
                 <MudText>Number of Games Played: @_gamesCount</MudText>
+                <MudText>Number of Scores: @_scoreCount</MudText>
             </MudPaper>
         </MudItem>
         <MudItem xs="6">
@@ -30,8 +31,9 @@
     private MudForm? _form;
     private BotConfiguration _configuration = null!;
 
-    private int _userCount;
-    private int _gamesCount;
+    private int _userCount = 0;
+    private int _gamesCount = 0;
+    private long _scoreCount = 0;
 
     private void CleanUsers()
     {
@@ -42,9 +44,11 @@
     {
         using var gameRepo = new GameRepository();
         using var userRepo = new UserRepository();
+        using var scoreRepo = new ScoreRepository();
 
         _userCount = await userRepo.GetUsersCount();
         _gamesCount = await gameRepo.GetGamesCount();
+        _scoreCount = await scoreRepo.GetScoreCount();
         
         _configuration = Bot.Configuration;
     }
@@ -52,4 +56,3 @@
     public void Dispose()
     {
     }
-}
