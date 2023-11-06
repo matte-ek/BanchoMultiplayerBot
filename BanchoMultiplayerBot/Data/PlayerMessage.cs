@@ -10,9 +10,12 @@ public class PlayerMessage : PrivateIrcMessage
     
     public MultiplayerPlayer? BanchoPlayer { get; }
     
-    public PlayerMessage(string rawMessage, Lobby lobby) : base(rawMessage)
+    public bool IsAdministrator { get; set; }
+    
+    public PlayerMessage(string rawMessage, Lobby lobby, bool isAdministrator) : base(rawMessage)
     {
         Lobby = lobby;
+        IsAdministrator = isAdministrator;
         BanchoPlayer = lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name.ToIrcNameFormat() == Sender);
     }
     

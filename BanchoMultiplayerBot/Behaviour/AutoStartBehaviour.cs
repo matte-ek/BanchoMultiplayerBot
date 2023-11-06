@@ -101,7 +101,7 @@ public class AutoStartBehaviour : IBotBehaviour
             {
                 if (_lobby.MultiplayerLobby.Host is not null)
                 {
-                    if (message.Sender == _lobby.MultiplayerLobby.Host.Name.ToIrcNameFormat())
+                    if (message.Sender == _lobby.MultiplayerLobby.Host.Name.ToIrcNameFormat() || message.IsAdministrator)
                     {
                         // If the user ran '!start' without any arguments,
                         // start the match immediately.
