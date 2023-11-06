@@ -365,10 +365,6 @@ public class MapManagerBehaviour : IBotBehaviour
             // Update the fallback id whenever someone picks a map that's 
             // within limits, so we don't have to reset to the osu!tutorial every time.
             _beatmapFallbackId = id;
-            
-            // By "setting" the map our self directly after the host picked it, 
-            // it will automatically be set to the newest version, even if the host's one is outdated.
-            SetBeatmap(CurrentBeatmap.Id);
 
             _lobby.Bot.RuntimeInfo.Statistics.MapPickTime.WithLabels(_lobby.LobbyLabel).Observe((DateTime.Now - _matchFinishTime).TotalSeconds);
 
@@ -442,7 +438,9 @@ public class MapManagerBehaviour : IBotBehaviour
                 return;
             }
             
-            _lobby.SendMessage($"[https://osu.ppy.sh/b/{id} {beatmapModel.Artist} - {beatmapModel.Title} [{beatmapModel.Version ?? string.Empty}]] - ([https://beatconnect.io/b/{CurrentBeatmap.SetId} BeatConnect Mirror] - [https://osu.direct/d/{CurrentBeatmap.SetId} osu.direct Mirror])");
+            // By "setting" the map our self directly after the host picked it, 
+            // it will automatically be set to the newest version, even if the host's one is outdated.
+            SetBeatmap(CurrentBeatmap.Id, $"| ([https://beatconnect.io/b/{CurrentBeatmap.SetId} BeatConnect Mirror] - [https://osu.direct/d/{CurrentBeatmap.SetId} osu.direct Mirror])");
 
             var starRating = Math.Round(float.Parse(beatmapModel.DifficultyRating, CultureInfo.InvariantCulture), 2);
 
@@ -470,12 +468,12 @@ public class MapManagerBehaviour : IBotBehaviour
         }
     }
     
-    private void SetBeatmap(int id)
+    private void SetBeatmap(int id, string? additionalInfo = null)
     {
         _botAppliedBeatmap = true;
         _lastBotAppliedBeatmap = id;
         
-        _lobby.SendMessage($"!mp map {id} 0");
+        _lobby.SendMessage($"!mp map {id} 0 {additionalInfo ?? string.Empty}");
     }
 
     private void RunViolationAutoSkip()

@@ -79,7 +79,7 @@ public class AutoStartBehaviour : IBotBehaviour
             _lobby.Bot.Configuration.AutoStartTimerTime == null) 
             return;
 
-        StartTimer(_lobby.Bot.Configuration.AutoStartTimerTime.Value);
+        StartTimer(_lobby.Bot.Configuration.AutoStartTimerTime.Value, false);
     }
 
     private void OnAdminMessage(PlayerMessage message)
@@ -153,7 +153,7 @@ public class AutoStartBehaviour : IBotBehaviour
         }
     }
 
-    private void StartTimer(int length)
+    private void StartTimer(int length, bool announceTimer = true)
     {
         if (_startTimerActive)
         {
@@ -172,7 +172,10 @@ public class AutoStartBehaviour : IBotBehaviour
         _sentWarningMessage = false;
         _startTimerActive = true;
 
-        _lobby.SendMessage($"Queued to start match in {length} seconds, use !stop to abort");
+        if (announceTimer)
+        {
+            _lobby.SendMessage($"Queued to start match in {length} seconds, use !stop to abort");
+        }
     }
 
     private void AbortTimer()
