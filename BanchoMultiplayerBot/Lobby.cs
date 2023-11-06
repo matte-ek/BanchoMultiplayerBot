@@ -192,8 +192,9 @@ public class Lobby
             
             return;
         }
-        
-        var playerMessage = new PlayerMessage(message.RawMessage, this);
+
+        var isAdministrator = await Bot.IsAdministrator(message.Sender);
+        var playerMessage = new PlayerMessage(message.RawMessage, this, isAdministrator);
 
         if (message.Recipient != Channel)
         {
@@ -212,7 +213,7 @@ public class Lobby
             return;
         }
 
-        if (await Bot.IsAdministrator(message.Sender))
+        if (isAdministrator)
         {
             OnAdminMessage?.Invoke(playerMessage);
         }
@@ -229,7 +230,7 @@ public class Lobby
         
         AddMessageToHistory(e);
 
-        var playerMessage = new PlayerMessage(e.RawMessage, this);
+        var playerMessage = new PlayerMessage(e.RawMessage, this, true);
         
         // We do this so messages sent from example the WebUI are
         // also processed.
