@@ -38,9 +38,10 @@ public class GlobalCommands
                 _bot.SendMessage(msg.Sender, "I cannot unfortunately join or create any new lobbies.");
             }
             
-            if (msg.Content.Equals("!version"))
+            if (msg.IsDirect && 
+                msg.Content.Contains(" is listening to https://osu.ppy.sh"))
             {
-                _bot.SendMessage(msg.IsDirect ? msg.Sender : msg.Recipient, $"{msg.Sender}, current version: {Bot.Version}");
+                _bot.SendMessage(msg.Sender, "You're probably looking for Tillerino");
             }
             
             if (msg.Content.ToLower().Equals("!rs"))
@@ -148,4 +149,3 @@ public class GlobalCommands
             Log.Error($"Exception at global commands: {e}");
         }
     }
-}
