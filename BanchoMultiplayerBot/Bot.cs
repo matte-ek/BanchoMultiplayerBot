@@ -5,7 +5,7 @@ using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
 using Serilog;
 using BanchoMultiplayerBot.Data;
-using BanchoMultiplayerBot.Database.Repositories;
+using BanchoMultiplayerBot.Database.PostgreSQL.Repositories;
 using BanchoMultiplayerBot.Utilities;
 using BanchoMultiplayerBot.Manager;
 
@@ -129,7 +129,7 @@ public class Bot
 
     public async Task AddLobbyAsync(string channel, LobbyConfiguration configuration)
     {
-        var lobby = new Lobby(this, configuration, channel);
+        var lobby = new Lobby(this, configuration, null!, channel);
 
         Lobbies.Add(lobby);
 
@@ -176,7 +176,7 @@ public class Bot
 
         _lobbyCreationQueue.Remove(config);
 
-        var lobby = new Lobby(this, config, (MultiplayerLobby)multiplayerLobby);
+        var lobby = new Lobby(this, config, null!, (MultiplayerLobby)multiplayerLobby);
 
         Lobbies.Add(lobby);
 
@@ -200,10 +200,11 @@ public class Bot
         
         RuntimeInfo.Statistics.IsConnected.Set(1);
     }
-
+    
     /// <summary>
     /// Checks if the osu! username specified is added as an bot administrator.
     /// </summary>
+    /// TODO: Move this elsewhere.
     internal static async Task<bool> IsAdministrator(string username)
     {
         if (!username.Any())
@@ -225,5 +226,4 @@ public class Bot
             return false;
         }
     }
-    
 }

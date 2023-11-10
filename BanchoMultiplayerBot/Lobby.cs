@@ -4,6 +4,7 @@ using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
 using Serilog;
 using BanchoMultiplayerBot.Data;
+using BanchoMultiplayerBot.Database.Models;
 using BanchoMultiplayerBot.Extensions;
 
 namespace BanchoMultiplayerBot;
@@ -14,6 +15,11 @@ public class Lobby
     /// Parent bot instance this lobby is running in
     /// </summary>
     public Bot Bot { get; }
+    
+    /// <summary>
+    /// Reference to the match in the DB
+    /// </summary>
+    public Match Match { get; init; }
 
     /// <summary>
     /// The BanchoSharp MultiplayerLobby instance running this lobby
@@ -49,21 +55,23 @@ public class Lobby
     
     public string Channel { get; set; }
 
-    internal int LobbyIndex;
-    internal string LobbyLabel = string.Empty;
+    public int LobbyIndex { get; private set; }
+    public string LobbyLabel { get; private set; }= string.Empty;
     
-    public Lobby(Bot bot, LobbyConfiguration configuration, string channel)
+    public Lobby(Bot bot, LobbyConfiguration configuration, Match match, string channel)
     {
         Bot = bot;
         Configuration = configuration;
+        Match = match;
         MultiplayerLobby = new MultiplayerLobby(Bot.Client, long.Parse(channel[4..]), channel);
         Channel = channel;
     }
     
-    public Lobby(Bot bot, LobbyConfiguration configuration, MultiplayerLobby lobby)
+    public Lobby(Bot bot, LobbyConfiguration configuration, Match match, MultiplayerLobby lobby)
     {
         Bot = bot;
         Configuration = configuration;
+        Match = match;
         MultiplayerLobby = lobby;
         Channel = lobby.ChannelName;
     }

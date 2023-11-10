@@ -14,7 +14,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\BanchoMultiplayerBot.Database\BanchoMultiplayerBot.Database.csproj" />
+      <ProjectReference Include="..\BanchoMultiplayerBot.Database.PostgreSQL\BanchoMultiplayerBot.Database.PostgreSQL.csproj" />
+      <ProjectReference Include="..\BanchoMultiplayerBot.Database.SQLite\BanchoMultiplayerBot.Database.SQLite.csproj" />
     </ItemGroup>
 
     <ItemGroup>

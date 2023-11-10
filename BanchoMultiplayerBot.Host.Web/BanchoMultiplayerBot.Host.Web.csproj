@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\BanchoMultiplayerBot.Database.PostgreSQL\BanchoMultiplayerBot.Database.PostgreSQL.csproj" />
     <ProjectReference Include="..\BanchoMultiplayerBot\BanchoMultiplayerBot.csproj" />
   </ItemGroup>
 

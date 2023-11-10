@@ -1,6 +1,6 @@
 ﻿using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Database.Models;
-using BanchoMultiplayerBot.Database.Repositories;
+using BanchoMultiplayerBot.Database.PostgreSQL.Repositories;
 using BanchoMultiplayerBot.Extensions;
 using BanchoSharp.EventArgs;
 using BanchoSharp.Interfaces;

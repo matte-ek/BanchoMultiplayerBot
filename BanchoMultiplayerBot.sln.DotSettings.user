@@ -6,4 +6,5 @@
   &lt;Assembly Path="C:\Users\matte\CLionProjects\BanchoSharp\BanchoSharp\bin\Release\net6.0\BanchoSharp.dll" /&gt;&#xD;
 &lt;/AssemblyExplorer&gt;</s:String>
 	
+	
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=beatmap/@EntryIndexedValue">True</s:Boolean></wpf:ResourceDictionary>

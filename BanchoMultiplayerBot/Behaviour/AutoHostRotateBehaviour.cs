@@ -2,7 +2,7 @@
 using BanchoSharp.Multiplayer;
 using Serilog;
 using BanchoMultiplayerBot.Data;
-using BanchoMultiplayerBot.Database.Repositories;
+using BanchoMultiplayerBot.Database.PostgreSQL.Repositories;
 using BanchoMultiplayerBot.Utilities;
 
 namespace BanchoMultiplayerBot.Behaviour;

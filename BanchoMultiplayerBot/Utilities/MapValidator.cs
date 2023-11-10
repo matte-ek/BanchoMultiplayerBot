@@ -1,5 +1,5 @@
 using System.Globalization;
-using BanchoMultiplayerBot.Database.Repositories;
+using BanchoMultiplayerBot.Database.PostgreSQL.Repositories;
 using BanchoMultiplayerBot.OsuApi;
 using BanchoSharp.Multiplayer;
 using Serilog;
