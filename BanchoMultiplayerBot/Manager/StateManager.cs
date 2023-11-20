@@ -12,7 +12,7 @@ public class StateManager
 
     public StateManager(Bot bot)
     {
-        this._bot = bot;
+        _bot = bot;
     }
 
     /// <summary>

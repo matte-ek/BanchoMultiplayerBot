@@ -1,4 +1,5 @@
 ﻿using BanchoMultiplayerBot.Data;
+using BanchoSharp.EventArgs;
 using BanchoSharp.Multiplayer;
 using Serilog;
 
@@ -11,23 +12,29 @@ public class PlayerVote
 {
     public string Question { get; }
     public Lobby Lobby { get; }
-    
     public List<MultiplayerPlayer> Votes { get; } = new();
     
     public PlayerVote(Lobby lobby, string question)
     {
         Lobby = lobby;
         Question = question;
+        
+        Lobby.MultiplayerLobby.OnPlayerDisconnected += OnPlayerDisconnected;
+    }
 
-        Lobby.MultiplayerLobby.OnPlayerDisconnected += disconnectArgs =>
-        {
-            Votes.Remove(disconnectArgs.Player);
-        };
+    ~PlayerVote()
+    {
+        Lobby.MultiplayerLobby.OnPlayerDisconnected -= OnPlayerDisconnected;
+    }
+    
+    private void OnPlayerDisconnected(PlayerDisconnectedEventArgs disconnectArgs)
+    {
+        Votes.Remove(disconnectArgs.Player);
     }
 
     public bool Vote(PlayerMessage message, MultiplayerPlayer player)
     {
-        int requiredVotes = Math.Max(Lobby.MultiplayerLobby.Players.Count / 2 + 1, 1);
+        var requiredVotes = Math.Max(Lobby.MultiplayerLobby.Players.Count / 2 + 1, 1);
 
         if (Votes.Contains(player))
         {
@@ -56,5 +63,4 @@ public class PlayerVote
     {
         Votes.Clear();
     }
-    
 }

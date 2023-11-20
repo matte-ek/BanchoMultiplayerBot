@@ -37,6 +37,18 @@ public class FunCommandsBehaviour : IBotBehaviour
         }
     }
 
+    public void Shutdown()
+    {
+        _lobby.MultiplayerLobby.OnPlayerDisconnected -= OnPlayerDisconnected;
+        _lobby.MultiplayerLobby.OnMatchStarted -= OnMatchStarted;
+        _lobby.MultiplayerLobby.OnMatchFinished -= OnMatchFinished;
+        _lobby.MultiplayerLobby.OnSettingsUpdated -= OnSettingsUpdated;
+        _lobby.OnUserMessage -= OnUserMessage;
+        _lobby.OnAdminMessage -= OnAdminMessage;
+
+        _mapManagerBehaviour = null;
+    }
+
     private void OnSettingsUpdated()
     {
         if (!_lobby.IsRecovering)

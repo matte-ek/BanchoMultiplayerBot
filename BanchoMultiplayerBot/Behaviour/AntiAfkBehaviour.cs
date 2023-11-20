@@ -1,4 +1,5 @@
-﻿using BanchoSharp.Interfaces;
+﻿using BanchoMultiplayerBot.Extensions;
+using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
 using Serilog;
 
@@ -11,20 +12,16 @@ public class AntiAfkBehaviour : IBotBehaviour
 {
     private Lobby _lobby = null!;
 
+    private Task _afkTimerTask = null!;
     private bool _afkTimerTaskActive = true;
+    
     private bool _afkTimerActive;
     private DateTime _afkTimerTime;
-
-    ~AntiAfkBehaviour()
-    {
-        _afkTimerTaskActive = false;
-    }
-
+    
     public void Setup(Lobby lobby)
     {
         _lobby = lobby;
-
-        Task.Run(AfkTimerTask);
+        _afkTimerTask = Task.Run(AfkTimerTask);
 
         _lobby.MultiplayerLobby.OnHostChanged += OnHostChanged;
         _lobby.MultiplayerLobby.OnHostChangingMap += OnHostChangingMap;
@@ -32,23 +29,47 @@ public class AntiAfkBehaviour : IBotBehaviour
         _lobby.OnBanchoMessage += OnBanchoMessage;
     }
 
+    public void Shutdown()
+    {
+        _lobby.MultiplayerLobby.OnHostChanged -= OnHostChanged;
+        _lobby.MultiplayerLobby.OnHostChangingMap -= OnHostChangingMap;
+        _lobby.MultiplayerLobby.OnMatchStarted -= OnMatchStarted;
+        _lobby.OnBanchoMessage -= OnBanchoMessage;
+        
+        _afkTimerTaskActive = false;
+        _afkTimerTask.Wait();
+    }
+
+    private void OnHostChanged(MultiplayerPlayer player)
+    {
+        StartTimer();
+    }
+
+    private void OnMatchStarted()
+    {
+        StopTimer();
+    }
+
+    private void OnHostChangingMap()
+    {
+        StopTimer();
+    }
+    
     private void OnBanchoMessage(IPrivateIrcMessage msg)
     {
-        if (!msg.IsDirect)
-            return;
-        if (!msg.Content.StartsWith("Stats for ("))
-            return;
-
         try
         {
+            if (!msg.IsDirect)
+                return;
+            if (!msg.Content.StartsWith("Stats for ("))
+                return;
+            
             var playerNameBegin = msg.Content.IndexOf('(') + 1;
             var playerNameEnd = msg.Content.IndexOf(')');
             var playerName = msg.Content[playerNameBegin..playerNameEnd];
 
             if (playerName != _lobby.MultiplayerLobby.Host?.Name)
-            {
                 return;
-            }
 
             if (msg.Content.Contains("is Afk"))
             {
@@ -59,27 +80,13 @@ public class AntiAfkBehaviour : IBotBehaviour
                 return;
             }
             
+            // Player is not reported as AFK yet, check again after 60 seconds
             StartTimer(60);
         }
         catch (Exception e)
         {
             Log.Error($"Failure in parsing BanchoBot stats response, {e}");
         }    
-    }
-
-    private void OnHostChanged(MultiplayerPlayer player)
-    {
-        StartTimer();
-    }
-
-    private void OnMatchStarted()
-    {
-        _afkTimerActive = false;
-    }
-
-    private void OnHostChangingMap()
-    {
-        _afkTimerActive = false;
     }
 
     private void StartTimer(int timeoutTime = 30)
@@ -91,6 +98,11 @@ public class AntiAfkBehaviour : IBotBehaviour
 
         _afkTimerTime = DateTime.Now.AddSeconds(timeoutTime);
         _afkTimerActive = true;
+    }
+
+    private void StopTimer()
+    {
+        _afkTimerActive = false;
     }
     
     private async Task AfkTimerTask()
@@ -106,19 +118,15 @@ public class AntiAfkBehaviour : IBotBehaviour
             
             _afkTimerActive = false;
 
-            if (_lobby.MultiplayerLobby.Players.Count == 0)
-            {
-                continue;
-            }
-
             var name = _lobby.MultiplayerLobby.Host?.Name;
-
-            if (name == null)
+            
+            if (_lobby.MultiplayerLobby.Players.Count == 0 ||
+                name == null)
             {
                 continue;
             }
 
-            _lobby.Bot.SendMessage("BanchoBot", $"!stat {name.Replace(' ', '_')}");
+            _lobby.Bot.SendMessage("BanchoBot", $"!stat {name.ToIrcNameFormat()}");
         }
     }
 }

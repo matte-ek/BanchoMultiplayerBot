@@ -1,6 +1,7 @@
 ﻿using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Extensions;
 using BanchoMultiplayerBot.Utilities;
+using BanchoSharp.Multiplayer;
 using Serilog;
 
 namespace BanchoMultiplayerBot.Behaviour;
@@ -10,6 +11,7 @@ public class AutoStartBehaviour : IBotBehaviour
     private Lobby _lobby = null!;
     private PlayerVote _playerStartVote = null!;
 
+    private Task _startTimerTask = null!;
     private bool _startTimerTaskActive = true;
 
     private bool _startTimerActive;
@@ -20,44 +22,16 @@ public class AutoStartBehaviour : IBotBehaviour
 
     private MapManagerBehaviour? _mapManagerBehaviour;
 
-    ~AutoStartBehaviour()
-    {
-        _startTimerTaskActive = false;
-    }
-
     public void Setup(Lobby lobby)
     {
         _lobby = lobby;
         _playerStartVote = new PlayerVote(_lobby, "Vote to start");
 
-        Task.Run(StartTimerTask); 
+        _startTimerTask = Task.Run(StartTimerTask); 
 
-        _lobby.MultiplayerLobby.OnAllPlayersReady += () =>
-        {
-            if (_lobby.Bot.Configuration.AutoStartAllPlayersReady == null || !_lobby.Bot.Configuration.AutoStartAllPlayersReady.Value)
-            {
-                return;
-            }
-            
-            _lobby.SendMessage("!mp start");
-            
-            AbortTimer();
-        };
-
-        _lobby.MultiplayerLobby.OnMatchStarted += () =>
-        {
-            AbortTimer();
-
-            _playerStartVote.Reset();
-        };
-
-        _lobby.MultiplayerLobby.OnHostChanged += _ =>
-        {
-            AbortTimer();
-            
-            _playerStartVote.Reset();
-        };
-
+        _lobby.MultiplayerLobby.OnAllPlayersReady += OnAllPlayersReady;
+        _lobby.MultiplayerLobby.OnMatchStarted += OnMatchStarted;
+        _lobby.MultiplayerLobby.OnHostChanged += OnHostChanged;
         _lobby.MultiplayerLobby.OnHostChangingMap += AbortTimer;
         _lobby.OnUserMessage += OnUserMessage;
         _lobby.OnAdminMessage += OnAdminMessage;
@@ -66,8 +40,56 @@ public class AutoStartBehaviour : IBotBehaviour
         if (mapManagerBehaviour != null)
         {
             _mapManagerBehaviour = ((MapManagerBehaviour)mapManagerBehaviour);
+            
             _mapManagerBehaviour.OnNewAllowedMap += OnNewAllowedMap;
         }
+    }
+
+    public void Shutdown()
+    {
+        _lobby.MultiplayerLobby.OnAllPlayersReady -= OnAllPlayersReady;
+        _lobby.MultiplayerLobby.OnMatchStarted -= OnMatchStarted;
+        _lobby.MultiplayerLobby.OnHostChanged -= OnHostChanged;
+        _lobby.MultiplayerLobby.OnHostChangingMap -= AbortTimer;
+        _lobby.OnUserMessage -= OnUserMessage;
+        _lobby.OnAdminMessage -= OnAdminMessage;
+
+        if (_mapManagerBehaviour != null)
+        {
+            _mapManagerBehaviour.OnNewAllowedMap -= OnNewAllowedMap;
+            _mapManagerBehaviour = null;
+        }
+        
+        _startTimerTaskActive = false;
+        _startTimerTask.Wait();
+
+        _playerStartVote = null!;
+    }
+    
+    private void OnHostChanged(MultiplayerPlayer obj)
+    {
+        AbortTimer();
+            
+        _playerStartVote.Reset();
+    }
+
+    private void OnMatchStarted()
+    {
+        AbortTimer();
+
+        _playerStartVote.Reset();
+    }
+
+    private void OnAllPlayersReady()
+    {
+        if (_lobby.Bot.Configuration.AutoStartAllPlayersReady == null || !_lobby.Bot.Configuration.AutoStartAllPlayersReady.Value)
+        {
+            return;
+        }
+            
+        _lobby.SendMessage("!mp start");
+            
+        AbortTimer();
     }
 
     private void OnNewAllowedMap()
@@ -159,7 +181,9 @@ public class AutoStartBehaviour : IBotBehaviour
         }
 
         if (length <= 1 || length >= 500)
+        {
             return;
+        }
              
         // This was previously implemented with Task.Delay, and a cancellation token to cancel the delay
         // task if we had to abort the timer. This however for some reason didn't exactly work all the time,

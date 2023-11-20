@@ -21,7 +21,7 @@ public class MessageManager
 
     public MessageManager(Bot bot)
     {
-        this._bot = bot;
+        _bot = bot;
     }
 
     public void Start()

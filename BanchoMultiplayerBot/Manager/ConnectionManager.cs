@@ -15,7 +15,7 @@ public class ConnectionManager
 
     public ConnectionManager(Bot bot)
     {
-        this._bot = bot;
+        _bot = bot;
     }
 
     public void Start()
@@ -101,10 +101,9 @@ public class ConnectionManager
                     Log.Information("Attempting to reconnect in 30 seconds");
 
                     await Task.Delay(30000);
-
+                    
+                    _bot.Shutdown();
                     _bot.Client.Dispose();
-                    _bot.Lobbies.Clear();
-
                     _bot.Client = new BanchoClient(new BanchoClientConfig(new IrcCredentials(_bot.Configuration.Username, _bot.Configuration.Password), LogLevel.Trace));
 
                     _ = Task.Run(_bot.RunAsync);

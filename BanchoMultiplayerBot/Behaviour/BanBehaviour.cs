@@ -19,6 +19,12 @@ public class BanBehaviour : IBotBehaviour
         _lobby.MultiplayerLobby.OnPlayerJoined += OnPlayerJoined;
     }
 
+    public void Shutdown()
+    {
+        _lobby.OnAdminMessage -= OnAdminMessage;
+        _lobby.MultiplayerLobby.OnPlayerJoined -= OnPlayerJoined;
+    }
+
     public static async Task<IEnumerable<PlayerBan>> GetActivePlayerBans(string playerName)
     {
         try

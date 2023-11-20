@@ -68,8 +68,13 @@ public class OsuApiWrapper
         }
     }
     
-    public async Task<ScoreModel?> GetRecentScore(string player)
+    public async Task<ScoreModel?> GetRecentScore(string? player)
     {
+        if (player == null)
+        {
+            return null;
+        }
+        
         using var httpClient = new HttpClient();
         using var _ = _bot.RuntimeInfo.Statistics.ApiRequestTime.NewTimer();
         
@@ -116,7 +121,7 @@ public class OsuApiWrapper
         }
     }
     
-    public async Task<List<ScoreModel?>> GetRecentScoresBatch(List<string?> players)
+    public async Task<List<ScoreModel?>> GetRecentScoresBatch(IEnumerable<string?> players)
     {
         try
         {

@@ -8,7 +8,7 @@ public class PlayerMessage : PrivateIrcMessage
 {
     private Lobby Lobby { get; }
     
-    public MultiplayerPlayer? BanchoPlayer { get; }
+    public MultiplayerPlayer BanchoPlayer { get; }
     
     public bool IsAdministrator { get; set; }
     
@@ -16,7 +16,7 @@ public class PlayerMessage : PrivateIrcMessage
     {
         Lobby = lobby;
         IsAdministrator = isAdministrator;
-        BanchoPlayer = lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name.ToIrcNameFormat() == Sender);
+        BanchoPlayer = lobby.MultiplayerLobby.Players.First(x => x.Name.ToIrcNameFormat() == Sender);
     }
     
     public void Reply(string message, bool carbonCopy = false)

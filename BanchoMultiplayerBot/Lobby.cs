@@ -56,6 +56,7 @@ public class Lobby
     public string Channel { get; set; }
 
     public int LobbyIndex { get; private set; }
+    
     public string LobbyLabel { get; private set; }= string.Empty;
     
     public Lobby(Bot bot, LobbyConfiguration configuration, Match match, string channel)
@@ -82,7 +83,6 @@ public class Lobby
         AddBehaviour(new LobbyManagerBehaviour());
         AddBehaviour(new MapManagerBehaviour());
         AddBehaviour(new BanBehaviour());
-        AddBehaviour(new ConfigBehaviour());
         AddBehaviour(new StatisticsBehaviour());
 
         // Add user specified behaviours
@@ -119,19 +119,7 @@ public class Lobby
 
         Behaviours.ForEach(x => x.Setup(this));
         
-        MultiplayerLobby.OnSettingsUpdated += () =>
-        {
-            // At this point, all behaviours should have done their "recover" stuff, and we may reset the recover status. 
-            IsRecovering = false;
-            
-            // We also need to reset the map manager's status here, since it needs to be at the last "OnSettingsUpdated" event listener.
-            var mapManagerBehaviour = Behaviours.Find(x => x.GetType() == typeof(MapManagerBehaviour));
-            if (mapManagerBehaviour != null)
-            {
-                ((MapManagerBehaviour)mapManagerBehaviour).MapValidationStatus = MapManagerBehaviour.MapValidation.None;
-            }
-        };
-
+        MultiplayerLobby.OnSettingsUpdated += OnSettingsUpdated;
         Bot.Client.OnPrivateMessageReceived += ClientOnPrivateMessageReceived;
         Bot.Client.OnPrivateMessageSent += ClientOnPrivateMessageSent;
 
@@ -139,12 +127,7 @@ public class Lobby
         {
             IsRecovering = true;
 
-            Bot.Client.OnChannelJoined += channel =>
-            {
-                if (channel.ChannelName != Channel) return;
-                
-                OnLobbyChannelJoined?.Invoke();
-            };
+            Bot.Client.OnChannelJoined += OnChannelJoined;
             
             // "Temporary" (permanent) fix for the fact that BanchoSharp's JoinChannelAsync calls 
             // OnChannelJoined before Bancho acknowledges that we have joined, so we'll send JOIN manually.
@@ -154,6 +137,43 @@ public class Lobby
         else
         {
             OnLobbyChannelJoined?.Invoke();
+        }
+    }
+    
+    public void Shutdown()
+    {
+        foreach (var behaviour in Behaviours)
+        {
+            behaviour.Shutdown();
+        }
+        
+        Behaviours.Clear();
+        
+        MultiplayerLobby.OnSettingsUpdated -= OnSettingsUpdated;
+        Bot.Client.OnPrivateMessageReceived -= ClientOnPrivateMessageReceived;
+        Bot.Client.OnPrivateMessageSent -= ClientOnPrivateMessageSent;
+        Bot.Client.OnChannelJoined -= OnChannelJoined;
+        
+        Log.Information($"Disposing of lobby {Configuration.Name} successful!");
+    }
+    
+    private void OnChannelJoined(IChatChannel channel)
+    {
+        if (channel.ChannelName != Channel) return;
+                
+        OnLobbyChannelJoined?.Invoke();    
+    }
+
+    private void OnSettingsUpdated()
+    {
+        // At this point, all behaviours should have done their "recover" stuff, and we may reset the recover status. 
+        IsRecovering = false;
+            
+        // We also need to reset the map manager's status here, since it needs to be at the last "OnSettingsUpdated" event listener.
+        var mapManagerBehaviour = Behaviours.Find(x => x.GetType() == typeof(MapManagerBehaviour));
+        if (mapManagerBehaviour != null)
+        {
+            ((MapManagerBehaviour)mapManagerBehaviour).MapValidationStatus = MapManagerBehaviour.MapValidation.None;
         }
     }
     

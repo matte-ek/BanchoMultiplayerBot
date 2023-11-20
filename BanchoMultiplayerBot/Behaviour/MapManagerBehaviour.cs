@@ -17,11 +17,7 @@ namespace BanchoMultiplayerBot.Behaviour;
 /// TODO: This class is in need of heavy refactoring, as it's getting quite messy with the new features hacked together.
 /// </summary>
 public class MapManagerBehaviour : IBotBehaviour
-{
-    public BeatmapInfo? CurrentBeatmap { get; private set; }
-    
-    public event Action? OnNewAllowedMap;
-
+{ 
     internal MapValidation MapValidationStatus { get; set; } = MapValidation.None;
     internal bool HasValidMapPicked { get; private set; } = true;
 
@@ -46,6 +42,9 @@ public class MapManagerBehaviour : IBotBehaviour
     private Lobby _lobby = null!;
     private AutoHostRotateBehaviour? _autoHostRotateBehaviour;
     
+    public BeatmapInfo? CurrentBeatmap { get; private set; }
+    public event Action? OnNewAllowedMap;
+    
     public void Setup(Lobby lobby)
     {
         _lobby = lobby;
@@ -57,14 +56,10 @@ public class MapManagerBehaviour : IBotBehaviour
         _lobby.MultiplayerLobby.OnMatchAborted += OnMatchFinished;
         
         _lobby.MultiplayerLobby.OnSettingsUpdated += OnSettingsUpdated;
+        _lobby.MultiplayerLobby.OnHostChanged += OnHostChanged;
         
         _lobby.OnUserMessage += OnUserMessage;
         _lobby.OnAdminMessage += OnAdminMessage;
-
-        _lobby.MultiplayerLobby.OnHostChanged += _ =>
-        {
-            _hostViolationCount = 0;
-        };
         
         var autoHostRotateBehaviour = _lobby.Behaviours.Find(x => x.GetType() == typeof(AutoHostRotateBehaviour));
         if (autoHostRotateBehaviour != null)
@@ -75,6 +70,29 @@ public class MapManagerBehaviour : IBotBehaviour
         _mapValidator = new MapValidator(lobby);
     }
 
+    public void Shutdown()
+    {
+        _lobby.MultiplayerLobby.OnBeatmapChanged -= OnBeatmapChanged;
+        _lobby.MultiplayerLobby.OnMatchStarted -= OnMatchStarted;
+        
+        _lobby.MultiplayerLobby.OnMatchFinished -= OnMatchFinished;
+        _lobby.MultiplayerLobby.OnMatchAborted -= OnMatchFinished;
+        
+        _lobby.MultiplayerLobby.OnSettingsUpdated -= OnSettingsUpdated;
+        _lobby.MultiplayerLobby.OnHostChanged -= OnHostChanged;
+        
+        _lobby.OnUserMessage -= OnUserMessage;
+        _lobby.OnAdminMessage -= OnAdminMessage;
+
+        _autoHostRotateBehaviour = null;
+        _mapValidator = null!;
+    }
+    
+    private void OnHostChanged(MultiplayerPlayer player)
+    {
+        _hostViolationCount = 0;
+    }
+    
     private async void OnSettingsUpdated()
     {
         if (MapValidationStatus == MapValidation.None)
@@ -493,7 +511,7 @@ public class MapManagerBehaviour : IBotBehaviour
 
         _lobby.SendMessage($"Skipping host automatically due to {skipViolationCount} violations!");
             
-        _autoHostRotateBehaviour.SkipCurrentHost();
+        _autoHostRotateBehaviour.SkipHost();
     }
 
     /// <summary>

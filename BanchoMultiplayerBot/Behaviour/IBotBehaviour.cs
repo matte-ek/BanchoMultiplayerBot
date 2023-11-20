@@ -9,5 +9,6 @@ public interface IBotBehaviour
 {
     
     void Setup(Lobby lobby);
+    void Shutdown();
 
 }

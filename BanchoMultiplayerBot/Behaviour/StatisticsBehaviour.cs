@@ -1,4 +1,7 @@
-﻿namespace BanchoMultiplayerBot.Behaviour;
+﻿using BanchoSharp.EventArgs;
+using BanchoSharp.Multiplayer;
+
+namespace BanchoMultiplayerBot.Behaviour;
 
 /// <summary>
 /// Behaviour to provide some anonymous statistics for the bot, such as "games played",
@@ -13,32 +16,45 @@ public class StatisticsBehaviour : IBotBehaviour
     {
         _lobby = lobby;
         
-        _lobby.MultiplayerLobby.OnMatchFinished += () =>
-        {
-            _lobby.Bot.RuntimeInfo.Statistics.GamesPlayed.WithLabels(_lobby.LobbyLabel).Inc();
-        };
+        _lobby.MultiplayerLobby.OnMatchFinished += OnMatchFinished;
+        _lobby.MultiplayerLobby.OnMatchAborted += OnMatchAborted;
+        _lobby.MultiplayerLobby.OnPlayerJoined += OnPlayerJoined;
+        _lobby.MultiplayerLobby.OnPlayerDisconnected += OnPlayerDisconnected;
+    }
 
-        _lobby.MultiplayerLobby.OnMatchAborted += () =>
+    public void Shutdown()
+    {
+        _lobby.MultiplayerLobby.OnMatchFinished -= OnMatchFinished;
+        _lobby.MultiplayerLobby.OnMatchAborted -= OnMatchAborted;
+        _lobby.MultiplayerLobby.OnPlayerJoined -= OnPlayerJoined;
+        _lobby.MultiplayerLobby.OnPlayerDisconnected -= OnPlayerDisconnected;
+    }
+    
+    private void OnPlayerDisconnected(PlayerDisconnectedEventArgs e)
+    {
+        _lobby.Bot.RuntimeInfo.Statistics.Players.WithLabels(_lobby.LobbyLabel).Set(_lobby.MultiplayerLobby.Players.Count);
+    }
+
+    private void OnPlayerJoined(MultiplayerPlayer e)
+    {
+        if (_players.All(x => x.Item1 != e.Name))
         {
-            _lobby.Bot.RuntimeInfo.Statistics.GamesAborted.WithLabels(_lobby.LobbyLabel).Inc();
-        }; 
-        
-        _lobby.MultiplayerLobby.OnPlayerJoined += (e) =>
-        {
-            if (_players.All(x => x.Item1 != e.Name))
-            {
-                _players.Add(new Tuple<string, DateTime>(e.Name, DateTime.Now));
-            }
+            _players.Add(new Tuple<string, DateTime>(e.Name, DateTime.Now));
+        }
             
-            _players.RemoveAll(x => DateTime.Now > x.Item2.AddHours(1));
+        _players.RemoveAll(x => DateTime.Now > x.Item2.AddHours(1));
             
-            _lobby.Bot.RuntimeInfo.Statistics.Players.WithLabels(_lobby.LobbyLabel).Set(_lobby.MultiplayerLobby.Players.Count);
-            _lobby.Bot.RuntimeInfo.Statistics.UniquePlayers.WithLabels(_lobby.LobbyLabel).Set(_players.Count);
-        }; 
-        
-        _lobby.MultiplayerLobby.OnPlayerDisconnected += (_) =>
-        {
-            _lobby.Bot.RuntimeInfo.Statistics.Players.WithLabels(_lobby.LobbyLabel).Set(_lobby.MultiplayerLobby.Players.Count);
-        }; 
+        _lobby.Bot.RuntimeInfo.Statistics.Players.WithLabels(_lobby.LobbyLabel).Set(_lobby.MultiplayerLobby.Players.Count);
+        _lobby.Bot.RuntimeInfo.Statistics.UniquePlayers.WithLabels(_lobby.LobbyLabel).Set(_players.Count);
+    }
+
+    private void OnMatchAborted()
+    {
+        _lobby.Bot.RuntimeInfo.Statistics.GamesAborted.WithLabels(_lobby.LobbyLabel).Inc();
+    }
+
+    private void OnMatchFinished()
+    {
+        _lobby.Bot.RuntimeInfo.Statistics.GamesPlayed.WithLabels(_lobby.LobbyLabel).Inc();
     }
 }

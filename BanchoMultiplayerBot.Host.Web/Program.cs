@@ -41,6 +41,8 @@ builder.Services.AddMudServices();
 builder.Services.AddScoped<AuthenticationStateProvider, TemporaryAuthStateProvider>();
 builder.Services.AddFeatureManagement();
 
+BotDbContext.ConnectionString = builder.Configuration.GetValue<string>("ConnectionString");
+
 var app = builder.Build();
 
 {

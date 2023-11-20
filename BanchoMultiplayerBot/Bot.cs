@@ -16,7 +16,7 @@ public class Bot
     public static string Version => "1.6.0";
 
     public BanchoClient Client { get; internal set; }
-
+    
     public ConfigurationManager ConfigurationManager { get; init; }
     public StateManager StateManager { get; init; }
     public ConnectionManager ConnectionManager { get; init; }
@@ -111,8 +111,20 @@ public class Bot
         await Client.ConnectAsync();
     }
 
+    public void Shutdown()
+    {
+        foreach (var lobby in Lobbies)
+        {
+            lobby.Shutdown();
+        }
+        
+        Lobbies.Clear();
+    }
+
     public async Task DisconnectAsync()
     {
+        Shutdown();
+        
         ConnectionManager.Stop();
 
         await Client.DisconnectAsync();
@@ -197,6 +209,8 @@ public class Bot
         StateManager.LoadState();
 
         OnBotReady?.Invoke();
+        
+        ConnectionManager.Start();
         
         RuntimeInfo.Statistics.IsConnected.Set(1);
     }

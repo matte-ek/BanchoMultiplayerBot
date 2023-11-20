@@ -11,7 +11,11 @@ public class BotDbContext : DbContext
     public DbSet<Score> Scores { get; set; }
     public DbSet<PlayerBan> PlayerBans { get; set; }
     public DbSet<MapBan> MapBans { get; set; }
+    
+    public static string ConnectionString { get; set; } = string.Empty;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseNpgsql(@"Host=myserver;Username=mylogin;Password=mypass;Database=mydatabase");
-}
+    {
+        optionsBuilder.UseNpgsql(ConnectionString);
+    }
+}   

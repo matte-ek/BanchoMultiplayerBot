@@ -4,6 +4,7 @@ using Serilog;
 using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Database.PostgreSQL.Repositories;
 using BanchoMultiplayerBot.Utilities;
+using BanchoSharp.EventArgs;
 
 namespace BanchoMultiplayerBot.Behaviour;
 
@@ -16,20 +17,22 @@ public class AutoHostRotateBehaviour : IBotBehaviour
     private Lobby _lobby = null!;
     private PlayerVote _playerSkipVote = null!;
 
-    private bool _matchInProgress;
-    
-    private bool _hasSkippedHost;
-
     // Keep track of the last 5 players who left, and their queue position. We do this so we are able
     // to restore people's queue position if they accidentally left and is rejoining within 30 seconds.
     private readonly List<PlayerQueueHistory> _recentLeaveHistory = new();
-
-    private MapManagerBehaviour? _mapManagerBehaviour;
-
+    
     // Players here are banned, and shouldn't be added to the queue.
     // This list exists just to cache the names, to avoid having to do DB lookups all the time.
     private readonly List<string> _queueIgnorePlayers = new();
     
+    private bool _matchInProgress;
+    private bool _hasSkippedHost;
+    
+    private MapManagerBehaviour? _mapManagerBehaviour;
+    
+    /// <summary>
+    /// Names of players currently in queue, obviously in order, where [0] is currently host.
+    /// </summary>
     public List<string> Queue { get; } = new();
 
     public void Setup(Lobby lobby)
@@ -37,57 +40,9 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         _lobby = lobby;
         _playerSkipVote = new PlayerVote(_lobby, "Skip host vote");
 
-        _lobby.MultiplayerLobby.OnPlayerJoined += async player =>
-        {
-            if ((await BanBehaviour.GetActivePlayerBans(player.Name)).Any())
-            {
-                // To make sure they aren't added afterwards.
-                _queueIgnorePlayers.Add(player.Name);
-                
-                return;
-            }
-            
-            if (!Queue.Contains(player.Name))
-                Queue.Add(player.Name);
-
-            if (_lobby.IsRecovering)
-            {
-                return;
-            }
-            
-            RestorePlayerQueuePosition(player);
-
-            OnQueueUpdated();
-        };
-
-        _lobby.MultiplayerLobby.OnPlayerDisconnected += disconnectEventArgs =>
-        {
-            if (_queueIgnorePlayers.Contains(disconnectEventArgs.Player.Name))
-            {
-                _queueIgnorePlayers.Remove(disconnectEventArgs.Player.Name);
-            }
-            
-            if (Queue.Contains(disconnectEventArgs.Player.Name))
-            {
-                AddLeaveQueuePosition(disconnectEventArgs.Player.Name);
-                
-                Queue.Remove(disconnectEventArgs.Player.Name);
-
-                OnQueueUpdated();
-
-                if (_lobby.MultiplayerLobby.Host is not null && _lobby.MultiplayerLobby.Host.Name == disconnectEventArgs.Player.Name && _matchInProgress)
-                {
-                    _hasSkippedHost = true;
-                }
-            }
-        };
-
-        _lobby.MultiplayerLobby.OnMatchStarted += () =>
-        {
-            _hasSkippedHost = false;
-            _matchInProgress = true;
-        };
-
+        _lobby.MultiplayerLobby.OnPlayerJoined += OnPlayerJoined;
+        _lobby.MultiplayerLobby.OnPlayerDisconnected += OnPlayerDisconnected;
+        _lobby.MultiplayerLobby.OnMatchStarted += OnMatchStarted;
         _lobby.MultiplayerLobby.OnSettingsUpdated += OnSettingsUpdated;
         _lobby.MultiplayerLobby.OnHostChanged += OnHostChanged;
         _lobby.OnUserMessage += OnUserMessage;
@@ -99,10 +54,24 @@ public class AutoHostRotateBehaviour : IBotBehaviour
             _mapManagerBehaviour = ((MapManagerBehaviour)mapManagerBehaviour);
         }
     }
-
-    public void SkipCurrentHost()
+    
+    public void Shutdown()
     {
-        SkipCurrentPlayer();
+        _lobby.MultiplayerLobby.OnPlayerJoined -= OnPlayerJoined;
+        _lobby.MultiplayerLobby.OnPlayerDisconnected -= OnPlayerDisconnected;
+        _lobby.MultiplayerLobby.OnMatchStarted -= OnMatchStarted;
+        _lobby.MultiplayerLobby.OnSettingsUpdated -= OnSettingsUpdated;
+        _lobby.MultiplayerLobby.OnHostChanged -= OnHostChanged;
+        _lobby.OnUserMessage -= OnUserMessage;
+        _lobby.OnAdminMessage -= OnAdminMessage;
+        
+        _playerSkipVote = null!;
+        _mapManagerBehaviour = null;
+    }
+
+    public void SkipHost()
+    {
+        RotateQueue();
         OnQueueUpdated();
     }
 
@@ -120,7 +89,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         OnQueueUpdated();
     }
 
-    public void MovePlayer(MultiplayerPlayer player, int newPosition)
+    public void MovePlayerQueuePosition(MultiplayerPlayer player, int newPosition)
     {
         var name = player.Name;
 
@@ -147,6 +116,55 @@ public class AutoHostRotateBehaviour : IBotBehaviour
             if (Queue.Contains(player.Name))
                 Queue.Remove(player.Name);
         }
+    }
+    
+    private async void OnPlayerJoined(MultiplayerPlayer player)
+    {
+        if ((await BanBehaviour.GetActivePlayerBans(player.Name)).Any())
+        {
+            // To make sure they aren't added afterwards.
+            _queueIgnorePlayers.Add(player.Name);
+                
+            return;
+        }
+            
+        if (!Queue.Contains(player.Name))
+            Queue.Add(player.Name);
+
+        if (_lobby.IsRecovering)
+        {
+            return;
+        }
+            
+        RestorePlayerQueuePosition(player);
+
+        OnQueueUpdated();
+    }
+    
+    private void OnPlayerDisconnected(PlayerDisconnectedEventArgs disconnectEventArgs)
+    {
+        if (_queueIgnorePlayers.Contains(disconnectEventArgs.Player.Name))
+            _queueIgnorePlayers.Remove(disconnectEventArgs.Player.Name);
+        
+        if (!Queue.Contains(disconnectEventArgs.Player.Name)) 
+            return;
+        
+        AddLeaveQueuePosition(disconnectEventArgs.Player.Name);
+                
+        Queue.Remove(disconnectEventArgs.Player.Name);
+
+        OnQueueUpdated();
+
+        if (_lobby.MultiplayerLobby.Host != null && _lobby.MultiplayerLobby.Host.Name == disconnectEventArgs.Player.Name && _matchInProgress)
+        {
+            _hasSkippedHost = true;
+        }
+    }
+    
+    private void OnMatchStarted()
+    {
+        _hasSkippedHost = false;
+        _matchInProgress = true;
     }
     
     private async void OnUserMessage(PlayerMessage message)
@@ -176,7 +194,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
             {
                 if (message.Sender == _lobby.MultiplayerLobby.Host.Name.ToIrcNameFormat())
                 {
-                    SkipCurrentPlayer();
+                    RotateQueue();
                     OnQueueUpdated();
 
                     _playerSkipVote.Reset();
@@ -191,7 +209,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
             {
                 if (_playerSkipVote.Vote(message, player))
                 {
-                    SkipCurrentPlayer();
+                    RotateQueue();
 
                     OnQueueUpdated();
 
@@ -206,11 +224,6 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         {
             try
             {
-                if (message.BanchoPlayer is null)
-                {
-                    return;
-                }
-                
                 using var userRepository = new UserRepository();
 
                 var user = await userRepository.FindOrCreateUser(message.BanchoPlayer.Name);
@@ -240,7 +253,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
     {
         if (message.Content.StartsWith("!forceskip"))
         {
-            SkipCurrentPlayer();
+            RotateQueue();
             OnQueueUpdated();
             
             _lobby.Bot.RuntimeInfo.Statistics.HostSkipCount.WithLabels(_lobby.LobbyLabel).Inc();
@@ -289,7 +302,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
                     }
                     else
                     {
-                        MovePlayer(targetPlayer, targetQueuePosition);
+                        MovePlayerQueuePosition(targetPlayer, targetQueuePosition);
                     }   
                 }
             }
@@ -302,6 +315,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
     private void OnSettingsUpdated()
     {
+        // Make sure this is an "end of match" settings event
         if (_mapManagerBehaviour?.MapValidationStatus != MapManagerBehaviour.MapValidation.None)
         {
             return;
@@ -314,7 +328,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
             foreach (var player in _lobby.Configuration.PreviousQueue.Split(','))
             {
-                if (_lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name == player) is not null && !Queue.Contains(player))
+                if (_lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name == player) != null && !Queue.Contains(player))
                 {
                     Queue.Add(player);
                 }
@@ -322,27 +336,18 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
             Log.Information($"Recovered old queue: {string.Join(", ", Queue.Take(5))}");
         }
-
-        // In some rare cases, players which have already left remain in the queue, so 
-        // go through the queue just in case.
-        foreach (var player in Queue.ToList())
-        {
-            if (_lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name == player) is not null)
-                continue;
-
-            Log.Warning($"Disconnected player {player} in queue!");
-            Queue.Remove(player);
-        }
-
-        // Same deal here, but sometimes players aren't in the queue.
+        
+        // Make sure all currently connected players are in the queue
         foreach (var player in _lobby.MultiplayerLobby.Players)
         {
             // Maybe they shouldn't?
-            if (_queueIgnorePlayers.Any(x => x == player.Name))
+            if (_queueIgnorePlayers.Any(x => x == player.Name) ||
+                Queue.Contains(player.Name))
+            {
                 continue;
+            }
 
-            if (!Queue.Contains(player.Name))
-                Queue.Add(player.Name);
+            Queue.Add(player.Name);
         }
 
         // Don't skip a player if we're just restoring a previous session.
@@ -353,13 +358,13 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
         if (!_hasSkippedHost)
         {
-            SkipCurrentPlayer();
+            RotateQueue();
         }
 
         OnQueueUpdated();
 
         _lobby.SendMessage(GetCurrentQueueMessage(true));
-
+        
         _matchInProgress = false;
     }
 
@@ -391,7 +396,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
             var user = await userRepository.FindOrCreateUser(queue[0]);
             if (user.AutoSkipEnabled)
             {
-                SkipCurrentPlayer();
+                RotateQueue();
                 
                 // This feels sort of stupid, but I would like to try to avoid doing any recursion here,
                 // and I also want to properly handle situations as in "what if everyone has auto-skip enabled?", or
@@ -402,7 +407,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
                     if (user.AutoSkipEnabled)
                     {
-                        SkipCurrentPlayer();
+                        RotateQueue();
                     }
                     else
                     {
@@ -463,7 +468,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
     /// <summary>
     /// Skips the first user in the queue, will NOT automatically update host.
     /// </summary>
-    private void SkipCurrentPlayer()
+    private void RotateQueue()
     {
         if (!Queue.Any()) return;
 
@@ -510,7 +515,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
             if (0 > previousQueuePosition.QueuePosition || previousQueuePosition.QueuePosition >= Queue.Count)
                 return;
             
-            MovePlayer(player, previousQueuePosition.QueuePosition);
+            MovePlayerQueuePosition(player, previousQueuePosition.QueuePosition);
             
             Log.Information($"Restored re-connected player queue position to #{previousQueuePosition.QueuePosition + 1}");
 

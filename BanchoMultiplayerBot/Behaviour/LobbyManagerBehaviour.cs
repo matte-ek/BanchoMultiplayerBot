@@ -18,7 +18,6 @@ public class LobbyManagerBehaviour : IBotBehaviour
 
     // I really, really hate this but whatever.
     private int _mpSettingsAttempts;
-
     private int _mpPasswordAttempts;
     private bool _mpPasswordSet;
 
@@ -40,30 +39,28 @@ public class LobbyManagerBehaviour : IBotBehaviour
 
         _lobby.OnLobbyChannelJoined += RunSettingsCommand;
         
-        // Quick temporary fix for an issue within BanchoSharp, that causes players with more than 16 characters to have duplicates.
-        _lobby.MultiplayerLobby.OnPlayerDisconnected += player =>
-        {
-            var playerName = player.Player.Name;
-            
-            if (playerName.Length <= 16)
-                return;
-            
-            var playerNameShorted = playerName[..16];
-            var duplicatePlayer = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name == playerNameShorted);
-
-            if (duplicatePlayer is null)
-                return;
-
-            Log.Warning($"Duplicate player found {playerName} -> {duplicatePlayer.Name}, removing.");
-
-            _lobby.MultiplayerLobby.Players.Remove(duplicatePlayer);
-        };
-        
         var mapManagerBehaviour = _lobby.Behaviours.Find(x => x.GetType() == typeof(MapManagerBehaviour));
         if (mapManagerBehaviour != null)
         {
             _mapManagerBehaviour = ((MapManagerBehaviour)mapManagerBehaviour);
         }
+    }
+
+    public void Shutdown()
+    {
+        _lobby.Bot.Client.OnPrivateMessageSent -= OnPrivateMessageSent;
+
+        _lobby.MultiplayerLobby.OnMatchStarted -= OnMatchStarted;
+        _lobby.MultiplayerLobby.OnMatchFinished -= OnMatchFinishedOrAborted;
+        _lobby.MultiplayerLobby.OnMatchAborted -= OnMatchFinishedOrAborted;
+        _lobby.MultiplayerLobby.OnSettingsUpdated -= OnRoomSettingsUpdated;
+
+        _lobby.OnBanchoMessage -= OnBanchoMessage; 
+        _lobby.OnAdminMessage -= OnAdminMessage;
+
+        _lobby.OnLobbyChannelJoined -= RunSettingsCommand;
+
+        _mapManagerBehaviour = null;
     }
 
     private void OnPrivateMessageSent(IPrivateIrcMessage msg)

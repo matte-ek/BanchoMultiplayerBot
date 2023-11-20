@@ -14,7 +14,7 @@ public class ConfigurationManager
 
     public ConfigurationManager(Bot bot)
     {
-        this._bot = bot;
+        _bot = bot;
     }
 
     public void LoadConfiguration()
