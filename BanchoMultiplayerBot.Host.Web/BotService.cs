@@ -1,4 +1,8 @@
-﻿namespace BanchoMultiplayerBot.Host.Web
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace BanchoMultiplayerBot.Host.Web
 {
     public class BotService : Bot, IDisposable
     {

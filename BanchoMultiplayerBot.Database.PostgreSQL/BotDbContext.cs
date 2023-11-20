@@ -16,6 +16,7 @@ public class BotDbContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseNpgsql(ConnectionString);
+        optionsBuilder.UseNpgsql(ConnectionString,
+            builder => builder.MigrationsAssembly("BanchoMultiplayerBot.Database.PostgreSQL"));
     }
 }   

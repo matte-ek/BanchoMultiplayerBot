@@ -4,7 +4,9 @@
 	<s:Boolean x:Key="/Default/AddReferences/RecentPaths/=_002Fhome_002Fmatte_002FDocuments_002FBanchoSharp_002FBanchoSharp_002Fbin_002FRelease_002Fnet6_002E0_002FBanchoSharp_002Edll/@EntryIndexedValue">True</s:Boolean>
 	<s:String x:Key="/Default/Environment/AssemblyExplorer/XmlDocument/@EntryValue">&lt;AssemblyExplorer&gt;&#xD;
   &lt;Assembly Path="C:\Users\matte\CLionProjects\BanchoSharp\BanchoSharp\bin\Release\net6.0\BanchoSharp.dll" /&gt;&#xD;
+  &lt;Assembly Path="C:\Users\matte\source\repos\forks\BanchoSharp\BanchoSharp\bin\Release\net6.0\BanchoSharp.dll" /&gt;&#xD;
 &lt;/AssemblyExplorer&gt;</s:String>
+	<s:Boolean x:Key="/Default/UnloadedProject/UnloadedProjects/=8ce6d749_002D46fe_002D4dfb_002Db3eb_002D2d06f6492fa6_0023BanchoMultiplayerBot_002EDatabase_002ESQLite/@EntryIndexedValue">True</s:Boolean>
 	
 	
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=beatmap/@EntryIndexedValue">True</s:Boolean></wpf:ResourceDictionary>

@@ -98,7 +98,7 @@ public class MessageManager
                 }
                 catch (Exception e)
                 {
-                    Log.Error($"Error while sending message: {e.Message}");
+                    Log.Error($"Error while sending message: {e}");
                 }
 
                 sentMessages.Add(message);

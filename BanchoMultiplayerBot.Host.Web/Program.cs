@@ -41,11 +41,11 @@ builder.Services.AddMudServices();
 builder.Services.AddScoped<AuthenticationStateProvider, TemporaryAuthStateProvider>();
 builder.Services.AddFeatureManagement();
 
-BotDbContext.ConnectionString = builder.Configuration.GetValue<string>("ConnectionString");
-
 var app = builder.Build();
 
 {
+    BotDbContext.ConnectionString = builder.Configuration.GetValue<string>("ConnectionString")!;
+    
     using var context = new BotDbContext();
 
     context.Database.Migrate();
