@@ -43,6 +43,8 @@ public class LobbyConfiguration
     public int MinimumMapLength { get; set; }
     public int MaximumMapLength { get; set; }
 
+    public bool? AllowDoubleTime { get; set; } = true;
+
     // Behaviour specific 
     public string? PreviousQueue;
     public PlaytimeRecord[]? PlayerPlaytime { get; set; }
