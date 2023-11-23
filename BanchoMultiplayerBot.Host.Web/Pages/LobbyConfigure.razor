@@ -63,6 +63,7 @@
                 <MudNumericField @bind-Value="_configuration.MinimumStarRating" Label="Minimum star rating" Variant="Variant.Filled" Min="0" />
                 <MudNumericField @bind-Value="_configuration.MaximumStarRating" Label="Maximum star rating" Variant="Variant.Filled" Min="0" />
                 <MudNumericField @bind-Value="_configuration.StarRatingErrorMargin" Label="Star rating error margin" Variant="Variant.Filled" Min="0" Max="1" />
+                <MudSwitch @bind-Checked="_configuration!.AllowDoubleTime" Label="Allow double time" Color="Color.Primary" />
             </MudPaper>
             <MudPaper Class="pa-8 ma-2">
                 <MudText Typo="Typo.h6" GutterBottom="true">Map Length</MudText>

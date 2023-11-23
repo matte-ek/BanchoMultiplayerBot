@@ -104,7 +104,14 @@ public class MapManagerBehaviour : IBotBehaviour
                 if ((_lobby.MultiplayerLobby.Mods & Mods.HardRock) != 0)
                     osuApiMods |= ModsModel.HardRock;
 
-                /*
+                if (_lobby.Configuration.AllowDoubleTime == false)
+                {
+                    if ((osuApiMods & ModsModel.DoubleTime) == 0)
+                    {
+                        return;
+                    }
+                }
+                
                 var beatmapInformation = await _lobby.Bot.OsuApi.GetBeatmapInformation(CurrentBeatmap.Id, (int)osuApiMods);
                 if (beatmapInformation == null)
                 {
@@ -115,12 +122,6 @@ public class MapManagerBehaviour : IBotBehaviour
                 {
                     return;
                 }
-                */
-
-                // 2023-11: Blocking all attempts of DT due to some discussion and a very low amount of "legitimate" maps
-                // Actively thinking of better solutions meanwhile.
-                if ((osuApiMods & ModsModel.DoubleTime) == 0) 
-                    return;
                 
                 Log.Error("Detected an attempt to play a map out of the lobby's star rating! Aborting...");
 
