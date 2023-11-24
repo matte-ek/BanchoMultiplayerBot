@@ -46,7 +46,7 @@ public class MessageManager
     /// </summary>
     private async Task MessagePumpTask()
     {
-        int messageBurstCount = _bot.Configuration.IsBotAccount == true ? 300 : 8;
+        int messageBurstCount = _bot.Configuration.IsBotAccount == true ? 300 : 9;
         int messageAge = _bot.Configuration.IsBotAccount == true ? 60 : 6;
         const int maxMessageLength = 400;
 
@@ -70,7 +70,7 @@ public class MessageManager
 
                 do
                 {
-                    shouldThrottle = sentMessages.Count >= messageBurstCount - 3;
+                    shouldThrottle = sentMessages.Count >= messageBurstCount - 1;
 
                     // Remove old messages that are more than 5 seconds old
                     sentMessages.RemoveAll(x => (DateTime.Now - x.Time).Seconds > messageAge);
