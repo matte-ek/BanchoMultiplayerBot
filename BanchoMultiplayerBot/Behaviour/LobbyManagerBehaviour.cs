@@ -238,11 +238,11 @@ public class LobbyManagerBehaviour : IBotBehaviour
     // which it for some reasons just don't want to sometimes.
     private async Task EnsureSettingsSent()
     {
-        await Task.Delay(5000);
+        await Task.Delay(10000);
 
         // If this is true, we've still not sent the "!mp settings" message, we must be unlucky with the rate limiting.
         // So we'll just wait an additional 5 seconds before checking it again.
-        if ((DateTime.Now - _lastSettingsUpdateSentTime).Duration().TotalSeconds > 5.1)
+        if ((DateTime.Now - _lastSettingsUpdateSentTime).Duration().TotalSeconds > 10.1)
         {
             //Log.Warning("Detected '!mp settings' still not being sent after 5 seconds, retrying...");
             
@@ -256,7 +256,7 @@ public class LobbyManagerBehaviour : IBotBehaviour
             }
         }
         
-        if (_lastSettingsUpdateSentTime - _lastSettingsUpdateReceivedTime > TimeSpan.FromSeconds(15))
+        if (_lastSettingsUpdateSentTime - _lastSettingsUpdateReceivedTime > TimeSpan.FromSeconds(25))
         {
             _lobby.UpdateSettings();
 
