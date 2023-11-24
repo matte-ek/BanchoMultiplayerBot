@@ -86,7 +86,7 @@
     private LobbyConfiguration? _configuration;
 
     private IEnumerable<string>? _selectedBehaviours;
-    private IEnumerable<string>? _selectedMods;//new HashSet<string>();
+    private IEnumerable<string>? _selectedMods; //new HashSet<string>();
 
     private string? _selectedMode;
 
@@ -111,7 +111,7 @@
                 GameMode.osuTaiko => "osu!taiko",
                 GameMode.osuCatch => "osu!catch",
                 _ => _selectedMode
-            };
+                };
         }
 
         _selectedTeamMode = _configuration.TeamMode ?? LobbyFormat.HeadToHead;
@@ -135,7 +135,7 @@
             "osu!taiko" => GameMode.osuTaiko,
             "osu!catch" => GameMode.osuCatch,
             _ => _configuration.Mode
-        };
+            };
 
         _configuration.TeamMode = _selectedTeamMode;
         _configuration.ScoreMode = _selectedScoreMode;
@@ -155,7 +155,7 @@
 
         _lobby = Bot.Lobbies[lobbyId];
     }
-    
+
     private readonly string[] _behaviourOptions =
     {
         "AutoHostRotate",
@@ -164,3 +164,4 @@
         "AbortVote",
         "FunCommands"
     };
+}
