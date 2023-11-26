@@ -55,7 +55,7 @@ public class ScoreModel
         {
             "X" => "SS",
             "XS" => "SS",
-            "SH" => "SS",
+            "SH" => "S",
             "XH" => "SS",
             _ => Rank ?? "N/A"
         };
