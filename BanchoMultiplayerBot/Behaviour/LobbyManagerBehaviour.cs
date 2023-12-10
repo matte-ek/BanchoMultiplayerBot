@@ -1,4 +1,6 @@
-﻿using BanchoMultiplayerBot.Extensions;
+﻿using BanchoMultiplayerBot.Data;
+using BanchoMultiplayerBot.Extensions;
+using BanchoSharp;
 using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
 using Serilog;
@@ -35,6 +37,7 @@ public class LobbyManagerBehaviour : IBotBehaviour
         _lobby.MultiplayerLobby.OnSettingsUpdated += OnRoomSettingsUpdated;
 
         _lobby.OnBanchoMessage += OnBanchoMessage; 
+        _lobby.OnUserMessage += OnUserMessage;
         _lobby.OnAdminMessage += OnAdminMessage;
 
         _lobby.OnLobbyChannelJoined += RunSettingsCommand;
@@ -283,4 +286,3 @@ public class LobbyManagerBehaviour : IBotBehaviour
             }
         }
     }
-}
