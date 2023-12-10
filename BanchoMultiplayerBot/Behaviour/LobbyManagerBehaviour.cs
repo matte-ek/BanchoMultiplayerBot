@@ -1,4 +1,5 @@
-﻿using BanchoMultiplayerBot.Extensions;
+﻿using BanchoMultiplayerBot.Data;
+using BanchoMultiplayerBot.Extensions;
 using BanchoSharp;
 using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
@@ -37,6 +38,7 @@ public class LobbyManagerBehaviour : IBotBehaviour
         _lobby.MultiplayerLobby.OnSettingsUpdated += OnRoomSettingsUpdated;
 
         _lobby.OnBanchoMessage += OnBanchoMessage; 
+        _lobby.OnUserMessage += OnUserMessage;
         _lobby.OnAdminMessage += OnAdminMessage;
 
         _lobby.OnLobbyChannelJoined += RunSettingsCommand;
@@ -64,6 +66,14 @@ public class LobbyManagerBehaviour : IBotBehaviour
         if (mapManagerBehaviour != null)
         {
             _mapManagerBehaviour = ((MapManagerBehaviour)mapManagerBehaviour);
+        }
+    }
+
+    private void OnUserMessage(PlayerMessage e)
+    {
+        if (e.Content.StartsWith("!mplink"))
+        {
+            e.Reply( $"Match history available [https://osu.ppy.sh/community/matches/{_lobby.Channel[4..]} here.]");
         }
     }
 
