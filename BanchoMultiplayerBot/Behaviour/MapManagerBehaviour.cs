@@ -441,8 +441,10 @@ public class MapManagerBehaviour : IBotBehaviour
             
             // By "setting" the map our self directly after the host picked it, 
             // it will automatically be set to the newest version, even if the host's one is outdated.
-            SetBeatmap(CurrentBeatmap.Id, $"| ([https://beatconnect.io/b/{CurrentBeatmap.SetId} BeatConnect Mirror] - [https://osu.direct/d/{CurrentBeatmap.SetId} osu.direct Mirror])");
+            SetBeatmap(CurrentBeatmap.Id);
 
+            _lobby.SendMessage($"[https://osu.ppy.sh/b/{id} {beatmapModel.Artist} - {beatmapModel.Title} [{beatmapModel.Version ?? string.Empty}]] - ([https://beatconnect.io/b/{CurrentBeatmap.SetId} BeatConnect Mirror] - [https://osu.direct/d/{CurrentBeatmap.SetId} osu.direct Mirror])");
+            
             var starRating = Math.Round(float.Parse(beatmapModel.DifficultyRating, CultureInfo.InvariantCulture), 2);
 
             if (_lobby.Bot.PerformancePointCalculator == null)
