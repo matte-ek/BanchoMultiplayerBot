@@ -104,21 +104,26 @@ public class MapManagerBehaviour : IBotBehaviour
                 if ((_lobby.MultiplayerLobby.Mods & Mods.HardRock) != 0)
                     osuApiMods |= ModsModel.HardRock;
 
+                var mapValid = true;
+
                 if (_lobby.Configuration.AllowDoubleTime == false)
                 {
-                    if ((osuApiMods & ModsModel.DoubleTime) == 0)
+                    if ((osuApiMods & ModsModel.DoubleTime) != 0)
                     {
-                        return;
+                        mapValid = false;
                     }
                 }
                 
                 var beatmapInformation = await _lobby.Bot.OsuApi.GetBeatmapInformation(CurrentBeatmap.Id, (int)osuApiMods);
-                if (beatmapInformation == null)
+                if (beatmapInformation != null)
                 {
-                    return;
+                    if (await _mapValidator.ValidateBeatmap(beatmapInformation) != MapValidator.MapStatus.Ok)
+                    {
+                        mapValid = false;
+                    }
                 }
-
-                if (await _mapValidator.ValidateBeatmap(beatmapInformation) == MapValidator.MapStatus.Ok)
+                
+                if (mapValid)
                 {
                     return;
                 }
