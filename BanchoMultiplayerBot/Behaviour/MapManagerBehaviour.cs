@@ -413,12 +413,12 @@ public class MapManagerBehaviour : IBotBehaviour
                 var mapStarRating = Math.Round(float.Parse(beatmap.DifficultyRating, CultureInfo.InvariantCulture), 2);
 
                 _lobby.SendMessage(mapStarRating >= _lobby.Configuration.MaximumStarRating
-                    ? $"The selected beatmap's star rating is too high for the lobby ({mapStarRating:0.00} > {_lobby.Configuration.MaximumStarRating:0.0}). Please make sure to use the online star rating!"
-                    : $"The selected beatmap's star rating is too low for the lobby ({_lobby.Configuration.MinimumStarRating:0.0} > {mapStarRating:0.00}). Please make sure to use the online star rating!");
+                    ? $"The selected beatmap's star rating is too high for the lobby ({mapStarRating:0.00} > {_lobby.Configuration.MaximumStarRating:0.0})."
+                    : $"The selected beatmap's star rating is too low for the lobby ({_lobby.Configuration.MinimumStarRating:0.0} > {mapStarRating:0.00}).");
             }
             else
             {
-                _lobby.SendMessage($"The beatmap you've picked is out of the lobby star range ({_lobby.Configuration.MinimumStarRating:.0#}* - {_lobby.Configuration.MaximumStarRating:.0#}*), please make sure to use the online star rating.");
+                _lobby.SendMessage($"The beatmap you've picked is out of the lobby star range ({_lobby.Configuration.MinimumStarRating:.0#}* - {_lobby.Configuration.MaximumStarRating:.0#}*).");
             }
         }
 
