@@ -18,6 +18,9 @@ public class LobbyManagerBehaviour : IBotBehaviour
     private DateTime _lastSettingsUpdateReceivedTime;
     private DateTime _lastSettingsUpdateSentTime;
 
+    private bool _validatingMatchFinish = false;
+    private DateTime _lastPlayerFinishTime;
+
     // I really, really hate this but whatever.
     private int _mpSettingsAttempts = 0;
 
@@ -91,6 +94,20 @@ public class LobbyManagerBehaviour : IBotBehaviour
         if (message.Recipient != _lobby.Channel)
         {
             return;
+        }
+
+        if (message.Content.Contains("finished playing (Score: ") && 
+            message.Content.EndsWith(").") && 
+            _lobby.MultiplayerLobby.MatchInProgress)
+        {
+            _lastPlayerFinishTime = DateTime.Now;
+            
+            if (!_validatingMatchFinish)
+            {
+                _validatingMatchFinish = true;
+
+                Task.Run(EnsureMatchFinished);
+            }
         }
 
         if (message.Content.StartsWith("Removed the match password") ||
@@ -297,5 +314,34 @@ public class LobbyManagerBehaviour : IBotBehaviour
                 EnsureRoomPassword();
             }
         }
+    }
+
+    // Attempt to find and abort matches that do not finish automatically,
+    // sometimes it's players that started a bit late and actually need to finish
+    // but I've had cases where the match is stuck for way too long
+    private async Task EnsureMatchFinished()
+    {
+        while (_lobby.MultiplayerLobby.MatchInProgress)
+        {
+            await Task.Delay(1000);
+
+            if (!_lobby.MultiplayerLobby.MatchInProgress)
+            {
+                break;
+            }
+            
+            if ((DateTime.Now - _lastPlayerFinishTime).TotalSeconds < 15)
+            {
+                continue;
+            }
+            
+            Log.Warning("Detected possibly stuck match, automatically aborting..."); 
+            
+            _lobby.SendMessage("!mp abort");
+        }
+        
+        await Task.Delay(5000);
+
+        _validatingMatchFinish = false;
     }
 }
