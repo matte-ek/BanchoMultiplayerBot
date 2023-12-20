@@ -19,6 +19,7 @@ public class LobbyManagerBehaviour : IBotBehaviour
     private DateTime _lastSettingsUpdateSentTime;
 
     private bool _validatingMatchFinish = false;
+    private int _playerFinishCount = 0;
     private DateTime _lastPlayerFinishTime;
 
     // I really, really hate this but whatever.
@@ -101,8 +102,9 @@ public class LobbyManagerBehaviour : IBotBehaviour
             _lobby.MultiplayerLobby.MatchInProgress)
         {
             _lastPlayerFinishTime = DateTime.Now;
+            _playerFinishCount++;
             
-            if (!_validatingMatchFinish)
+            if (!_validatingMatchFinish && _playerFinishCount > _lobby.MultiplayerLobby.Players.Count / 2)
             {
                 _validatingMatchFinish = true;
 
@@ -133,6 +135,8 @@ public class LobbyManagerBehaviour : IBotBehaviour
         {
             _lobby.SendMessage("!mp abort");
         }
+
+        _playerFinishCount = 0;
     }
 
     private void OnMatchFinishedOrAborted()
@@ -337,11 +341,13 @@ public class LobbyManagerBehaviour : IBotBehaviour
             
             Log.Warning("Detected possibly stuck match, automatically aborting..."); 
             
+            _lobby.SendMessage("Detected possibly stuck match, automatically aborting...");
             _lobby.SendMessage("!mp abort");
         }
         
         await Task.Delay(5000);
 
         _validatingMatchFinish = false;
+        _playerFinishCount = 0;
     }
 }
