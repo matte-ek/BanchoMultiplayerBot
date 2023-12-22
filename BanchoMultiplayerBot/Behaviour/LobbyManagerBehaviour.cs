@@ -63,6 +63,7 @@ public class LobbyManagerBehaviour : IBotBehaviour
         _lobby.MultiplayerLobby.OnSettingsUpdated -= OnRoomSettingsUpdated;
 
         _lobby.OnBanchoMessage -= OnBanchoMessage; 
+        _lobby.OnUserMessage -= OnUserMessage;
         _lobby.OnAdminMessage -= OnAdminMessage;
 
         _lobby.OnLobbyChannelJoined -= RunSettingsCommand;
@@ -79,6 +80,14 @@ public class LobbyManagerBehaviour : IBotBehaviour
             _lastSettingsUpdateSentTime = DateTime.Now;
     }
 
+    private void OnUserMessage(PlayerMessage e)
+    {
+        if (e.Content.StartsWith("!mplink"))
+        {
+            e.Reply( $"Match history available [https://osu.ppy.sh/community/matches/{_lobby.Channel[4..]} here.]");
+        }
+    }
+    
     private void OnBanchoMessage(IPrivateIrcMessage message)
     {
         if (message.Recipient != _lobby.Channel)
@@ -313,7 +322,7 @@ public class LobbyManagerBehaviour : IBotBehaviour
     // but I've had cases where the match is stuck for way too long
     private async Task EnsureMatchFinished()
     {
-        while (_lobby.MultiplayerLobby.MatchInProgress)
+        while (_lobby.MultiplayerLobby.MatchInProgress && _mapManagerBehaviour != null)
         {
             await Task.Delay(1000);
 
