@@ -343,6 +343,8 @@ public class LobbyManagerBehaviour : IBotBehaviour
             
             _lobby.SendMessage("Detected possibly stuck match, automatically aborting...");
             _lobby.SendMessage("!mp abort");
+
+            break;
         }
         
         await Task.Delay(5000);
