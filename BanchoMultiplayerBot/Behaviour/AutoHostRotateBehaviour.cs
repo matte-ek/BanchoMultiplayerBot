@@ -508,7 +508,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
                 return;
         
             // Make sure this was recent, as what would happen if accidentally disconnected/crashed.
-            if (DateTime.Now >= previousQueuePosition.Time.AddSeconds(30))
+            if (DateTime.Now >= previousQueuePosition.Time.AddSeconds(60))
                 return;
 
             if (0 > previousQueuePosition.QueuePosition || previousQueuePosition.QueuePosition >= Queue.Count)
