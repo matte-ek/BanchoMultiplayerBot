@@ -334,7 +334,7 @@ public class LobbyManagerBehaviour : IBotBehaviour
                 break;
             }
             
-            if ((DateTime.Now - _lastPlayerFinishTime).TotalSeconds < 15)
+            if ((DateTime.Now - _lastPlayerFinishTime).TotalSeconds < 30)
             {
                 continue;
             }
