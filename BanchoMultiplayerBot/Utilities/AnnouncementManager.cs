@@ -33,7 +33,7 @@ namespace BanchoMultiplayerBot.Utilities
         }
         
         /// <summary>
-        /// Sends the specified message in all lobbies, with a small delay in between all lobbies
+        /// Sends the specified message in all lobbies, with a unique identifier for each lobby.
         /// </summary>
         public void SendAnnouncementMessage(string message)
         {

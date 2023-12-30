@@ -155,6 +155,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
     
     private async void OnUserMessage(PlayerMessage message)
     {
+        // Show the current queue to the user.
         if (message.Content.ToLower().Equals("!q") || message.Content.ToLower().Equals("!queue"))
         {
             message.Reply(GetCurrentQueueMessage());
@@ -162,6 +163,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
             return;
         }
 
+        // Shows the user's position in the queue.
         if (message.Content.ToLower().StartsWith("!queuepos") || message.Content.ToLower().StartsWith("!qp"))
         {
             var queuePosition = Queue.FindIndex(x => x.ToIrcNameFormat().Equals(message.Sender));
@@ -173,6 +175,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
             return;
         }
 
+        // Allow players to vote to skip the current host, or allow the host to skip themselves.
         if (message.Content.ToLower().StartsWith("!skip") || message.Content.ToLower().Equals("!s"))
         {
             // If the host is sending the message, just skip.
@@ -206,6 +209,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
             }
         }
 
+        // Allow the user to enable/disable auto-skip.
         if (message.Content.StartsWith("!autoskip"))
         {
             try
@@ -218,7 +222,8 @@ public class AutoHostRotateBehaviour : IBotBehaviour
                 using var userRepository = new UserRepository();
 
                 var user = await userRepository.FindOrCreateUser(message.BanchoPlayer.Name);
-
+                var previousStatus = user.AutoSkipEnabled;
+                
                 if (message.Content.StartsWith("!autoskip "))
                 {
                     if (message.Content.EndsWith("enable") || message.Content.EndsWith("on"))
@@ -228,8 +233,10 @@ public class AutoHostRotateBehaviour : IBotBehaviour
                 }
                 
                 var status = user.AutoSkipEnabled ? "enabled" : "disabled";
-                
-                message.Reply($"{message.BanchoPlayer.Name}, your auto-skip is currently {status}.");
+
+                message.Reply(previousStatus != user.AutoSkipEnabled
+                    ? $"{message.BanchoPlayer.Name}, your auto-skip has been {status}."
+                    : $"{message.BanchoPlayer.Name}, your auto-skip is {status}.");
 
                 await userRepository.Save();
             }
@@ -281,6 +288,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
                 var targetQueuePosition = int.Parse(split[2]);
                 var targetPlayer = _lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name.ToIrcNameFormat().ToLower() == targetName.ToLower());
 
+                // Make sure the target position is valid.
                 if (0 > targetQueuePosition || targetQueuePosition >= Queue.Count)
                 {
                     _lobby.SendMessage("Target position is out of range.");
@@ -304,8 +312,9 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         }
     }
 
-    private async void OnSettingsUpdated()
+    private void OnSettingsUpdated()
     {
+        // Don't do anything if a map is being validated.
         if (_mapManagerBehaviour?.MapValidationStatus != MapManagerBehaviour.MapValidation.None)
         {
             return;
@@ -316,6 +325,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         {
             Queue.Clear();
 
+            // Add players that are still in the lobby to the queue.
             foreach (var player in _lobby.Configuration.PreviousQueue.Split(','))
             {
                 if (_lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name == player) is not null && !Queue.Contains(player))
@@ -443,13 +453,15 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
         // Add a zero width space to the player names to avoid mentioning them
         Queue.ForEach(playerName => cleanPlayerNamesQueue.Add($"{playerName[0]}\u200B{playerName[1..]}"));
-
+        
+        // Replace the host with the original name, if requested.
         if (tagHost && cleanPlayerNamesQueue.Any())
         {
             cleanPlayerNamesQueue.RemoveAt(0);
             cleanPlayerNamesQueue.Insert(0, Queue.First());
         }
         
+        // Compile a queue string that is shorter than 100 characters.
         foreach (var name in cleanPlayerNamesQueue)
         {
             if (queueStr.Length > 100)
@@ -494,7 +506,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         if (_recentLeaveHistory.Count > 5)
             _recentLeaveHistory.RemoveAt(_recentLeaveHistory.Count - 1);
     }
-
+    
     private void RestorePlayerQueuePosition(MultiplayerPlayer player)
     {
         try
@@ -510,7 +522,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
             // Make sure this was recent, as what would happen if accidentally disconnected/crashed.
             if (DateTime.Now >= previousQueuePosition.Time.AddSeconds(60))
                 return;
-
+            
             if (0 > previousQueuePosition.QueuePosition || previousQueuePosition.QueuePosition >= Queue.Count)
                 return;
             
