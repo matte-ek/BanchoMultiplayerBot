@@ -45,7 +45,8 @@
                 <MudText Typo="Typo.h6" Class="py-2">Host Rotation</MudText>
                 <MudSwitch @bind-Checked="_configuration!.AutomaticallySkipAfterViolations" Label="Auto skip after violations" Color="Color.Primary" />
                 <MudNumericField @bind-Value="_configuration.ViolationSkipCount" Label="Violation Count" Variant="Variant.Filled" Min="1" Max="10" />
-            </MudPaper>
+                <MudSwitch @bind-Checked="_configuration!.AnnounceLeaderboardResults" Label="Announce leaderboard results" Color="Color.Primary" />
+                </MudPaper>
             <MudPaper Class="pa-8 ma-2">
                 <MudText Typo="Typo.h6" GutterBottom="true">Behaviours</MudText>
                 <MudSelect T="string" Label="Behaviours" MultiSelection="true" Variant="Variant.Filled" @bind-SelectedValues="_selectedBehaviours">

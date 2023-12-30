@@ -116,6 +116,54 @@ public class OsuApiWrapper
         }
     }
     
+    public async Task<IReadOnlyList<LeaderboardScoreModel>?> GetLeaderboardScores(int beatmapId)
+    {
+        using var httpClient = new HttpClient();
+        using var _ = _bot.RuntimeInfo.Statistics.ApiRequestTime.NewTimer();
+        
+        _bot.RuntimeInfo.Statistics.ApiRequests.Inc();
+        
+        httpClient.Timeout = TimeSpan.FromSeconds(5);
+
+        try
+        {
+            var result = await httpClient.GetAsync($"https://osu.ppy.sh/api/get_scores?k={_osuApiKey}&b={beatmapId}");
+
+            if (!result.IsSuccessStatusCode)
+            {
+                Log.Error($"Error code {result.StatusCode} while getting leaderboard from map {beatmapId}!");
+
+                _bot.RuntimeInfo.Statistics.ApiErrors.Inc();
+
+                return result.StatusCode switch
+                {
+                    HttpStatusCode.Unauthorized => throw new ApiKeyInvalidException(),
+                    _ => null
+                };
+            }
+
+            var json = await result.Content.ReadAsStringAsync();
+            var scores = JsonSerializer.Deserialize<List<LeaderboardScoreModel>>(json);
+
+            if (scores != null && !scores.Any())
+                throw new BeatmapNotFoundException(); // the API returns 200 even if it got no results.
+
+            return scores;
+        }
+        catch (BeatmapNotFoundException)
+        {
+            throw;
+        }
+        catch (Exception e)
+        {
+            Log.Error($"Exception during osu!api request: {e.Message}, beatmap: {beatmapId}");
+            
+            _bot.RuntimeInfo.Statistics.ApiErrors.Inc();
+            
+            throw;
+        }
+    }
+    
     public async Task<List<ScoreModel?>> GetRecentScoresBatch(List<string?> players)
     {
         try

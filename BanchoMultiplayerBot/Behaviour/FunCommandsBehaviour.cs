@@ -118,6 +118,7 @@ public class FunCommandsBehaviour : IBotBehaviour
                     List<float> leaveRatio = new();
                     List<float> passRatio = new();
 
+                    // Calculate percentages for the last 10 games
                     foreach (var game in recentGames)
                     {
                         if (game.PlayerPassedCount == -1)
@@ -161,6 +162,8 @@ public class FunCommandsBehaviour : IBotBehaviour
     {
         try
         {
+            // !mvname <source> <target>
+            // Moves the stats from source to target
             if (msg.Content.StartsWith("!mvname "))
             {
                 using var userRepository = new UserRepository();
@@ -187,6 +190,42 @@ public class FunCommandsBehaviour : IBotBehaviour
                 await userRepository.Save();
 
                 _lobby.SendMessage("Successfully moved player stats.");
+            }
+
+            if (msg.Content.StartsWith("!setstats "))
+            {
+                using var userRepository = new UserRepository();
+                var args = msg.Content.Split(' ');
+                
+                var user = await userRepository.FindUser(args[1]);
+                var playtime = int.Parse(args[2]);
+                var matchesPlayed = int.Parse(args[3]);
+                var numberOneResults = int.Parse(args[4]);
+
+                if (user == null)
+                {
+                    return;
+                }
+                
+                user.Playtime = playtime;
+                user.MatchesPlayed = matchesPlayed;
+                user.NumberOneResults = numberOneResults;
+
+                await userRepository.Save();
+            }
+
+            if (msg.Content.StartsWith("!getstats "))
+            {
+                using var userRepository = new UserRepository();
+                var args = msg.Content.Split(' ');
+                var user = await userRepository.FindUser(args[1]);
+                
+                if (user == null)
+                {
+                    return;
+                }
+                
+                _lobby.SendMessage($"{user.Playtime} | {user.MatchesPlayed} | {user.NumberOneResults}");
             }
         }
         catch (Exception e)
@@ -221,6 +260,7 @@ public class FunCommandsBehaviour : IBotBehaviour
             
             await StoreGameData(recentScores);
             await StorePlayerFinishData(recentScores);
+            await AnnounceLeaderboardResults(recentScores);
         }
         catch (Exception e)
         {
@@ -340,6 +380,44 @@ public class FunCommandsBehaviour : IBotBehaviour
         }
         
         await scoreRepository.Save();
+    }
+
+    private async Task AnnounceLeaderboardResults(IReadOnlyList<PlayerScoreResult> recentScores)
+    {
+        if (_mapManagerBehaviour?.CurrentBeatmap == null ||
+            _hasGameData == false)
+        {
+            return;
+        }
+        
+        var leaderboardScores = await _lobby.Bot.OsuApi.GetLeaderboardScores(_mapManagerBehaviour!.CurrentBeatmap!.Id);
+        if (leaderboardScores == null || !leaderboardScores.Any())
+        {
+            return;
+        }
+        
+        foreach (var score in recentScores)
+        {
+            var leaderboardScore = leaderboardScores.FirstOrDefault(x => x?.ScoreId == score?.Score?.ScoreId);
+            if (leaderboardScore == null)
+            {
+                continue;
+            }
+
+            var leaderboardPosition = leaderboardScores.ToList().FindIndex(x => x?.ScoreId == score?.Score?.ScoreId);
+            if (leaderboardPosition == -1)
+            {
+                continue;
+            }
+            
+            Log.Information($"Found leaderboard score for player: {score.Player.Name}!");
+
+            if (_lobby.Configuration.AnnounceLeaderboardResults == true)
+            {
+                _lobby.SendMessage(
+                    $"Congratulations {score.Player.Name} for getting #{leaderboardPosition + 1} on the map's leaderboard!");            
+            }
+        }
     }
 
     private async Task<IReadOnlyList<PlayerScoreResult>> GetRecentScores()
