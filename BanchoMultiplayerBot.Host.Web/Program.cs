@@ -28,7 +28,7 @@ AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
 {
     var e = (Exception)args.ExceptionObject;
 
-    Log.Error($"Unhandeled exception: {e}");
+    Log.Error($"Unhandled exception: {e}");
 };
 
 var builder = WebApplication.CreateBuilder(args);
