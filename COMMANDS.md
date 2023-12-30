@@ -21,6 +21,7 @@ An osu! multiplayer bot that will maintain a queue and pass the host around ever
 | !timeleft            | Shows the estimated time left of the current map, useful if you joined during an ongoing match. |
 | !autoskip (on/off)   | Feeling like just tagging along? Auto-skip will automatically skip your turn. |
 | !mirror              | Sends a download link to the map from a mirror. |
+| !mplink              | Sends a link to the osu! match history. |
 | !help                | Sends a link to the command/help page. |
 
 ### Admin Commands
@@ -30,10 +31,10 @@ An osu! multiplayer bot that will maintain a queue and pass the host around ever
 | !forceskip                    | Will skip the current host, without any vote.                                                      |
 | !sethost \<name\>             | Sets a new host for the round.                                                                     |
 | !setqueuepos \<name\> \<pos\> | Sets a new queue position for the player. Queue position starts from zero.                         |
-| !ban \<name\>                 | Ban a user, will run `!mp ban` and also save the username and automatically ban in future lobbies. |
+| !ban \<name\> \<host-ban\> \<time-days\> | Ban a user, will run `!mp ban` and also save the username and automatically ban in future lobbies. |
 | !banmapset \<id\>             | Ban a mapset by id                                                                                 |
 | !config \<name\> \<value\>    | Update the lobby properties directly in-game                                                       
-| !addref		                     | Adds you as a match referee to use bancho tournament commands.                                     |
+| !addref		                | Adds you as a match referee to use bancho tournament commands.                                     |
 | !togglemapcheck               | Toggle map regulation checker for the lobby.                                                       |
 
 ### Debug Commands
