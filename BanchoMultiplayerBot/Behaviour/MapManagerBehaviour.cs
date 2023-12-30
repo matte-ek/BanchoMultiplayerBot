@@ -46,6 +46,8 @@ public class MapManagerBehaviour : IBotBehaviour
     private BeatmapModel? _currentValidationBeatmap;
     private BeatmapModel? _currentValidationBeatmapDt;
 
+    private List<string> _mapFinishPingList = new();
+
     private Lobby _lobby = null!;
     private AutoHostRotateBehaviour? _autoHostRotateBehaviour;
     
@@ -166,6 +168,13 @@ public class MapManagerBehaviour : IBotBehaviour
         {
             _lobby.Bot.RuntimeInfo.Statistics.MapLength.WithLabels(_lobby.LobbyLabel).Observe(CurrentBeatmap.Length.TotalSeconds);
         }
+
+        foreach (var player in _mapFinishPingList)
+        {
+            _lobby.Bot.SendMessage(player, $"Match has finished in the {_lobby.Configuration.Name} lobby!");
+        }
+        
+        _mapFinishPingList.Clear();
     }
 
     private void OnMatchStarted()
@@ -210,10 +219,19 @@ public class MapManagerBehaviour : IBotBehaviour
             msg.Reply($"[https://beatconnect.io/b/{CurrentBeatmap.SetId} BeatConnect Mirror] - [https://osu.direct/d/{CurrentBeatmap.SetId} osu.direct Mirror]");
         }
 
+        // Shows the user the estimated time left of the current map.
         if (msg.Content.ToLower().StartsWith("!timeleft") && _lobby.MultiplayerLobby.MatchInProgress)
         {
             try
             {
+                var pingEnabled = false;
+                
+                if (msg.Content.ToLower().StartsWith("!timeleft ping"))
+                {
+                    _mapFinishPingList.Add(msg.Sender);
+                    pingEnabled = true;
+                }
+                
                 var finishTime = _matchStartTime.Add(CurrentBeatmap.Length);
 
                 // Add a few seconds to account for people loading/finishing the map
@@ -228,11 +246,13 @@ public class MapManagerBehaviour : IBotBehaviour
                 }
             
                 var timeLeft = (finishTime - DateTime.Now).ToString(@"mm\:ss");
-                
-                msg.Reply($"Estimated time left of current map: {timeLeft}");
-                
+
+                msg.Reply(pingEnabled
+                    ? $"Estimated time left of current map: {timeLeft}, you will be notified when the map is finished."
+                    : $"Estimated time left of current map: {timeLeft}");
+
                 if (beginSkipTime == null)
-                    Log.Information("Unable to get map begin time during !timeleft estimation.");
+                    Log.Warning("Unable to get map begin time during !timeleft estimation.");
             }
             catch (Exception)
             {
@@ -520,7 +540,7 @@ public class MapManagerBehaviour : IBotBehaviour
         {
             return false;
         }
-
+        
         if (matchStart)
         {
             if (3 < (now - _beatmapRejectTime).Duration().TotalSeconds)
