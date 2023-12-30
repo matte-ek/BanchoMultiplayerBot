@@ -3,11 +3,21 @@
 public class Game
 {
     public int Id { get; set; }
+ 
+/*
+    /// <summary>
+    /// The lobby of which the game was played
+    /// </summary>
+    public int? LobbyId { get; set; }
+    
+    public int? MapId { get; set; }
+    public Map? Map { get; set; } = null!;
+  */
     
     /// <summary>
     /// The osu! beatmap id
     /// </summary>
-    public int BeatmapId { get; set; }
+    public long BeatmapId { get; set; }
     
     /// <summary>
     /// Amount of players that were present at the beginning of the game
