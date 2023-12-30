@@ -18,7 +18,7 @@ An osu! multiplayer bot that will maintain a queue and pass the host around ever
 | !playstats / !ps     | Shows your total matches played and #1's |
 | !mapstats / !ms      | Shows play stats of the currently picked map. |
 | !rs                  | Shows information about your most recent score. |
-| !timeleft            | Shows the estimated time left of the current map, useful if you joined during an ongoing match. |
+| !timeleft            | Shows the estimated time left of the current map. You may also add "ping" (as in `!timeleft ping`) to get notified when the match finishes. |
 | !autoskip (on/off)   | Feeling like just tagging along? Auto-skip will automatically skip your turn. |
 | !mirror              | Sends a download link to the map from a mirror. |
 | !mplink              | Sends a link to the osu! match history. |
