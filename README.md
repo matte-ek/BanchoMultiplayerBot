@@ -21,6 +21,8 @@ Information on how to setup and use the bot are avaliable on the [wiki](https://
 ## Additional Thanks
 [hburn7 (Stage)](https://github.com/hburn7) for BanchoSharp and other help
 
+[iWeeti](https://github.com/iWeeti) for a [very nice statistics website](https://github.com/iWeeti/weetisoft-osu) built for the bot
+
 [MaxOhn](https://github.com/MaxOhn) for rosu-pp that the bot uses to calculate performance points
 
 [bitknox](https://github.com/bitknox) for giving me cool ideas and additional help
