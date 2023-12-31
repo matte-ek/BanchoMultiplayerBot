@@ -28,7 +28,11 @@ public class GlobalCommands
         {
             if (msg.Content.ToLower().Equals("!help") || msg.Content.ToLower().Equals("!info") || msg.Content.ToLower().Equals("!commands"))
             {
-                _bot.SendMessage(msg.IsDirect ? msg.Sender : msg.Recipient, $"osu! auto host rotation bot (v{Bot.Version}) [https://github.com/matte-ek/BanchoMultiplayerBot/blob/master/COMMANDS.md Help & Commands]");
+                var targetUrl = _bot.Configuration.StatisticsUrl != null
+                    ? $"{_bot.Configuration.StatisticsUrl}/commands"
+                    : "https://github.com/matte-ek/BanchoMultiplayerBot/blob/master/COMMANDS.md";
+
+                _bot.SendMessage(msg.IsDirect ? msg.Sender : msg.Recipient, $"osu! auto host rotation bot (v{Bot.Version}) [{targetUrl} Help & Commands]");
             }
 
             if (msg.IsDirect &&

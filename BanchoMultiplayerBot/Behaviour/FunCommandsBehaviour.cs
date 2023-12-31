@@ -1,4 +1,6 @@
 ﻿using System.Text;
+using System.Text.Encodings.Web;
+using System.Web;
 using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Database.Models;
 using BanchoMultiplayerBot.Database.Repositories;
@@ -85,6 +87,10 @@ public class FunCommandsBehaviour : IBotBehaviour
                 return;
             }
 
+            var nameIdentifier = _lobby.Bot.Configuration.StatisticsUrl != null
+                ? $"[{_lobby.Bot.Configuration.StatisticsUrl}/user/{player.Id.ToString() ?? HttpUtility.UrlEncode(player.Name)} {player.Name}]"
+                : player.Name;
+            
             if (msg.Content.ToLower().Equals("!playtime") || msg.Content.ToLower().Equals("!pt"))
             {
                 using var userRepository = new UserRepository();
@@ -93,7 +99,7 @@ public class FunCommandsBehaviour : IBotBehaviour
                 var currentPlaytime = DateTime.Now - player.JoinTime;
                 var totalPlaytime = TimeSpan.FromSeconds(user.Playtime) + currentPlaytime; // We add current play-time since it's only appended after the player disconnects.
 
-                msg.Reply($"{msg.Sender} has been here for {currentPlaytime:h' hours 'm' minutes 's' seconds'} ({totalPlaytime:d' days 'h' hours 'm' minutes 's' seconds'} ({totalPlaytime.TotalHours:F0}h) in total)");
+                msg.Reply($"{nameIdentifier} has been here for {currentPlaytime:h' hours 'm' minutes 's' seconds'} ({totalPlaytime:d' days 'h' hours 'm' minutes 's' seconds'} ({totalPlaytime.TotalHours:F0}h) in total).");
             }
 
             if (msg.Content.ToLower().Equals("!playstats") || msg.Content.ToLower().Equals("!ps"))
@@ -101,7 +107,7 @@ public class FunCommandsBehaviour : IBotBehaviour
                 using var userRepository = new UserRepository();
                 var user = await userRepository.FindUser(player.Name) ?? await userRepository.CreateUser(player.Name);
 
-                msg.Reply($"{msg.Sender} has played {user.MatchesPlayed} matches with a total of {user.NumberOneResults} #1's");
+                msg.Reply($"{nameIdentifier} has played {user.MatchesPlayed} matches with a total of {user.NumberOneResults} #1's.");
             }
 
             if ((msg.Content.ToLower().Equals("!mapstats") || msg.Content.ToLower().Equals("!ms")) && _mapManagerBehaviour.CurrentBeatmap != null)
