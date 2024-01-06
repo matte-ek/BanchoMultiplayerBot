@@ -1,6 +1,5 @@
 using System.Text;
 using BanchoMultiplayerBot.OsuApi;
-using BanchoSharp.Multiplayer;
 
 namespace BanchoMultiplayerBot.Extensions;
 

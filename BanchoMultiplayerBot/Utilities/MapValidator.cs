@@ -1,5 +1,4 @@
 using System.Globalization;
-using BanchoMultiplayerBot.Config;
 using BanchoMultiplayerBot.Database.Repositories;
 using BanchoMultiplayerBot.OsuApi;
 using BanchoSharp.Multiplayer;

@@ -20,13 +20,13 @@
                 <MudSwitch @bind-Checked="_configuration.AutoStartAllPlayersReady" Label="Auto-start when all players are ready" Color="Color.Primary"/>
                 <MudSwitch @bind-Checked="_configuration.EnableAutoStartTimer" Label="Automatically start auto-start timer" Color="Color.Primary"/>
                 <MudNumericField @bind-Value="_configuration.AutoStartTimerTime" Label="Auto-start timer (s)" Variant="Variant.Filled" Min="10" Max="600"/>
+                <MudTextField @bind-Value="_configuration.StatisticsUrl" T="string" Label="Statistics Url" Variant="Variant.Filled"/>
             </MudPaper>
             <MudPaper Class="pa-8 ma-2">
                 <MudText Typo="Typo.h6" GutterBottom="true">Other</MudText>
                 <MudText Typo="Typo.body2" GutterBottom="true" Class="mt-2">Bot Version: @BanchoMultiplayerBot.Bot.Version</MudText>
                 <MudButton Color="Color.Error" Variant="Variant.Outlined" @onclick="TerminateApplication">Exit without saving</MudButton>
             </MudPaper>
-
         </MudItem>
         <MudItem xs="6">
             <MudPaper Class="pa-8 ma-2">
@@ -58,7 +58,7 @@
 
         if (result.Cancelled)
             return;
-        
+
         ApplicationLifetime.StopApplication();
     }
 

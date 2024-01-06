@@ -3,7 +3,6 @@ using System.Text;
 using BanchoMultiplayerBot.Extensions;
 using BanchoMultiplayerBot.OsuApi;
 using BanchoSharp.Interfaces;
-using BanchoSharp.Multiplayer;
 using Serilog;
 
 namespace BanchoMultiplayerBot;

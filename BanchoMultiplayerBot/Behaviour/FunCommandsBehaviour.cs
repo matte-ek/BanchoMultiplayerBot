@@ -1,15 +1,10 @@
-﻿using System.Text;
-using System.Text.Encodings.Web;
-using System.Web;
+﻿using System.Web;
 using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Database.Models;
 using BanchoMultiplayerBot.Database.Repositories;
 using BanchoMultiplayerBot.Extensions;
-using BanchoMultiplayerBot.OsuApi;
 using BanchoSharp.EventArgs;
 using BanchoSharp.Interfaces;
-using BanchoSharp.Multiplayer;
-using Microsoft.Extensions.Primitives;
 using Serilog;
 
 namespace BanchoMultiplayerBot.Behaviour;
@@ -87,8 +82,9 @@ public class FunCommandsBehaviour : IBotBehaviour
                 return;
             }
 
+            var name = player.Id.ToString() ?? HttpUtility.UrlEncode(player.Name);
             var nameIdentifier = _lobby.Bot.Configuration.StatisticsUrl != null
-                ? $"[{_lobby.Bot.Configuration.StatisticsUrl}/user/{player.Id.ToString() ?? HttpUtility.UrlEncode(player.Name)} {player.Name}]"
+                ? $"[{_lobby.Bot.Configuration.StatisticsUrl}/user/{name} {player.Name}]"
                 : player.Name;
             
             if (msg.Content.ToLower().Equals("!playtime") || msg.Content.ToLower().Equals("!pt"))
