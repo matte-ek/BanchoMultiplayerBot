@@ -129,7 +129,7 @@ public class FunCommandsBehaviour : IBotBehaviour
                         }
                         
                         leaveRatio.Add((float)game.PlayerFinishCount / game.PlayerCount);
-                        passRatio.Add((float)game.PlayerPassedCount / game.PlayerFinishCount);
+                        passRatio.Add(game.PlayerFinishCount == 0 ? 0f : (float)game.PlayerPassedCount / game.PlayerFinishCount);
                     }
 
                     if (!passRatio.Any())
