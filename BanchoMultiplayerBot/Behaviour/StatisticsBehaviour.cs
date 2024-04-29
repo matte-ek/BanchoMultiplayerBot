@@ -15,12 +15,12 @@ public class StatisticsBehaviour : IBotBehaviour
         
         _lobby.MultiplayerLobby.OnMatchFinished += () =>
         {
-            _lobby.Bot.RuntimeInfo.Statistics.GamesPlayed.WithLabels(_lobby.LobbyLabel).Inc();
+            //_lobby.Bot.RuntimeInfo.Statistics.GamesPlayed.WithLabels(_lobby.LobbyLabel).Inc();
         };
 
         _lobby.MultiplayerLobby.OnMatchAborted += () =>
         {
-            _lobby.Bot.RuntimeInfo.Statistics.GamesAborted.WithLabels(_lobby.LobbyLabel).Inc();
+            // _lobby.Bot.RuntimeInfo.Statistics.GamesAborted.WithLabels(_lobby.LobbyLabel).Inc();
         }; 
         
         _lobby.MultiplayerLobby.OnPlayerJoined += (e) =>
@@ -31,14 +31,14 @@ public class StatisticsBehaviour : IBotBehaviour
             }
             
             _players.RemoveAll(x => DateTime.Now > x.Item2.AddHours(1));
-            
-            _lobby.Bot.RuntimeInfo.Statistics.Players.WithLabels(_lobby.LobbyLabel).Set(_lobby.MultiplayerLobby.Players.Count);
-            _lobby.Bot.RuntimeInfo.Statistics.UniquePlayers.WithLabels(_lobby.LobbyLabel).Set(_players.Count);
+
+            // _lobby.Bot.RuntimeInfo.Statistics.Players.WithLabels(_lobby.LobbyLabel).Set(_lobby.MultiplayerLobby.Players.Count);
+            // _lobby.Bot.RuntimeInfo.Statistics.UniquePlayers.WithLabels(_lobby.LobbyLabel).Set(_players.Count);
         }; 
         
         _lobby.MultiplayerLobby.OnPlayerDisconnected += (e) =>
         {
-            _lobby.Bot.RuntimeInfo.Statistics.Players.WithLabels(_lobby.LobbyLabel).Set(_lobby.MultiplayerLobby.Players.Count);
+            //   _lobby.Bot.RuntimeInfo.Statistics.Players.WithLabels(_lobby.LobbyLabel).Set(_lobby.MultiplayerLobby.Players.Count);
         }; 
     }
 }

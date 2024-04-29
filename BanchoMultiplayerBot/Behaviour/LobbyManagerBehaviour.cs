@@ -86,7 +86,10 @@ public class LobbyManagerBehaviour : IBotBehaviour
             return;
 
         if (msg.Content.StartsWith("!mp settings"))
+        {
+            Log.Warning($"Verboose: {_lobby.Channel}: Detected '!mp settings' being sent");
             _lastSettingsUpdateSentTime = DateTime.Now;
+        }
     }
 
     private void OnBanchoMessage(IPrivateIrcMessage message)
@@ -274,7 +277,7 @@ public class LobbyManagerBehaviour : IBotBehaviour
         // So we'll just wait an additional 5 seconds before checking it again.
         if ((DateTime.Now - _lastSettingsUpdateSentTime).Duration().TotalSeconds > 10.1)
         {
-            //Log.Warning("Detected '!mp settings' still not being sent after 5 seconds, retrying...");
+            Log.Warning($"Verbose: {_lobby.Channel}: Detected '!mp settings' still not being sent after 5 seconds, retrying... ({_mpSettingsAttempts})");
             
             if (_mpSettingsAttempts < 5)
             {
@@ -285,9 +288,12 @@ public class LobbyManagerBehaviour : IBotBehaviour
                 return;
             }
         }
-        
+
         if (_lastSettingsUpdateSentTime - _lastSettingsUpdateReceivedTime > TimeSpan.FromSeconds(25))
         {
+            Log.Warning($"Verbose: {_lobby.Channel}: No reply after '!mp settings' being sent.");
+            Log.Warning($"Verbose: {_lobby.Channel}: Sent Time: {_lastSettingsUpdateSentTime.ToLongTimeString()} - Received Time: {_lastSettingsUpdateReceivedTime.ToLongTimeString()}");
+
             _lobby.UpdateSettings();
 
             // If we still have some attempts left, then check if it got ran successfully again

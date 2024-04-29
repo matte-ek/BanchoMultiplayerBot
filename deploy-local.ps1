@@ -1,3 +1,5 @@
+# Script to upgrade bot on remote server
+
 Push-Location
 
 $IpAddress = $Env:OsuBot
@@ -27,7 +29,7 @@ Write-Host "OK"
 
 Write-Host -NoNewline "Preparing package ... "
 
-Set-Location ".\bin\Release\net6.0"
+Set-Location ".\bin\Release\net8.0"
 
 Remove-Item ".\publish\config.json" 2>$null
 Remove-Item ".\publish\appsettings.json" 2>$null
