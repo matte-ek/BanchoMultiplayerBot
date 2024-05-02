@@ -1,4 +1,5 @@
-﻿using BanchoMultiplayerBot.Database.Models;
+﻿using BanchoMultiplayerBot.Data;
+using BanchoMultiplayerBot.Database.Models;
 using BanchoMultiplayerBot.Database.Repositories;
 using BanchoMultiplayerBot.Extensions;
 using BanchoSharp.Interfaces;
@@ -10,6 +11,8 @@ namespace BanchoMultiplayerBot.Behaviour;
 public class BanBehaviour : IBotBehaviour
 {
     private Lobby _lobby = null!;
+
+    private Dictionary<string, PlayerJoinBan> _playerJoinRecords = new();
     
     public void Setup(Lobby lobby)
     {
@@ -74,10 +77,10 @@ public class BanBehaviour : IBotBehaviour
                     reason,
                     expireTime != null ? DateTime.Now.AddDays(int.Parse(expireTime)) : null);
                 
-                // If the user is banned from the lobby, we might as well ban him immediately
+                // If the user is banned from the lobby, we might as well kick the user immediately
                 if (!hostBan)
                 {
-                    _lobby.SendMessage($"!mp ban {playerName.ToIrcNameFormat()}");
+                    _lobby.SendMessage($"!mp kick {playerName.ToIrcNameFormat()}");
                 }
                 else
                 {
@@ -145,9 +148,39 @@ public class BanBehaviour : IBotBehaviour
     {
         var bans = await GetActivePlayerBans(player.Name);
 
-        if (bans.Any(x => !x.HostBan))
+        if (!bans.Any(x => !x.HostBan))
         {
-            _lobby.SendMessage($"!mp ban {player.Name.ToIrcNameFormat()}");
+            return;
         }
+
+        // We do this player join record crap since we do not ever really want to use the `!mp ban` command
+        // unless we absolutely have to, since there is no "!mp unban" command, so the player will remain banned
+        // until the lobby gets recreated. This prevents us from controlling whenever a user should be unbanned or
+        // even worse, if a user was wrongfully banned it may not be possible to unban the player. We do still
+        // keep a "fail safe" to `!mp ban` if the player keeps rejoining quickly in a small timespan since it
+        // may otherwise be abused to spam the chat with "!mp kick" messages.
+
+        if (!_playerJoinRecords.ContainsKey(player.Name))
+        {
+            _playerJoinRecords.Add(player.Name, new PlayerJoinBan
+            {
+                Name = player.Name,
+                Frequency = 0,
+                LastJoinTime = DateTime.Now,
+            });
+        }
+
+        var record = _playerJoinRecords[player.Name];
+
+        if ((DateTime.Now - record.LastJoinTime).TotalMinutes > 15)
+        {
+            record.Frequency = 0;
+        }
+
+        record.Frequency++;
+
+        var method = record.Frequency > 5 ? "ban" : "kick";
+
+        _lobby.SendMessage($"!mp {method} {player.Name.ToIrcNameFormat()}");
     }
 }
