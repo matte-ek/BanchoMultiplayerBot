@@ -35,6 +35,13 @@
                 <MudTextField @bind-Value="_configuration.WebhookUrl" T="string" Label="Webhook URL" Variant="Variant.Filled"/>
                 <MudSwitch @bind-Checked="_configuration.WebhookNotifyConnectionErrors" Label="Notify on osu!bancho connection issues" Color="Color.Primary"/>
                 <MudSwitch @bind-Checked="_configuration.WebhookNotifyLobbyTerminations" Label="Notify when managed lobbies gets removed" Color="Color.Primary"/>
+                <MudText Typo="Typo.h6" GutterBottom="true">Webhook Message Notifications</MudText>
+                <MudSwitch @bind-Checked="_configuration.WebhookNotifyUserMessage" Label="Notify on user direct messages" Color="Color.Primary" />
+                <MudTooltip Text="Tries to find messages sent in lobbies where either 'bot' or your osu! username is mentioned">
+                    <MudSwitch @bind-Checked="_configuration.WebhookNotifyBotMention" Label="Notify on bot mention messages" Color="Color.Primary" />
+                </MudTooltip>
+                <MudSwitch @bind-Checked="_configuration.WebhookMentionSeperateWebhook" Label="Use seperate webhook for message notifications" Color="Color.Primary" />
+                <MudTextField @bind-Value="_configuration.WebhookSeperateUrl" T="string" Label="Webhook URL" Variant="Variant.Filled" />
             </MudPaper>
         </MudItem>
     </MudGrid>

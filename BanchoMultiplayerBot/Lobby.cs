@@ -77,6 +77,7 @@ public class Lobby
         AddBehaviour(new DebugCommandsBehaviour());
         AddBehaviour(new ConfigBehaviour());
         AddBehaviour(new StatisticsBehaviour());
+        AddBehaviour(new NotificationBehaviour());
 
         // Add user specified behaviours
         if (Configuration.Behaviours != null)

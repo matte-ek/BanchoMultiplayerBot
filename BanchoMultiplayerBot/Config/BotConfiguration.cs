@@ -30,7 +30,11 @@ public class BotConfiguration
     public string? WebhookUrl { get; set; }
     public bool? WebhookNotifyLobbyTerminations { get; set; } = true;
     public bool? WebhookNotifyConnectionErrors { get; set; } = true;
-    
+    public bool? WebhookNotifyUserMessage { get; set; } = true;
+    public bool? WebhookNotifyBotMention { get; set; } = true;
+    public bool? WebhookMentionSeperateWebhook { get; set; } = false;
+    public string? WebhookSeperateUrl { get; set; }
+
     public string? StatisticsUrl { get; set; }
 
 }
