@@ -1,9 +1,0 @@
-﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
-	<s:Boolean x:Key="/Default/AddReferences/RecentPaths/=C_003A_005CUsers_005Cmatte_005CCLionProjects_005CBanchoSharp_005CBanchoSharp_005Cbin_005CRelease_005Cnet6_002E0_005CBanchoSharp_002Edll/@EntryIndexedValue">True</s:Boolean>
-	<s:Boolean x:Key="/Default/AddReferences/RecentPaths/=C_003A_005CUsers_005Cmatte_005Csource_005Crepos_005Chburn7_005CBanchoSharp_005CBanchoSharp_005Cbin_005CRelease_005Cnet6_002E0_005CBanchoSharp_002Edll/@EntryIndexedValue">True</s:Boolean>
-	<s:Boolean x:Key="/Default/AddReferences/RecentPaths/=_002Fhome_002Fmatte_002FDocuments_002FBanchoSharp_002FBanchoSharp_002Fbin_002FRelease_002Fnet6_002E0_002FBanchoSharp_002Edll/@EntryIndexedValue">True</s:Boolean>
-	<s:String x:Key="/Default/Environment/AssemblyExplorer/XmlDocument/@EntryValue">&lt;AssemblyExplorer&gt;&#xD;
-  &lt;Assembly Path="C:\Users\matte\CLionProjects\BanchoSharp\BanchoSharp\bin\Release\net6.0\BanchoSharp.dll" /&gt;&#xD;
-&lt;/AssemblyExplorer&gt;</s:String>
-	
-	<s:Boolean x:Key="/Default/UserDictionary/Words/=beatmap/@EntryIndexedValue">True</s:Boolean></wpf:ResourceDictionary>
