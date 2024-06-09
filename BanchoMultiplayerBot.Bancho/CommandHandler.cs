@@ -29,7 +29,7 @@ namespace BanchoMultiplayerBot.Bancho
                 {
                     _queuedCommands[channel].Add(new QueuedCommand()
                     {
-                        Command = T.Command, // Creating a new instance of the command is not ideal, any better way?
+                        Command = T.Command,
                         SuccessfulResponses = T.SuccessfulResponses,
                         DateTime = DateTime.Now
                     });

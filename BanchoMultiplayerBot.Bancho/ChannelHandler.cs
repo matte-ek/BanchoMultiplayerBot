@@ -11,6 +11,7 @@ namespace BanchoMultiplayerBot.Bancho
     public class ChannelHandler(IBanchoConnection banchoConnection) : IChannelHandler
     {
         public event Action<IChatChannel>? OnChannelJoined;
+        public event Action<string>? OnChannelJoinFailure;
         public event Action<IChatChannel>? OnChannelLeft;
 
         private IBanchoConnection _banchoConnection = banchoConnection;
@@ -21,9 +22,10 @@ namespace BanchoMultiplayerBot.Bancho
             {
                 return;
             }
-            
+
             _banchoConnection.BanchoClient.OnChannelJoined += BanchoOnChannelJoined;
             _banchoConnection.BanchoClient.OnChannelParted += BanchoOnChannelParted;
+            _banchoConnection.BanchoClient.OnChannelJoinFailure += BanchoOnChannelJoinFailure;
         }
 
         public void Stop()
@@ -35,6 +37,7 @@ namespace BanchoMultiplayerBot.Bancho
 
             _banchoConnection.BanchoClient.OnChannelJoined -= BanchoOnChannelJoined;
             _banchoConnection.BanchoClient.OnChannelParted -= BanchoOnChannelParted;
+            _banchoConnection.BanchoClient.OnChannelJoinFailure -= BanchoOnChannelJoinFailure;
         }
 
         private void BanchoOnChannelParted(IChatChannel chatChannel)
@@ -45,6 +48,11 @@ namespace BanchoMultiplayerBot.Bancho
         private void BanchoOnChannelJoined(IChatChannel chatChannel)
         {
             OnChannelJoined?.Invoke(chatChannel);
+        }
+
+        private void BanchoOnChannelJoinFailure(string chatChannel)
+        {
+            OnChannelJoinFailure?.Invoke(chatChannel);
         }
     }
 }
