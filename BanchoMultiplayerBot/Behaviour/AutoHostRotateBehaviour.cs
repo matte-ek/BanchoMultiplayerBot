@@ -182,6 +182,11 @@ public class AutoHostRotateBehaviour : IBotBehaviour
                     SkipCurrentPlayer();
                     OnQueueUpdated();
 
+                    if (_matchInProgress)
+                    {
+                        _hasSkippedHost = true;
+                    }
+
                     _playerSkipVote.Reset();
 
                     return;
@@ -195,8 +200,12 @@ public class AutoHostRotateBehaviour : IBotBehaviour
                 if (_playerSkipVote.Vote(message, player))
                 {
                     SkipCurrentPlayer();
-
                     OnQueueUpdated();
+
+                    if (_matchInProgress)
+                    {
+                        _hasSkippedHost = true;
+                    }
 
                     _lobby.Bot.RuntimeInfo.Statistics.HostSkipCount.WithLabels(_lobby.LobbyLabel).Inc();
 
