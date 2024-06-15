@@ -198,7 +198,7 @@ public class AutoHostRotateBehaviour : IBotBehaviour
 
                     OnQueueUpdated();
 
-                    // _lobby.Bot.RuntimeInfo.Statistics.HostSkipCount.WithLabels(_lobby.LobbyLabel).Inc();
+                    _lobby.Bot.RuntimeInfo.Statistics.HostSkipCount.WithLabels(_lobby.LobbyLabel).Inc();
 
                     return;
                 }
@@ -249,8 +249,8 @@ public class AutoHostRotateBehaviour : IBotBehaviour
         {
             SkipCurrentPlayer();
             OnQueueUpdated();
-
-            //_lobby.Bot.RuntimeInfo.Statistics.HostSkipCount.WithLabels(_lobby.LobbyLabel).Inc();
+            
+            _lobby.Bot.RuntimeInfo.Statistics.HostSkipCount.WithLabels(_lobby.LobbyLabel).Inc();
         }
 
         if (message.Content.StartsWith("!sethost "))

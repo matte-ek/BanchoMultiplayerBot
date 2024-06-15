@@ -40,8 +40,8 @@ namespace BanchoMultiplayerBot.Host.Web.Extra
         {
             // These should theoretically overwrite each other, but I had some issues with caching.
             Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, proxy-revalidate";
-            Response.Headers.Append("Surrogate-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-            Response.Headers.Append("Expires", "0");
+            Response.Headers.Add("Surrogate-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+            Response.Headers.Add("Expires", "0");
 
             try
             {

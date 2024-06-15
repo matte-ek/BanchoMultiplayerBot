@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Text.Json;
 using BanchoMultiplayerBot.OsuApi.Exceptions;
-//using Prometheus;
+using Prometheus;
 using Serilog;
 
 namespace BanchoMultiplayerBot.OsuApi;
@@ -23,10 +23,10 @@ public class OsuApiWrapper
     public async Task<BeatmapModel?> GetBeatmapInformation(int beatmapId, int mods = 0)
     {
         using var httpClient = new HttpClient();
-        //using var _ = _bot.RuntimeInfo.Statistics.ApiRequestTime.NewTimer();
-
-        //_bot.RuntimeInfo.Statistics.ApiRequests.Inc();
-
+        using var _ = _bot.RuntimeInfo.Statistics.ApiRequestTime.NewTimer();
+        
+        _bot.RuntimeInfo.Statistics.ApiRequests.Inc();
+        
         httpClient.Timeout = TimeSpan.FromSeconds(5);
 
         try
@@ -37,7 +37,7 @@ public class OsuApiWrapper
             {
                 Log.Error($"Error code {result.StatusCode} while getting beatmap details for id {beatmapId}!");
 
-                //_bot.RuntimeInfo.Statistics.ApiErrors.Inc();
+                _bot.RuntimeInfo.Statistics.ApiErrors.Inc();
 
                 return result.StatusCode switch
                 {
@@ -61,9 +61,9 @@ public class OsuApiWrapper
         catch (Exception e)
         {
             Log.Error($"Exception during osu!api request: {e.Message}, beatmap: {beatmapId}");
-
-            // _bot.RuntimeInfo.Statistics.ApiErrors.Inc();
-
+            
+            _bot.RuntimeInfo.Statistics.ApiErrors.Inc();
+            
             throw;
         }
     }
@@ -71,10 +71,10 @@ public class OsuApiWrapper
     public async Task<ScoreModel?> GetRecentScore(string player)
     {
         using var httpClient = new HttpClient();
-        //using var _ = _bot.RuntimeInfo.Statistics.ApiRequestTime.NewTimer();
-
-        //_bot.RuntimeInfo.Statistics.ApiRequests.Inc();
-
+        using var _ = _bot.RuntimeInfo.Statistics.ApiRequestTime.NewTimer();
+        
+        _bot.RuntimeInfo.Statistics.ApiRequests.Inc();
+        
         httpClient.Timeout = TimeSpan.FromSeconds(5);
 
         try
@@ -85,7 +85,7 @@ public class OsuApiWrapper
             {
                 Log.Error($"Error code {result.StatusCode} while getting recent score for player {player}!");
 
-                //_bot.RuntimeInfo.Statistics.ApiErrors.Inc();
+                _bot.RuntimeInfo.Statistics.ApiErrors.Inc();
 
                 return result.StatusCode switch
                 {
@@ -109,9 +109,9 @@ public class OsuApiWrapper
         catch (Exception e)
         {
             Log.Error($"Exception during osu!api request: {e.Message}, player: {player}");
-
-            // _bot.RuntimeInfo.Statistics.ApiErrors.Inc();
-
+            
+            _bot.RuntimeInfo.Statistics.ApiErrors.Inc();
+            
             throw;
         }
     }
@@ -119,10 +119,10 @@ public class OsuApiWrapper
     public async Task<IReadOnlyList<LeaderboardScoreModel>?> GetLeaderboardScores(int beatmapId)
     {
         using var httpClient = new HttpClient();
-        // using var _ = _bot.RuntimeInfo.Statistics.ApiRequestTime.NewTimer();
-
-        //_bot.RuntimeInfo.Statistics.ApiRequests.Inc();
-
+        using var _ = _bot.RuntimeInfo.Statistics.ApiRequestTime.NewTimer();
+        
+        _bot.RuntimeInfo.Statistics.ApiRequests.Inc();
+        
         httpClient.Timeout = TimeSpan.FromSeconds(5);
 
         try
@@ -133,7 +133,7 @@ public class OsuApiWrapper
             {
                 Log.Error($"Error code {result.StatusCode} while getting leaderboard from map {beatmapId}!");
 
-                // _bot.RuntimeInfo.Statistics.ApiErrors.Inc();
+                _bot.RuntimeInfo.Statistics.ApiErrors.Inc();
 
                 return result.StatusCode switch
                 {
@@ -157,9 +157,9 @@ public class OsuApiWrapper
         catch (Exception e)
         {
             Log.Error($"Exception during osu!api request: {e.Message}, beatmap: {beatmapId}");
-
-            // _bot.RuntimeInfo.Statistics.ApiErrors.Inc();
-
+            
+            _bot.RuntimeInfo.Statistics.ApiErrors.Inc();
+            
             throw;
         }
     }

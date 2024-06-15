@@ -12,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 using Serilog;
 using Microsoft.FeatureManagement;
-//using Prometheus;
+using Prometheus;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
@@ -74,12 +74,10 @@ app.MapBlazorHub(configureOptions: options =>
     options.Transports = HttpTransportType.WebSockets;
 });
 
-/*
 if (app.Configuration.GetSection("FeatureManagement").GetValue<bool>("StatisticsController", false))
 {
     app.UseMetricServer("/api/statistics/metrics");
 }
-*/
 
 app.MapFallbackToPage("/_Host");
 

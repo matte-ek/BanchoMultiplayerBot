@@ -163,7 +163,7 @@ public class MapManagerBehaviour : IBotBehaviour
 
         if (CurrentBeatmap != null)
         {
-            //_lobby.Bot.RuntimeInfo.Statistics.MapLength.WithLabels(_lobby.LobbyLabel).Observe(CurrentBeatmap.Length.TotalSeconds);
+            _lobby.Bot.RuntimeInfo.Statistics.MapLength.WithLabels(_lobby.LobbyLabel).Observe(CurrentBeatmap.Length.TotalSeconds);
         }
 
         foreach (var player in _mapFinishPingList)
@@ -178,7 +178,7 @@ public class MapManagerBehaviour : IBotBehaviour
     {
         _matchStartTime = DateTime.Now;
 
-        //_lobby.Bot.RuntimeInfo.Statistics.MapPlayTime.WithLabels(_lobby.LobbyLabel).Observe((DateTime.Now - _matchFinishTime).TotalSeconds);
+        _lobby.Bot.RuntimeInfo.Statistics.MapPlayTime.WithLabels(_lobby.LobbyLabel).Observe((DateTime.Now - _matchFinishTime).TotalSeconds);
 
         if (EnsureValidMap(true))
             return;
@@ -389,7 +389,7 @@ public class MapManagerBehaviour : IBotBehaviour
             // within limits, so we don't have to reset to the osu!tutorial every time.
             _beatmapFallbackId = id;
 
-            //_lobby.Bot.RuntimeInfo.Statistics.MapPickTime.WithLabels(_lobby.LobbyLabel).Observe((DateTime.Now - _matchFinishTime).TotalSeconds);
+            _lobby.Bot.RuntimeInfo.Statistics.MapPickTime.WithLabels(_lobby.LobbyLabel).Observe((DateTime.Now - _matchFinishTime).TotalSeconds);
 
             await AnnounceNewBeatmap(beatmap, id);
             
@@ -443,8 +443,8 @@ public class MapManagerBehaviour : IBotBehaviour
         
         _hostValidMapPicked = false;
         _beatmapRejectTime = DateTime.Now;
-
-        // _lobby.Bot.RuntimeInfo.Statistics.MapViolations.WithLabels(_lobby.LobbyLabel).Inc();
+        
+        _lobby.Bot.RuntimeInfo.Statistics.MapViolations.WithLabels(_lobby.LobbyLabel).Inc();
 
         EnsureValidMap(false);
         RunViolationAutoSkip();

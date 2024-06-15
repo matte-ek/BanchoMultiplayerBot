@@ -1,4 +1,4 @@
-﻿//using Prometheus;
+﻿using Prometheus;
 
 namespace BanchoMultiplayerBot.Data;
 
@@ -7,7 +7,7 @@ namespace BanchoMultiplayerBot.Data;
 /// </summary>
 public class BotStatistics
 {
- /*   
+    
     public Gauge IsConnected { get; } = Metrics.CreateGauge("IsConnected", "If the bot is connected to Bancho.");
     
     public Counter MessagesSent { get; } = Metrics.CreateCounter("MessagesSent", "Number of messages sent");
@@ -27,5 +27,5 @@ public class BotStatistics
     public Histogram MapLength { get; } = Metrics.CreateHistogram("MapLength", "Length of the last map played", "Lobby");
     public Histogram MapPickTime { get; } = Metrics.CreateHistogram("MapPickTime", "Time it took to pick a map", "Lobby");
     public Histogram MapPlayTime { get; } = Metrics.CreateHistogram("MapPlayTime", "Time it took to start the match", "Lobby");
- */
+
 }
