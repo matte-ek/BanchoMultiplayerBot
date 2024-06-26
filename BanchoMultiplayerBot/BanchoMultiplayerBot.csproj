@@ -16,4 +16,8 @@
     <Folder Include="Data\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\BanchoMultiplayerBot.Bancho\BanchoMultiplayerBot.Bancho.csproj" />
+  </ItemGroup>
+
 </Project>

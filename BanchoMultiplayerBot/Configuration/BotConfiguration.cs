@@ -10,7 +10,5 @@
 
         // osu! API authentication
         public string ApiKey { get; set; } = null!;
-
-
     }
 }

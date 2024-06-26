@@ -11,17 +11,19 @@ namespace BanchoMultiplayerBot.Bancho
 
         public BanchoClient? BanchoClient { get; private set; } = null!;
 
-        public IMessageHandler MessageHandler { get; } = null!;
-        public ICommandHandler CommandHandler { get; } = null!;
+        public IMessageHandler MessageHandler { get; }
+        public ICommandHandler CommandHandler { get; }
+        public IChannelHandler ChannelHandler { get; }
 
-        private BanchoClientConfiguration _banchoConfiguration = null!;
-        private IConnectionHandler? _connectionWatchdog = null!;
+        private readonly BanchoClientConfiguration _banchoConfiguration;
+        private ConnectionHandler? _connectionWatchdog;
 
         public BanchoConnection(BanchoClientConfiguration banchoClientConfiguration) 
         {
             _banchoConfiguration = banchoClientConfiguration;
 
             MessageHandler = new MessageHandler(this);
+            ChannelHandler = new ChannelHandler(this);
             CommandHandler = new CommandHandler(MessageHandler);
         }
 
@@ -55,6 +57,8 @@ namespace BanchoMultiplayerBot.Bancho
                 MessageHandler.Stop();
             }
 
+            ChannelHandler.Stop();
+
             if (BanchoClient != null)
             {
                 await BanchoClient.DisconnectAsync();
@@ -70,7 +74,7 @@ namespace BanchoMultiplayerBot.Bancho
 
         private void BanchoOnAuthenticated()
         {
-            if (BanchoClient == null || BanchoClient?.TcpClient == null)
+            if (BanchoClient?.TcpClient == null)
             {
                 // Shouldn't ever happen, hopefully.
                 return;
@@ -78,12 +82,13 @@ namespace BanchoMultiplayerBot.Bancho
 
             IsConnected = true;
 
-            // Once we got a connection successfuly up and running, make sure to initiate
+            // Once we got a connection successfully up and running, make sure to initiate
             // the connection watchdog immediately
             _connectionWatchdog = new ConnectionHandler(BanchoClient.TcpClient, MessageHandler);
             _connectionWatchdog.OnConnectionLost += OnConnectionLost;
             _connectionWatchdog.Start();
 
+            ChannelHandler.Start();
             MessageHandler.Start();
         }
 

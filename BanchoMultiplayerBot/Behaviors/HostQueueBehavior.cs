@@ -1,28 +1,33 @@
-﻿using BanchoMultiplayerBot.Interfaces;
+﻿using System.Text.Json;
+using BanchoMultiplayerBot.Interfaces;
 using System.Text.Json.Nodes;
 
 namespace BanchoMultiplayerBot.Behaviors
 {
     public class HostQueueBehavior : IBehavior
     {
-        public void Setup()
+        private Lobby _lobby = null!;
+        
+        public List<string> Queue
         {
-            throw new NotImplementedException();
+            get
+            {
+                _lobby.RuntimeData["queue"] ??= new JsonArray();
+                return _lobby.RuntimeData["queue"]!.GetValue<string[]>().ToList();
+            }
+            
+            set => _lobby.RuntimeData["queue"] = JsonSerializer.Serialize(value);
+        }
+        
+        public void Setup(Lobby lobby)
+        {
+            _lobby = lobby;
+            
+            Queue.Insert(0, "hello world.");
         }
 
         public void Dispose()
         {
-            throw new NotImplementedException();
-        }
-
-        public void Load(JsonObject data)
-        {
-            throw new NotImplementedException();
-        }
-
-        public JsonObject Save()
-        {
-            throw new NotImplementedException();
         }
     }
 }

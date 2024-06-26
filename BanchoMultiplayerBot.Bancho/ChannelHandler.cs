@@ -1,5 +1,6 @@
 ﻿using BanchoMultiplayerBot.Bancho.Interfaces;
 using BanchoSharp.Interfaces;
+using BanchoSharp.Multiplayer;
 
 namespace BanchoMultiplayerBot.Bancho
 {
@@ -10,6 +11,7 @@ namespace BanchoMultiplayerBot.Bancho
     /// </summary>
     public class ChannelHandler(IBanchoConnection banchoConnection) : IChannelHandler
     {
+        public event Action<IMultiplayerLobby>? OnLobbyCreated;
         public event Action<IChatChannel>? OnChannelJoined;
         public event Action<string>? OnChannelJoinFailure;
         public event Action<IChatChannel>? OnChannelLeft;
@@ -23,6 +25,7 @@ namespace BanchoMultiplayerBot.Bancho
                 return;
             }
 
+            _banchoConnection.BanchoClient.BanchoBotEvents.OnTournamentLobbyCreated += BanchoOnLobbyCreated;
             _banchoConnection.BanchoClient.OnChannelJoined += BanchoOnChannelJoined;
             _banchoConnection.BanchoClient.OnChannelParted += BanchoOnChannelParted;
             _banchoConnection.BanchoClient.OnChannelJoinFailure += BanchoOnChannelJoinFailure;
@@ -35,9 +38,15 @@ namespace BanchoMultiplayerBot.Bancho
                 return;
             }
 
+            _banchoConnection.BanchoClient.BanchoBotEvents.OnTournamentLobbyCreated -= BanchoOnLobbyCreated;
             _banchoConnection.BanchoClient.OnChannelJoined -= BanchoOnChannelJoined;
             _banchoConnection.BanchoClient.OnChannelParted -= BanchoOnChannelParted;
             _banchoConnection.BanchoClient.OnChannelJoinFailure -= BanchoOnChannelJoinFailure;
+        }
+
+        private void BanchoOnLobbyCreated(IMultiplayerLobby lobby)
+        {
+            OnLobbyCreated?.Invoke(lobby);
         }
 
         private void BanchoOnChannelParted(IChatChannel chatChannel)
