@@ -404,6 +404,12 @@ public class MapManagerBehaviour : IBotBehaviour
                 ? $"This map set ({beatmap.Title}) has been banned."
                 : "This map set has been banned.");
         }
+        else if (mapStatus == MapValidator.MapStatus.Removed)
+        {
+            _lobby.SendMessage(beatmap.Title != null
+                ? $"This map set ({beatmap.Title}) has been removed from the osu! website."
+                : "This map set has been removed from the osu! website.");
+        }
         else if (mapStatus == MapValidator.MapStatus.GameMode)
         {
             var modeName = _lobby.Configuration.Mode switch

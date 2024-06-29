@@ -34,10 +34,12 @@ public class MapValidator
             return MapStatus.Length;
         if (!IsAllowedBeatmapStarRating(beatmap))
             return MapStatus.StarRating;
+        //if (!IsDownloadable(beatmap))
+         //   return MapStatus.Removed;
 
         return MapStatus.Ok;
     }
-
+    
     private bool IsAllowedBeatmapStarRating(BeatmapModel beatmap)
     {
         if (!_lobby.Configuration.LimitStarRating)
@@ -121,12 +123,23 @@ public class MapValidator
         }
     }
 
+    private static bool IsDownloadable(BeatmapModel beatmap)
+    {
+        if (beatmap.DownloadUnavailable == null)
+            return true;
+        if (beatmap.AudioUnavailable == null)
+            return true;
+        
+        return !(beatmap.DownloadUnavailable == "1" || beatmap.AudioUnavailable == "1");
+    }
+    
     public enum MapStatus
     {
         Ok,
         StarRating,
         Length,
         GameMode,
-        Banned
+        Banned,
+        Removed
     }
 }
