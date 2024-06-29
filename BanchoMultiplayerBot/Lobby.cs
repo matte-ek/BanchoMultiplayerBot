@@ -78,6 +78,7 @@ public class Lobby
         AddBehaviour(new ConfigBehaviour());
         AddBehaviour(new StatisticsBehaviour());
         AddBehaviour(new NotificationBehaviour());
+        AddBehaviour(new InactivityDetectorBehaviour());
 
         // Add user specified behaviours
         if (Configuration.Behaviours != null)

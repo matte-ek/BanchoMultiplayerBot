@@ -24,8 +24,17 @@
 
 <MudPaper Class="pa-4 mt-2 d-flex align-content-center flex-grow-1 gap-2">
     <MudButton Variant="Variant.Text" Color="Color.Primary" DisableElevation="true" OnClick="OnConfigureButtonClicked">Configure</MudButton>
-    <MudButton Variant="Variant.Text" Color="Color.Error" DisableElevation="true" OnClick="OnExitLobbyButtonClicked">Leave Lobby</MudButton>
+    
 
+    @if (_lobby?.IsParted == true)
+    {
+        <MudButton Variant="Variant.Text" Color="Color.Success" DisableElevation="true" OnClick="OnRecreateLobbyButtonClicked">Recreate Lobby</MudButton>
+    }
+    else
+    {
+        <MudButton Variant="Variant.Text" Color="Color.Error" DisableElevation="true" OnClick="OnExitLobbyButtonClicked">Leave Lobby</MudButton>
+    }
+    
     <div style="margin-left: auto; margin-right: 0;align-items: center;line-height: 38px">
         <MudText Typo="Typo.button">@(_lobby != null && _lobby.MultiplayerLobby.MatchInProgress ? "IN PROGRESS" : "")</MudText>
     </div>
@@ -143,6 +152,16 @@
         NavManager.NavigateTo($"/osu-bot/lobby/{IdStr}/configure");
     }
 
+    private async void OnRecreateLobbyButtonClicked()
+    {
+        NavManager.NavigateTo("");
+        
+        if (_lobby != null) 
+            await Bot.RecreateLobby(_lobby);
+        
+        UpdatePage();
+    }
+    
     private async void OnExitLobbyButtonClicked()
     {
         var parameters = new DialogParameters { ["Message"] = "Are you sure you want to exit the lobby?" };

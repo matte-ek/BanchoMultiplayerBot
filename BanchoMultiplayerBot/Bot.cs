@@ -16,7 +16,7 @@ namespace BanchoMultiplayerBot;
 
 public class Bot
 {
-    public static string Version => "1.5.4";
+    public static string Version => "1.5.5";
 
     public BanchoClient Client { get; private set; }
 
@@ -46,12 +46,6 @@ public class Bot
     /// Message queue which is part of the message rate limiting system.
     /// </summary>
     private readonly BlockingCollection<QueuedMessage> _messageQueue = new(20);
-
-    /// <summary>
-    /// List of messages the message pump will internally ignore, we do this because there is no way
-    /// of safely removing messages in the message queue.
-    /// </summary>
-    private readonly List<Guid> _ignoredMessages = new();
     
     /// <summary>
     /// All lobbies created through CreateLobby, awaiting Bancho to create the room. Gets processed by
@@ -188,10 +182,9 @@ public class Bot
         Client.OnAuthenticationFailed += () => throw new Exception($"Failed to authenticate with the username {Configuration.Username}");
         Client.OnAuthenticated += ClientOnAuthenticated;
         Client.OnDisconnected += ClientOnDisconnected;
-        Client.OnChannelParted += OnChannelParted;
         Client.BanchoBotEvents.OnTournamentLobbyCreated += OnTournamentLobbyCreated;
         Client.OnPrivateMessageReceived += OnPrivateMessageReceived;
-
+        
         // Events for logging purposes
         Client.OnPrivateMessageReceived += e =>
         {
@@ -275,20 +268,13 @@ public class Bot
         OnLobbiesUpdated?.Invoke();
     }
 
-    private void OnChannelParted(IChatChannel channel)
+    public async Task RecreateLobby(Lobby lobby)
     {
-        if (WebhookConfigured && Configuration.WebhookNotifyLobbyTerminations == true)
-        {
-            _ = WebhookUtils.SendWebhookMessage(Configuration.WebhookUrl!, "Channel Closed", $"Channel {channel.ChannelName} was closed.");
-        }
-
-        var lobby = Lobbies.Where(x => x.Channel == channel.ChannelName)?.FirstOrDefault();
-        if (lobby != null)
-        {
-            lobby.IsParted = true;
-        }
-
-        Log.Warning($"Channel {channel.ChannelName} was parted.");
+        var config = lobby.Configuration;
+        
+        RemoveLobby(lobby);
+        
+        await CreateLobbyAsync(config);
     }
 
     /// <summary>
@@ -502,12 +488,6 @@ public class Bot
             {
                 var message = _messageQueue.Take();
 
-                if (_ignoredMessages.Contains(message.Id))
-                {
-                    _ignoredMessages.Remove(message.Id);
-                    continue;
-                }
-                
                 RuntimeInfo.Statistics.MessageSendQueue.Set(_messageQueue.Count);
                 
                 bool shouldThrottle;
