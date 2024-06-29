@@ -85,4 +85,19 @@ public class ScoreModel
 
         return ((n300 * 300 + n100 * 100 + n50 * 50) / (float)((n300 + n100 + n50 + nMiss) * 300)) * 100;
     }
+    
+    public static string GetRankString(int rank)
+    {
+        return rank switch
+        {
+            1 => "F",
+            2 => "D",
+            3 => "C",
+            4 => "B",
+            5 => "A",
+            6 => "S",
+            7 => "SS",
+            _ => "N/A"
+        };
+    }
 }
