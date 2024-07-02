@@ -13,7 +13,8 @@ public class InactivityDetectorBehaviour : IBotBehaviour
 {
     private Lobby _lobby = null!;
     private DateTime _lastLobbyMessage = DateTime.Now;
-    
+
+    private bool _hasNotifedError = false;
     private bool _isCheckingStatus = false;
     private DateTime _statusCheckTime = DateTime.Now;
     
@@ -49,7 +50,12 @@ public class InactivityDetectorBehaviour : IBotBehaviour
             if ((DateTime.Now - _lastLobbyMessage).TotalMinutes > 45)
             {
                 // Still no message? Assume the lobby is closed
-                Log.Error("Lobby {Channel} is dead, waiting for re-creation command.", _lobby.Configuration.Name);
+                if (!_hasNotifedError)
+                {
+                    Log.Error("Lobby {Channel} is dead, waiting for re-creation command.", _lobby.Configuration.Name);
+                    _hasNotifedError = true;
+                }
+                
                 _lobby.IsParted = true;
             }
             else
