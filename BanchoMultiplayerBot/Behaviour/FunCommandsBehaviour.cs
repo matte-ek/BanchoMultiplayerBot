@@ -145,10 +145,11 @@ public class FunCommandsBehaviour : IBotBehaviour
                     using var scoreRepository = new ScoreRepository();
                     
                     var scores = await scoreRepository.GetScoresByMapAndPlayerId(player.Id.Value, _mapManagerBehaviour.CurrentBeatmap.Id);
-                    var bestScore = scores.Where(x => x.Rank != 1).MaxBy(x => x.TotalScore);
-
+                    var bestScore = scores.MaxBy(x => x.TotalScore);
+                    var bestScoreAcc = bestScore?.CalculateAccuracy();
+                    
                     _lobby.SendMessage(bestScore != null
-                        ? $"{nameIdentifier}, your best score on this map is an {ScoreModel.GetRankString(bestScore.Rank)} rank with x{bestScore.MaxCombo} combo, {bestScore.Count300}/{bestScore.Count100}/{bestScore.Count50}/{bestScore.CountMiss}!"
+                        ? $"{nameIdentifier}, your best score on this map is an {ScoreModel.GetRankString(bestScore.Rank)} rank with {bestScoreAcc:0.00}% accuracy and x{bestScore.MaxCombo} combo, {bestScore.Count300}/{bestScore.Count100}/{bestScore.Count50}/{bestScore.CountMiss}!"
                         : $"{nameIdentifier}, you haven't played this map yet!");
                 }
                 
