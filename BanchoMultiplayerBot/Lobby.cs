@@ -47,6 +47,8 @@ public class Lobby
     public event Action<PlayerMessage>? OnAdminMessage;
     public event Action<IPrivateIrcMessage>? OnBanchoMessage;
     
+    public string LobbyJoinId { get; set; }
+    
     public string Channel { get; set; }
 
     internal int LobbyIndex = 0;
@@ -116,6 +118,11 @@ public class Lobby
         
         MultiplayerLobby.OnSettingsUpdated += () =>
         {
+            if (Bot.LobbyJoinIds.TryGetValue(Channel, out var id))
+            {
+                LobbyJoinId = id;
+            }
+            
             // At this point, all behaviours should have done their "recover" stuff, and we may reset the recover status. 
             IsRecovering = false;
             

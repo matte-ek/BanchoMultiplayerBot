@@ -159,12 +159,7 @@ namespace BanchoMultiplayerBot.Host.Web.Extra
 
             var lobby = _bot.Lobbies[lobbyId];
 
-            if (lobby.Configuration.LobbyJoinLink == null)
-            {
-                return BadRequest();
-            }
-
-            return Redirect(lobby.Configuration.LobbyJoinLink);
+            return Redirect( $"osu://mp/{lobby.LobbyJoinId}");
         }
 
         // See https://github.com/ppy/osu/blob/master/osu.Game/Graphics/OsuColour.cs#L26

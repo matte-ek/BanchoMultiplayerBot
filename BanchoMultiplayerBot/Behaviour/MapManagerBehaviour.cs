@@ -168,7 +168,7 @@ public class MapManagerBehaviour : IBotBehaviour
 
         foreach (var player in _mapFinishPingList)
         {
-            _lobby.Bot.SendMessage(player, $"Match has finished in the {_lobby.Configuration.Name} lobby!");
+            _lobby.Bot.SendMessage(player, $"Match has finished in the [osu://mp/{_lobby.LobbyJoinId} {_lobby.Configuration.Name}] lobby!");
         }
         
         _mapFinishPingList.Clear();

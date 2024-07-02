@@ -37,11 +37,13 @@ public class Bot
     
     public GlobalCommands GlobalCommands { get; }
 
+    public Dictionary<string, string> LobbyJoinIds { get; } = new();
+    
     public event Action? OnBotReady;
     public event Action? OnLobbiesUpdated;
 
     public bool WebhookConfigured => Configuration.EnableWebhookNotifications == true && Configuration.WebhookUrl?.Any() == true;
-
+    
     /// <summary>
     /// Message queue which is part of the message rate limiting system.
     /// </summary>
@@ -196,6 +198,24 @@ public class Bot
         {
             RuntimeInfo.Statistics.MessagesSent.Inc();
             Log.Information($"[{e.Recipient}] {e.Sender}: {e.Content}");
+        };
+
+        Client.OnMessageReceived += e =>
+        {
+            if (e.Command == "332") // RPL_TOPIC
+            {
+                try
+                {
+                    var multiplayerId = e.RawMessage[e.RawMessage.IndexOf("#mp_", StringComparison.Ordinal)..e.RawMessage.IndexOf(" :", StringComparison.Ordinal)];
+                    var numberId = e.RawMessage[(e.RawMessage.LastIndexOf("#", StringComparison.Ordinal) + 1)..];
+    
+                    LobbyJoinIds.TryAdd(multiplayerId, numberId);
+                }
+                catch (Exception)
+                {
+                    // ignored
+                }
+            }
         };
         
         Client.OnChannelJoined += e => { Log.Information($"Joined channel {e.ChannelName}"); };
