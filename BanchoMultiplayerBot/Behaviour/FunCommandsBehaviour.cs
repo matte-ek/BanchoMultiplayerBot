@@ -131,12 +131,12 @@ public class FunCommandsBehaviour : IBotBehaviour
                     if (scores.Count > 0)
                     {
                         _lobby.SendMessage(passFail == "fail"
-                            ? $"{nameIdentifier}, you've played this map {scores.Count} times! You usually {passFail} the map! :("
-                            : $"{nameIdentifier}, you've played this map {scores.Count} times! You usually {passFail} the map with an {ScoreModel.GetRankString(mostCommonRank!)} rank, average accuracy: {avgAccuracy:0.00}%!");
+                            ? $"{nameIdentifier}, you've played this map {scores.Count} times in this lobby! You usually {passFail} the map! :("
+                            : $"{nameIdentifier}, you've played this map {scores.Count} times in this lobby! You usually {passFail} the map with an {ScoreModel.GetRankString(mostCommonRank!)} rank, average accuracy: {avgAccuracy:0.00}%!");
                     }
                     else
                     {
-                        _lobby.SendMessage($"{nameIdentifier}, you haven't played this map yet!");  
+                        _lobby.SendMessage($"{nameIdentifier}, you haven't played this map in this lobby yet!");  
                     }
                 }
                 
@@ -149,8 +149,8 @@ public class FunCommandsBehaviour : IBotBehaviour
                     var bestScoreAcc = bestScore?.CalculateAccuracy();
                     
                     _lobby.SendMessage(bestScore != null
-                        ? $"{nameIdentifier}, your best score on this map is an {ScoreModel.GetRankString(bestScore.Rank)} rank with {bestScoreAcc:0.00}% accuracy and x{bestScore.MaxCombo} combo, {bestScore.Count300}/{bestScore.Count100}/{bestScore.Count50}/{bestScore.CountMiss}!"
-                        : $"{nameIdentifier}, you haven't played this map yet!");
+                        ? $"{nameIdentifier}, your best score on this map in this lobby is an {ScoreModel.GetRankString(bestScore.Rank)} rank with {bestScoreAcc:0.00}% accuracy and x{bestScore.MaxCombo} combo, {bestScore.Count300}/{bestScore.Count100}/{bestScore.Count50}/{bestScore.CountMiss}!"
+                        : $"{nameIdentifier}, you haven't played this map in this lobby yet!");
                 }
                 
                 if (msg.Content.ToLower().Equals("!mapstats") || msg.Content.ToLower().Equals("!ms"))
