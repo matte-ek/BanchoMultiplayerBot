@@ -6,22 +6,20 @@ namespace BanchoMultiplayerBot.Bancho
 {
     public class CommandHandler : ICommandHandler
     {
-        private IMessageHandler _messageHandler;
+        private readonly IMessageHandler _messageHandler;
         private int _lastSpamFilterCount = 0;
 
-        private Dictionary<string, List<QueuedCommand>> _queuedCommands;
+        private readonly Dictionary<string, List<QueuedCommand>> _queuedCommands = [];
 
         public CommandHandler(IMessageHandler messageHandler)
         {
             _messageHandler = messageHandler;
-            _queuedCommands = [];
-
             _messageHandler.OnMessageReceived += OnMessageReceived;
         }
 
         public Task<bool> ExecuteAsync<T>(string channel, IReadOnlyList<string>? args = null) where T : IBanchoCommand
         {
-            Task<bool> task = Task.Run(async () =>
+            var task = Task.Run(async () =>
             {
                 Log.Verbose("CommandHandler: Executing command {Command} in {Channel}", T.Command, channel);
 
@@ -97,12 +95,12 @@ namespace BanchoMultiplayerBot.Bancho
                 return;
             }
 
-            if (!_queuedCommands.ContainsKey(msg.Recipient))
+            if (!_queuedCommands.TryGetValue(msg.Recipient, out var commands))
             {
                 return;
             }
 
-            foreach (var command in _queuedCommands[msg.Recipient])
+            foreach (var command in commands)
             {
                 if (command.Responded)
                 {

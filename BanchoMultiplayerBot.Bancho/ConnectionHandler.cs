@@ -8,8 +8,8 @@ namespace BanchoMultiplayerBot.Bancho
     {
         public bool IsRunning { get; private set; } = false;
 
-        private TcpClient _tcpClient = tcpClient;
-        private IMessageHandler _messageHandler = messageHandler;
+        private readonly TcpClient _tcpClient = tcpClient;
+        private readonly IMessageHandler _messageHandler = messageHandler;
 
         private Task? _watchdogTask = null!;
         private bool _exitRequested = false;
@@ -35,7 +35,9 @@ namespace BanchoMultiplayerBot.Bancho
             if (_watchdogTask == null || _watchdogTask.Status != TaskStatus.Running)
             {
                 Log.Warning("ConnectionHandler: Watchdog task is not running during Stop()");
+                
                 _watchdogTask = null;
+
                 return;
             }
 
@@ -81,7 +83,7 @@ namespace BanchoMultiplayerBot.Bancho
 
         private bool IsConnectionHealthy()
         {
-            // First check if the TCP socket seems healtly
+            // First check if the TCP socket seems healthy
             if (!IsTcpConnectionAlive(_tcpClient))
             {
                 Log.Error("ConnectionHandler: TCP socket unhealthy");
@@ -90,20 +92,21 @@ namespace BanchoMultiplayerBot.Bancho
             }
 
             // Additional fail-safe message check
-            if ((DateTime.Now - _lastMessageReceived).TotalMinutes > 5)
+            if (!((DateTime.Now - _lastMessageReceived).TotalMinutes > 5))
             {
-                // We realistically should be receiving at least one message in 5 minutes during normal operation, so if we haven't
-                // attempt to send a dummy message to see if the connection is still alive. We won't be signaling that the connection
-                // is lost, since we're not sure if it's actually lost or not.
-
-                Log.Warning("ConnectionHandler: No messages received in 5 minutes, sending dummy message to test connection");
-
-                _messageHandler.SendMessage("dummy message", "dummy message");
-
                 return true;
             }
+            
+            // We realistically should be receiving at least one message in 5 minutes during normal operation, so if we haven't
+            // attempted to send a dummy message to see if the connection is still alive. We won't be signaling that the connection
+            // is lost, since we're not sure if it's actually lost or not.
+
+            Log.Warning("ConnectionHandler: No messages received in 5 minutes, sending dummy message to test connection");
+
+            _messageHandler.SendMessage("dummy message", "dummy message");
 
             return true;
+
         }
 
         private void MessageHandler_OnMessageReceived(BanchoSharp.Interfaces.IPrivateIrcMessage obj)

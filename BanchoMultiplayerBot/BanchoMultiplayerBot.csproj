@@ -13,11 +13,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Data\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\BanchoMultiplayerBot.Bancho\BanchoMultiplayerBot.Bancho.csproj" />
+    <ProjectReference Include="..\BanchoMultiplayerBot.Database\BanchoMultiplayerBot.Database.csproj" />
   </ItemGroup>
 
 </Project>

@@ -10,7 +10,7 @@ namespace BanchoMultiplayerBot.Bancho.Interfaces
         public static abstract string Command { get; }
 
         /// <summary>
-        /// Whether or not the command message should have characters of the end of the message.
+        /// Whether the command message should have characters of the end of the message.
         /// This cannot be used with a command with arguments.
         /// </summary>
         public static abstract bool AppendSpamFilter { get; }

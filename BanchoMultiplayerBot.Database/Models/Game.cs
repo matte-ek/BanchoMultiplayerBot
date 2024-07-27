@@ -1,6 +1,8 @@
-﻿namespace BanchoMultiplayerBot.Database.Models;
+﻿using BanchoMultiplayerBot.Database.Interfaces;
 
-public class Game
+namespace BanchoMultiplayerBot.Database.Models;
+
+public class Game : IEntity
 {
     public int Id { get; set; }
  

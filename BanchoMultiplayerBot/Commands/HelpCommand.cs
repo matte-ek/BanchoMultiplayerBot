@@ -13,7 +13,7 @@ namespace BanchoMultiplayerBot.Commands
         public Task ExecuteAsync(IPlayerMessage message)
         {
             message.Reply("");
-
+    
             return Task.CompletedTask;
         }
     }

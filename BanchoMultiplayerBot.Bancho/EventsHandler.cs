@@ -4,7 +4,7 @@ namespace BanchoMultiplayerBot.Bancho
 {
     public class EventsHandler(BanchoConnection banchoConnection) : IEventsHandler
     {
-        private BanchoConnection _banchoConnection = banchoConnection;
+        private readonly BanchoConnection _banchoConnection = banchoConnection;
 
         public void Start()
         {

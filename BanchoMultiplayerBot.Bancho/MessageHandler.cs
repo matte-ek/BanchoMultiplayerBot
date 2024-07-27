@@ -19,7 +19,7 @@ namespace BanchoMultiplayerBot.Bancho
 
         public event Action<IPrivateIrcMessage>? OnMessageSent;
 
-        private IBanchoConnection _banchoConnection = banchoConnection;
+        private readonly IBanchoConnection _banchoConnection = banchoConnection;
 
         private BlockingCollection<QueuedMessage> _messageQueue = new(20);
 

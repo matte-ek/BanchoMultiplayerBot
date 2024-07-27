@@ -6,7 +6,7 @@ public class LobbyConfiguration
 {
     public int Id { get; set; }
     
-    public string Name { get; set; } = string.Empty;
+    public string Name { get; set; } = "Unnamed";
 
     public GameMode? Mode { get; set; } = GameMode.osu;
 

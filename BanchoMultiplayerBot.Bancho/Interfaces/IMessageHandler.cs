@@ -6,7 +6,7 @@ namespace BanchoMultiplayerBot.Bancho.Interfaces
     public interface IMessageHandler
     {
         /// <summary>
-        /// Whetever the internal message pump is running or not.
+        /// Whether the internal message pump is running or not.
         /// </summary>
         public bool IsRunning { get; }
 

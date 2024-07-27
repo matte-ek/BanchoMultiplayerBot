@@ -1,6 +1,5 @@
 ﻿using BanchoMultiplayerBot.Bancho.Interfaces;
 using BanchoSharp.Interfaces;
-using BanchoSharp.Multiplayer;
 
 namespace BanchoMultiplayerBot.Bancho
 {
@@ -16,32 +15,30 @@ namespace BanchoMultiplayerBot.Bancho
         public event Action<string>? OnChannelJoinFailure;
         public event Action<IChatChannel>? OnChannelLeft;
 
-        private IBanchoConnection _banchoConnection = banchoConnection;
-
         public void Start()
         {
-            if (_banchoConnection.BanchoClient == null)
+            if (banchoConnection.BanchoClient == null)
             {
                 return;
             }
 
-            _banchoConnection.BanchoClient.BanchoBotEvents.OnTournamentLobbyCreated += BanchoOnLobbyCreated;
-            _banchoConnection.BanchoClient.OnChannelJoined += BanchoOnChannelJoined;
-            _banchoConnection.BanchoClient.OnChannelParted += BanchoOnChannelParted;
-            _banchoConnection.BanchoClient.OnChannelJoinFailure += BanchoOnChannelJoinFailure;
+            banchoConnection.BanchoClient.BanchoBotEvents.OnTournamentLobbyCreated += BanchoOnLobbyCreated;
+            banchoConnection.BanchoClient.OnChannelJoined += BanchoOnChannelJoined;
+            banchoConnection.BanchoClient.OnChannelParted += BanchoOnChannelParted;
+            banchoConnection.BanchoClient.OnChannelJoinFailure += BanchoOnChannelJoinFailure;
         }
 
         public void Stop()
         {
-            if (_banchoConnection.BanchoClient == null)
+            if (banchoConnection.BanchoClient == null)
             {
                 return;
             }
 
-            _banchoConnection.BanchoClient.BanchoBotEvents.OnTournamentLobbyCreated -= BanchoOnLobbyCreated;
-            _banchoConnection.BanchoClient.OnChannelJoined -= BanchoOnChannelJoined;
-            _banchoConnection.BanchoClient.OnChannelParted -= BanchoOnChannelParted;
-            _banchoConnection.BanchoClient.OnChannelJoinFailure -= BanchoOnChannelJoinFailure;
+            banchoConnection.BanchoClient.BanchoBotEvents.OnTournamentLobbyCreated -= BanchoOnLobbyCreated;
+            banchoConnection.BanchoClient.OnChannelJoined -= BanchoOnChannelJoined;
+            banchoConnection.BanchoClient.OnChannelParted -= BanchoOnChannelParted;
+            banchoConnection.BanchoClient.OnChannelJoinFailure -= BanchoOnChannelJoinFailure;
         }
 
         private void BanchoOnLobbyCreated(IMultiplayerLobby lobby)
