@@ -18,7 +18,7 @@ public class PerformancePointCalculator
     /// <summary>
     /// Calculates the pp values for 100%, 98% and 95% with NM for the specified beatmap.
     /// </summary>
-    public async Task<BeatmapPerformanceInfo?> CalculatePerformancePoints(int beatmapId)
+    public async Task<BeatmapPerformanceInfo?> CalculatePerformancePoints(int beatmapId, int mods = 0)
     {
         if (!await PrepareBeatmapData(beatmapId))
         {
@@ -27,7 +27,7 @@ public class PerformancePointCalculator
 
         try
         {
-            return (BeatmapPerformanceInfo?)await CalculateBeatmapPerformancePoints(beatmapId);
+            return (BeatmapPerformanceInfo?)await CalculateBeatmapPerformancePoints(beatmapId, mods);
         }
         catch (Exception e)
         {

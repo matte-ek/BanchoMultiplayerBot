@@ -218,6 +218,24 @@ public class FunCommandsBehaviour : IBotBehaviour
                     
                     msg.Reply(outputMessage.ToString());
                 }
+
+                if (msg.Content.ToLower().StartsWith("!pp") &&
+                    _mapManagerBehaviour.CurrentBeatmap != null &&
+                    _lobby.Bot.PerformancePointCalculator != null)
+                {
+                    ModsModel mods = ModsModel.None;
+                    
+                    if (msg.Content.Length >= 6)
+                    {
+                        mods = ApiModsExtensions.FromAbbreviatedForm(msg.Content[4..].ToUpper());
+                    }
+
+                    var ppInfo = await _lobby.Bot.PerformancePointCalculator.CalculatePerformancePoints(_mapManagerBehaviour.CurrentBeatmap.Id, (int)mods);
+
+                    msg.Reply(ppInfo != null
+                        ? $"{nameIdentifier}, 100%: {ppInfo.Performance100}pp | 98%: {ppInfo.Performance98}pp | 95%: {ppInfo.Performance95}pp"
+                        : "Error calculating performance points");
+                }
             }
         }
         catch (Exception e)
