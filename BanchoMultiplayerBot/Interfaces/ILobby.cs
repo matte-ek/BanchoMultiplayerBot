@@ -18,6 +18,11 @@ namespace BanchoMultiplayerBot.Interfaces
         public int LobbyConfigurationId { get; set; }
         
         /// <summary>
+        /// Event dispatcher for behavior events
+        /// </summary>
+        public IBehaviorEventDispatcher? BehaviorEventDispatcher { get; }
+        
+        /// <summary>
         /// Attempts to connect to an existing channel, or creates a new one if none is provided
         /// </summary>
         public Task ConnectAsync(string? existingChannel);
@@ -25,8 +30,6 @@ namespace BanchoMultiplayerBot.Interfaces
         /// <summary>
         /// Disposes of the lobby and removes event handlers, called once during application lifetime
         /// </summary>
-        public void Dispose();
-
-        public T? GetBehavior<T>();
+        public Task Dispose();
     }
 }

@@ -1,9 +1,11 @@
 ﻿namespace BanchoMultiplayerBot.Events;
 
 [AttributeUsage(AttributeTargets.Method)]
-public class BotEvent(BotEventType type) : Attribute
+public class BotEvent(BotEventType type, string? optionalParameter = null) : Attribute
 {
     public BotEventType Type { get; init; } = type;
+    
+    public string? OptionalParameter { get; init; } = optionalParameter;
 }
 
 public enum BotEventType
@@ -12,5 +14,8 @@ public enum BotEventType
     BotStopped,
     MessageReceived,
     MessageSent,
-    LobbyMessageReceived
+    LobbyMessageReceived,
+    CommandExecuted,
+    TimerElapsed,
+    BehaviourEvent
 }

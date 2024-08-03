@@ -2,10 +2,11 @@
 
 public interface IBehaviorEventDispatcher
 {
-    public ILobby Lobby { get; init; }
-
-    public void RegisterBehavior(IBehavior behavior);
+    public void RegisterBehavior(string behavior);
 
     public void Start();
     public void Stop();
+
+    public Task OnBehaviorEvent(object param);
+    public Task OnTimerElapsed(ITimer timer);
 }

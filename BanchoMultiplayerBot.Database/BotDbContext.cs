@@ -16,6 +16,7 @@ namespace BanchoMultiplayerBot.Database
         public DbSet<LobbyConfiguration> LobbyConfigurations { get; set; }
         public DbSet<LobbyRoomInstance> LobbyRoomInstances { get; set; }
         public DbSet<LobbyBehaviorData> LobbyBehaviorData { get; set; }
+        public DbSet<LobbyTimer> LobbyTimers { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options) => options.UseSqlite($"Data Source=bot.db");
     }

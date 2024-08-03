@@ -1,18 +1,27 @@
 ﻿using BanchoMultiplayerBot.Bancho.Interfaces;
 using BanchoMultiplayerBot.Interfaces;
+using BanchoSharp.Multiplayer;
 using Serilog;
 
 namespace BanchoMultiplayerBot.Data;
 
-public sealed class BotEventContext(IBehaviorData data, ILobby lobby)
+public sealed class BotEventContext(ILobby lobby, CancellationToken cancellationToken)
 {
     public ILobby Lobby { get; init; } = lobby;
     
-    public IBehaviorData Data { get; init; } = data;
-
+    public MultiplayerLobby MultiplayerLobby => Lobby.MultiplayerLobby!;
+    
     public ICommandHandler CommandHandler => Lobby.BanchoConnection.CommandHandler;
 
+    /// <summary>
+    /// The channel name of the multiplayer lobby, formatted as "#mp_channel-id".
+    /// </summary>
     public string Channel => Lobby.MultiplayerLobby!.ChannelName;
+
+    /// <summary>
+    /// A cancellation token that can be used to cancel the bot event.
+    /// </summary>
+    public CancellationToken CancellationToken { get; init; } = cancellationToken;
 
     public void SendMessage(string contents)
     {

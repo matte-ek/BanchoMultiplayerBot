@@ -22,11 +22,21 @@ namespace BanchoMultiplayerBot
         /// Database id of the lobby configuration
         /// </summary>
         public int LobbyConfigurationId { get; set; } = new();
+        
+        /// <summary>
+        /// Event dispatcher for behavior events
+        /// </summary>
+        public IBehaviorEventDispatcher? BehaviorEventDispatcher { get; private set; }
+        
+        /// <summary>
+        /// A list of behavior class names to be loaded into the lobby instance
+        /// </summary>
+        private readonly List<string> _behaviors = [];
 
         private string _channelId = string.Empty;
-
-        private readonly List<IBehavior> _behaviors = [];
-
+        
+        private TimerProvider? _timerProvider;
+        
         public Lobby(BanchoConnection banchoConnection)
         {
             BanchoConnection = banchoConnection;
@@ -35,12 +45,12 @@ namespace BanchoMultiplayerBot
             BanchoConnection.ChannelHandler.OnChannelJoinFailure += OnChannelJoinedFailure;
         }
 
-        public void Dispose()
+        public async Task Dispose()
         {
             BanchoConnection.ChannelHandler.OnChannelJoined -= OnChannelJoined;
             BanchoConnection.ChannelHandler.OnChannelJoinFailure -= OnChannelJoinedFailure;
             
-            ShutdownInstance();
+            await ShutdownInstance();
         }
         
         /// <summary>
@@ -55,7 +65,7 @@ namespace BanchoMultiplayerBot
                 throw new InvalidOperationException("BanchoClient is not initialized during lobby connection attempt.");
             }
 
-            var lobbyConfiguration = GetLobbyConfiguration();
+            var lobbyConfiguration = await GetLobbyConfiguration();
 
             _channelId = existingChannel ?? string.Empty;
 
@@ -74,34 +84,33 @@ namespace BanchoMultiplayerBot
                 await BanchoConnection.BanchoClient?.MakeTournamentLobbyAsync(lobbyConfiguration.Name)!;
             }
         }
-
-        public T? GetBehavior<T>()
-        {
-            return (T?)_behaviors.FirstOrDefault(x => x.GetType() == typeof(T));
-        }
         
-        private void BuildInstance()
+        private async Task BuildInstance()
         {
-            // Make sure we don't have any existing behaviors
-            if (_behaviors.Count > 0)
+            var lobbyConfiguration = GetLobbyConfiguration();
+
+            BehaviorEventDispatcher = new BehaviorEventDispatcher(this);
+            _timerProvider = new TimerProvider(this);
+    
+            BehaviorEventDispatcher.RegisterBehavior("HostQueueBehavior");
+            
+            BehaviorEventDispatcher.Start();
+            await _timerProvider.Start();
+        }
+
+        private async Task ShutdownInstance()
+        {
+            if (_timerProvider != null)
             {
-                ShutdownInstance();
+                await _timerProvider.Stop();
+                _timerProvider = null;
             }
             
-            var lobbyConfiguration = GetLobbyConfiguration();
+            BehaviorEventDispatcher?.Stop();
+            BehaviorEventDispatcher = null;
         }
 
-        private void ShutdownInstance()
-        {
-            foreach (var behavior in _behaviors)
-            {
-                behavior.Dispose();
-            }
-
-            _behaviors.Clear();
-        }
-
-        private void OnChannelJoined(IChatChannel channel)
+        private async void OnChannelJoined(IChatChannel channel)
         {
             if (BanchoConnection.BanchoClient == null)
             {
@@ -118,7 +127,8 @@ namespace BanchoMultiplayerBot
             Log.Verbose("Lobby: Joined channel {Channel} successfully, building lobby instance...", channel.ChannelName);
 
             MultiplayerLobby = new MultiplayerLobby(BanchoConnection.BanchoClient, long.Parse(channel.ChannelName[4..]), channel.ChannelName);
-            BuildInstance();
+            
+            await BuildInstance();
         }
 
         private async void OnChannelJoinedFailure(string attemptedChannel)
@@ -135,14 +145,14 @@ namespace BanchoMultiplayerBot
                 return;
             }
 
-            var lobbyConfiguration = GetLobbyConfiguration();
+            var lobbyConfiguration = await GetLobbyConfiguration();
 
             Log.Warning("Lobby: Failed to join channel {AttemptedChannel}, creating new lobby instead.", attemptedChannel);
 
             await BanchoConnection.BanchoClient?.MakeTournamentLobbyAsync(lobbyConfiguration.Name)!;
         }
 
-        private LobbyConfiguration GetLobbyConfiguration()
+        private async Task<LobbyConfiguration> GetLobbyConfiguration()
         {
             // FUTURE ME: Throw if lobby configuration is null!
             // Also log since the caller will not expect the call to throw sometimes

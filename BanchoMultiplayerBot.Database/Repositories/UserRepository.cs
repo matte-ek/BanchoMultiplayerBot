@@ -6,7 +6,6 @@ namespace BanchoMultiplayerBot.Database.Repositories
     public class UserRepository : IDisposable
     {
         private readonly BotDbContext _botDbContext;
-        private bool _disposed;
 
         public UserRepository()
         {
@@ -50,21 +49,8 @@ namespace BanchoMultiplayerBot.Database.Repositories
 
         public void Dispose()
         {
-            Dispose(true);
+            _botDbContext.Dispose();
             GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!_disposed)
-            {
-                if (disposing)
-                {
-                    _botDbContext.Dispose();
-                }
-            }
-
-            _disposed = true;
         }
     }
 }
