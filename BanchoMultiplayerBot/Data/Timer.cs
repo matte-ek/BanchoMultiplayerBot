@@ -1,7 +1,8 @@
 ﻿using BanchoMultiplayerBot.Interfaces;
+using Serilog;
 using ITimer = BanchoMultiplayerBot.Interfaces.ITimer;
 
-namespace BanchoMultiplayerBot;
+namespace BanchoMultiplayerBot.Data;
 
 public class Timer(ITimerProvider timerProvider, string name) : ITimer
 {
@@ -17,11 +18,16 @@ public class Timer(ITimerProvider timerProvider, string name) : ITimer
 
     public void Start(TimeSpan duration)
     {
-                
+        Log.Verbose("Timer ({Name}): Starting timer with duration {Duration}", Name, duration);
+        
+        StartTime = DateTime.UtcNow;
+        EndTime = StartTime + duration;
+        IsActive = true;
     }
 
     public void Stop()
     {
-        
+        Log.Verbose("Timer ({Name}): Stopping timer", Name);
+        IsActive = false;
     }
 }

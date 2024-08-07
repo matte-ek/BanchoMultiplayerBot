@@ -35,7 +35,7 @@ public class BehaviorEventDispatcher(ILobby lobby) : IBehaviorEventDispatcher
         {
             Log.Error("BehaviorEventDispatcher: Attempted to register behavior '{Behavior}' which does not exist.", behavior);
             throw new InvalidOperationException($"BehaviorEventDispatcher: Attempted to register behavior '{behavior}' which does not exist.");
-        }
+        }   
         
         var methods = behaviorType.GetMethods(BindingFlags.Public | BindingFlags.Instance);
         foreach (var method in methods)
@@ -71,7 +71,7 @@ public class BehaviorEventDispatcher(ILobby lobby) : IBehaviorEventDispatcher
         lobby.MultiplayerLobby.OnPlayerDisconnected += OnPlayerDisconnected;
         lobby.MultiplayerLobby.OnHostChanged += OnHostChanged;
         lobby.MultiplayerLobby.OnHostChangingMap += OnHostChangingMap;
-        lobby.MultiplayerLobby.OnHostChangingMap += OnSettingsUpdated;
+        lobby.MultiplayerLobby.OnSettingsUpdated += OnSettingsUpdated;
     }
 
     /// <summary>
@@ -93,7 +93,7 @@ public class BehaviorEventDispatcher(ILobby lobby) : IBehaviorEventDispatcher
         lobby.MultiplayerLobby.OnPlayerDisconnected -= OnPlayerDisconnected;
         lobby.MultiplayerLobby.OnHostChanged -= OnHostChanged;
         lobby.MultiplayerLobby.OnHostChangingMap -= OnHostChangingMap;
-        lobby.MultiplayerLobby.OnHostChangingMap -= OnSettingsUpdated;
+        lobby.MultiplayerLobby.OnSettingsUpdated -= OnSettingsUpdated;
         
         // Cancel any running tasks
         _cancellationTokenSource?.Cancel();

@@ -4,8 +4,9 @@ using BanchoMultiplayerBot.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using ITimer = BanchoMultiplayerBot.Interfaces.ITimer;
+using Timer = BanchoMultiplayerBot.Data.Timer;
 
-namespace BanchoMultiplayerBot;
+namespace BanchoMultiplayerBot.Providers;
 
 public class TimerProvider(ILobby lobby) : ITimerProvider
 {

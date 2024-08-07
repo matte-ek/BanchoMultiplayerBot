@@ -1,4 +1,5 @@
-﻿using BanchoMultiplayerBot.Interfaces;
+﻿using BanchoMultiplayerBot.Data;
+using BanchoMultiplayerBot.Interfaces;
 
 namespace BanchoMultiplayerBot.Commands
 {
@@ -10,10 +11,16 @@ namespace BanchoMultiplayerBot.Commands
 
         public bool AllowGlobal => true;
 
-        public Task ExecuteAsync(IPlayerMessage message)
+        public bool Administrator => false;
+
+        public int MinimumArguments { get; } = 0;
+        
+        public string? Usage { get; } = null; 
+
+        public Task ExecuteAsync(CommandEventContext message)
         {
-            message.Reply("");
-    
+            message.Reply("Yep");
+            
             return Task.CompletedTask;
         }
     }

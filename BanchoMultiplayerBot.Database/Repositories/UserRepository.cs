@@ -5,12 +5,7 @@ namespace BanchoMultiplayerBot.Database.Repositories
 {
     public class UserRepository : IDisposable
     {
-        private readonly BotDbContext _botDbContext;
-
-        public UserRepository()
-        {
-            _botDbContext = new BotDbContext();
-        }
+        private readonly BotDbContext _botDbContext = new();
 
         public async Task<User> FindOrCreateUser(string username)
         {

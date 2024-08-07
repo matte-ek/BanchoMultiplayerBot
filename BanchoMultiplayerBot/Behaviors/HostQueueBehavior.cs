@@ -4,6 +4,8 @@ using BanchoMultiplayerBot.Database.Repositories;
 using BanchoMultiplayerBot.Events;
 using BanchoMultiplayerBot.Extensions;
 using BanchoMultiplayerBot.Utilities;
+using BanchoSharp.Multiplayer;
+using Serilog;
 
 namespace BanchoMultiplayerBot.Behaviors
 {
@@ -13,27 +15,83 @@ namespace BanchoMultiplayerBot.Behaviors
         private HostQueueBehaviorData Data => _dataProvider.Data;
 
         [BotEvent(BotEventType.BotStarted)]
-        public void Setup()
+        public async Task Setup()
         {
             // Since we might be picking up where we left off, we need to ensure the queue is valid
             // since some players might have left while the bot was offline
-            EnsureQueueValid();
+            await EnsureQueueValid();
         }
         
-        [BanchoEvent(BanchoEventType.MatchStarted)]
-        public void OnMatchStarted()
+        [BanchoEvent(BanchoEventType.OnPlayerJoined)]
+        public async Task OnPlayerJoined(MultiplayerPlayer player)
         {
-            context.SendMessage("OnMatchStarted");
+            using var userRepository = new UserRepository();
+            var user = await userRepository.FindOrCreateUser(player.Name);
+            
+            if (user.Bans.Count != 0)
+            {
+                Log.Warning("HostQueueBehavior: Player {PlayerName} is banned, skipping queue", player.Name);
+                return;
+            }
+
+            if (Data.Queue.Contains(player.Name))
+            {
+                Log.Warning("HostQueueBehavior: Player {PlayerName} is already in the queue during join event", player.Name);
+                return;
+            }
+            
+            Data.Queue.Add(player.Name);
+            
+            ApplyRoomHost();
+        }
+        
+        [BanchoEvent(BanchoEventType.OnPlayerDisconnected)]
+        public void OnPlayerDisconnected(MultiplayerPlayer player)
+        {
+            if (!Data.Queue.Contains(player.Name))
+            {
+                Log.Warning("HostQueueBehavior: Player {PlayerName} is not in the queue during disconnect event", player.Name);
+                return;
+            }
+            
+            Data.Queue.Remove(player.Name);
+            
+            ApplyRoomHost();
         }
 
-        [BanchoEvent(BanchoEventType.MatchFinished)]
-        public void OnMatchFinished()
+        [BotEvent(BotEventType.BehaviourEvent, "LobbyManagerMatchFinished")]
+        public async Task OnManagerMatchFinished()
         {
-            context.SendMessage("OnMatchFinished");
+            await SkipHost();
         }
-
-        [CommandEvent("skip")]
+        
+        [BotEvent(BotEventType.CommandExecuted, "Queue")]
+        public void OnQueueCommandExecuted()
+        {
+        }
+        
+        [BotEvent(BotEventType.CommandExecuted, "QueuePosition")]
+        public void OnQueuePositionCommandExecuted()
+        {
+        }
+        
+        [BotEvent(BotEventType.CommandExecuted, "Skip")]
         public async Task OnSkipCommandExecuted()
+        {
+        }
+        
+        [BotEvent(BotEventType.CommandExecuted, "ForceSkip")]
+        public async Task OnForceSkipCommandExecuted()
+        {
+        }
+        
+        [BotEvent(BotEventType.CommandExecuted, "SetHost")]
+        public async Task OnSetHostCommandExecuted()
+        {
+        }
+        
+        [BotEvent(BotEventType.CommandExecuted, "SetQueuePosition")]
+        public async Task OnSetQueuePositionCommandExecuted()
         {
         }
         
@@ -43,14 +101,20 @@ namespace BanchoMultiplayerBot.Behaviors
         /// </summary>
         private void ApplyRoomHost()
         {
+            if (Data.Queue.Count == 0)
+            {
+                return;
+            }
+            
             if (context.MultiplayerLobby.Host != null && 
-                Data.Queue.FirstOrDefault()?.ToIrcNameFormat() == context.MultiplayerLobby.Host.Name.ToIrcNameFormat())
+                Data.Queue.First().ToIrcNameFormat() == context.MultiplayerLobby.Host.Name.ToIrcNameFormat())
             {
                 // Correct host is already set, no need to do anything
                 return;
             }
             
             // Set the host to the first player in the queue
+            context.SendMessage($"!mp host {context.GetPlayerIdentifier(Data.Queue.First())}");
         }
         
         /// <summary>
@@ -100,7 +164,7 @@ namespace BanchoMultiplayerBot.Behaviors
         /// Ensures the queue is valid by removing any players that are no longer in the lobby,
         /// or adding any players that are in the lobby but not in the queue.
         /// </summary>
-        private void EnsureQueueValid()
+        private async Task EnsureQueueValid()
         {
             // Remove any players from the queue that are no longer in the lobby
             foreach (var player in Data.Queue.ToList().Where(player => context.MultiplayerLobby.Players.All(x => x.Name.ToIrcNameFormat() != player.ToIrcNameFormat())))
@@ -111,6 +175,15 @@ namespace BanchoMultiplayerBot.Behaviors
             // Add any players that are in the lobby but not in the queue
             foreach (var multiplayerPlayer in context.MultiplayerLobby.Players.Where(multiplayerPlayer => !Data.Queue.Contains(multiplayerPlayer.Name.ToIrcNameFormat())))
             {
+                var userRepo = new UserRepository();
+                var user = await userRepo.FindOrCreateUser(multiplayerPlayer.Name);
+                
+                // Make sure we don't add any banned players to the queue
+                if (user.Bans.Count == 0)
+                {
+                    continue;
+                }
+                
                 Data.Queue.Add(multiplayerPlayer.Name);
             }
 
@@ -125,20 +198,9 @@ namespace BanchoMultiplayerBot.Behaviors
         private static async Task<bool> IsPlayerHostCandidate(string playerName)
         {
             using var userRepository = new UserRepository();
-            
             var user = await userRepository.FindOrCreateUser(playerName);
-            
-            if (user.Bans.Count != 0)
-            {
-                return false;
-            }
 
-            if (user.AutoSkipEnabled)
-            {
-                return false;
-            }
-
-            return true;
+            return user.Bans.Count == 0 && !user.AutoSkipEnabled;
         }
     }
 }

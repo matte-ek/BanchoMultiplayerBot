@@ -14,6 +14,8 @@ namespace BanchoMultiplayerBot.Bancho
         public IMessageHandler MessageHandler { get; }
         public ICommandHandler CommandHandler { get; }
         public IChannelHandler ChannelHandler { get; }
+        
+        public event Action? OnReady;
 
         private readonly BanchoClientConfiguration _banchoConfiguration;
         private ConnectionHandler? _connectionWatchdog;
@@ -90,6 +92,8 @@ namespace BanchoMultiplayerBot.Bancho
 
             ChannelHandler.Start();
             MessageHandler.Start();
+            
+            OnReady?.Invoke();
         }
 
         private void OnConnectionLost()
