@@ -12,4 +12,5 @@ public interface IBehaviorEventProcessor
     public Task OnBehaviorEvent(string name, object? param = null);
     public Task OnCommandExecuted(string command, CommandEventContext commandEventContext);
     public Task OnTimerElapsed(ITimer timer);
+    public Task OnTimerEarlyWarningElapsed(ITimer timer);
 }

@@ -123,14 +123,14 @@ namespace BanchoMultiplayerBot.Bancho
                     shouldThrottle = sentMessages.Count >= messageBurstCount - 1;
 
                     // Remove old messages that are more than 5 seconds old
-                    sentMessages.RemoveAll(x => (DateTime.Now - x.Sent).Seconds > messageAge);
+                    sentMessages.RemoveAll(x => (DateTime.UtcNow - x.Sent).TotalSeconds > messageAge);
 
                     if (!shouldThrottle) continue;
 
                     Thread.Sleep(1000);
                 } while (shouldThrottle);
 
-                message.Sent = DateTime.Now;
+                message.Sent = DateTime.UtcNow;
 
                 // Maybe trimming the message would be a better idea here, but realistically this shouldn't happen,
                 // and this check is more of a fail-safe than anything.
@@ -146,7 +146,7 @@ namespace BanchoMultiplayerBot.Bancho
                     if (message.TrackCookie != null)
                     {
                         message.TrackCookie.MessageSent = true;
-                        message.TrackCookie.SentTime = DateTime.Now;
+                        message.TrackCookie.SentTime = DateTime.UtcNow;
                     }
                 }
                 catch (Exception e)

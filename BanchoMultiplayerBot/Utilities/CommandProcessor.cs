@@ -97,7 +97,7 @@ public class CommandProcessor(Bot bot)
             }
         }
         
-        var commandContext = new CommandEventContext(message, args, command, user, bot.BanchoConnection.MessageHandler);
+        var commandContext = new CommandEventContext(message, args.Skip(1).ToArray(), command, user, bot.BanchoConnection.MessageHandler);
 
         // Execute the command in a global context
         await command.ExecuteAsync(commandContext);

@@ -94,7 +94,7 @@ public class TimerProvider(ILobby lobby) : ITimerProvider
                 EndTime = timer.EndTime
             };
             
-            if ((DateTime.UtcNow - timer.EndTime).TotalSeconds > 45)
+            if ((DateTime.UtcNow - timer.EndTime).TotalSeconds > 45 && timer.IsActive)
             {
                 // If more than 45 seconds have passed since the timer ended, we'll just mark it as inactive
                 // as the relevant event probably shouldn't be triggered anymore
@@ -155,7 +155,24 @@ public class TimerProvider(ILobby lobby) : ITimerProvider
         {
             await Task.Delay(1000);
 
-            foreach (var timer in _timers.Where(timer => timer.IsActive && DateTime.UtcNow >= timer.EndTime))
+            // Trigger early warning events
+            foreach (var timer in _timers.Where(timer => timer.IsActive && timer.EarlyWarning != 0 && DateTime.UtcNow >= timer.EndTime.AddSeconds(-timer.EarlyWarning)).ToList())
+            {
+                Log.Verbose("TimerProvider ({LobbyIndex}): Timer {Name} early warning triggered", lobby.LobbyConfigurationId, timer.Name);
+
+                timer.EarlyWarning = 0;
+                
+                if (lobby.BehaviorEventProcessor == null)
+                {
+                    Log.Warning("TimerProvider ({LobbyIndex}): BehaviorEventDispatcher is null, cannot trigger timer early warning event", lobby.LobbyConfigurationId);
+                    continue;
+                }
+                
+                await lobby.BehaviorEventProcessor.OnTimerEarlyWarningElapsed(timer);
+            }
+
+            // Trigger elapsed timer events
+            foreach (var timer in _timers.Where(timer => timer.IsActive && DateTime.UtcNow >= timer.EndTime).ToList())
             {
                 Log.Verbose("TimerProvider ({LobbyIndex}): Timer {Name} elapsed", lobby.LobbyConfigurationId, timer.Name);
                 
@@ -164,7 +181,6 @@ public class TimerProvider(ILobby lobby) : ITimerProvider
                 if (lobby.BehaviorEventProcessor == null)
                 {
                     Log.Warning("TimerProvider ({LobbyIndex}): BehaviorEventDispatcher is null, cannot trigger timer elapsed event", lobby.LobbyConfigurationId);
-                    
                     continue;
                 }
                 

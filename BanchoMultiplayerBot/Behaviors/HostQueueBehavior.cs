@@ -42,6 +42,8 @@ namespace BanchoMultiplayerBot.Behaviors
             
             Data.Queue.Add(player.Name);
             
+            RestoreQueuePosition(player);
+            
             ApplyRoomHost();
         }
         
@@ -54,12 +56,14 @@ namespace BanchoMultiplayerBot.Behaviors
                 return;
             }
             
+            StoreQueuePosition(player);
+            
             Data.Queue.Remove(player.Name);
             
             ApplyRoomHost();
         }
 
-        [BotEvent(BotEventType.BehaviourEvent, "LobbyManagerMatchFinished")]
+        [BotEvent(BotEventType.BehaviourEvent, "RoomManagerMatchFinished")]
         public async Task OnManagerMatchFinished()
         {
             await SkipHost();
@@ -96,27 +100,99 @@ namespace BanchoMultiplayerBot.Behaviors
                 return;
             }
 
+            // If the player requesting is a host, skip immediately
             if (commandEventContext.Player.Name.ToIrcNameFormat() == Data.Queue.FirstOrDefault()?.ToIrcNameFormat())
             {
                 await SkipHost();
 
                 return;
             }
+
+            // Else initiate a vote
+            var skipVote = context.Lobby.VoteProvider!.FindOrCreateVote("SkipVote");
+            if (skipVote.PlayerVote(commandEventContext.Player))
+            {
+                await SkipHost();
+            }
         }
-        
-        [BotEvent(BotEventType.CommandExecuted, "ForceSkip")]
-        public async Task OnForceSkipCommandExecuted()
+
+        [BotEvent(BotEventType.CommandExecuted, "AutoSkip")]
+        public async Task OnAutoSkipCommandExecuted(CommandEventContext commandEventContext)
         {
+            using var userRepository = new UserRepository();
+
+            if (commandEventContext.Player == null)
+            {
+                return;
+            }
+            
+            var user = await userRepository.FindOrCreateUser(commandEventContext.Player.Name);
+            
+            if (commandEventContext.Arguments.Length == 0)
+            {
+                commandEventContext.Reply($"{commandEventContext.Player.Name}, your auto-skip is currently {(user.AutoSkipEnabled ? "enabled" : "disabled")}");
+                return;
+            }
+
+            var autoSkipEnabled = commandEventContext.Arguments[0].ToLower() == "on" ||
+                                  commandEventContext.Arguments[0].ToLower() == "true" ||
+                                  commandEventContext.Arguments[0].ToLower() == "yes";
+            
+            user.AutoSkipEnabled = autoSkipEnabled;
+            
+            commandEventContext.Reply($"{commandEventContext.Player.Name}, your auto-skip is now {(user.AutoSkipEnabled ? "enabled" : "disabled")}");
+            
+            await userRepository.Save();
+        }
+
+        [BotEvent(BotEventType.CommandExecuted, "ForceSkip")]
+        public async Task OnForceSkipCommandExecuted(CommandEventContext commandEventContext)
+        {
+            await SkipHost();
         }
         
         [BotEvent(BotEventType.CommandExecuted, "SetHost")]
-        public async Task OnSetHostCommandExecuted()
+        public void OnSetHostCommandExecuted(CommandEventContext commandEventContext)
         {
+            var player = context.MultiplayerLobby.Players.FirstOrDefault(x => x.Name.ToIrcNameFormat() == commandEventContext.Arguments[0].ToIrcNameFormat());
+
+            if (player == null)
+            {
+                commandEventContext.Reply("Player not found in lobby.");
+                return;
+            }
+
+            Data.Queue.RemoveAll(x => x == player.Name);
+            Data.Queue.Insert(0, player.Name);
+            
+            ApplyRoomHost();
         }
         
         [BotEvent(BotEventType.CommandExecuted, "SetQueuePosition")]
-        public async Task OnSetQueuePositionCommandExecuted()
+        public void OnSetQueuePositionCommandExecuted(CommandEventContext commandEventContext)
         {
+            var player = context.MultiplayerLobby.Players.FirstOrDefault(x => x.Name.ToIrcNameFormat() == commandEventContext.Arguments[0].ToIrcNameFormat());
+
+            if (player == null)
+            {
+                commandEventContext.Reply("Player not found in lobby.");
+                return;
+            }
+            
+            if (!int.TryParse(commandEventContext.Arguments[1], out int position))
+            {
+                commandEventContext.Reply("Invalid position argument.");
+                return;
+            }
+            
+            if (position < 0 || position > Data.Queue.Count)
+            {
+                commandEventContext.Reply("Queue position out of bounds.");
+                return;
+            }
+            
+            Data.Queue.RemoveAll(x => x == player.Name);
+            Data.Queue.Insert(position, player.Name);
         }
         
         /// <summary>
@@ -186,6 +262,8 @@ namespace BanchoMultiplayerBot.Behaviors
                 // No players in the queue, nothing to do
                 return;
             }
+        
+            context.Lobby.VoteProvider?.FindOrCreateVote("SkipVote").Abort();
             
             RotateQueue();
             
@@ -217,6 +295,47 @@ namespace BanchoMultiplayerBot.Behaviors
             
             Data.Queue.RemoveAt(0);
             Data.Queue.Add(currentHost);
+        }
+
+        private void StoreQueuePosition(MultiplayerPlayer player)
+        {
+            // Make sure we won't end up with duplicate records
+            if (Data.PreviousQueueRecords.Any(x => x.Name == player.Name))
+            {
+                Data.PreviousQueueRecords.RemoveAll(x => x.Name == player.Name);
+            }
+
+            var currentQueuePosition = Data.Queue.FindIndex(x => x.ToIrcNameFormat() == player.Name.ToIrcNameFormat());
+
+            // We don't want to restore the position if the player currently is host
+            if (currentQueuePosition < 1)
+            {
+                return;
+            }
+            
+            Data.PreviousQueueRecords.Add(new HostQueueBehaviorData.PlayerPreviousQueueRecord()
+            {
+                Name = player.Name,
+                Position = currentQueuePosition,
+                Time = DateTime.UtcNow
+            });
+        }
+        
+        private void RestoreQueuePosition(MultiplayerPlayer player)
+        {
+            // Remove any records that are older than 2 minutes, since we don't want to restore them
+            Data.PreviousQueueRecords.RemoveAll(x => DateTime.UtcNow > x.Time.AddMinutes(2));
+            
+            var previousRecord = Data.PreviousQueueRecords.FirstOrDefault(x => x.Name == player.Name);
+            if (previousRecord == null)
+            {
+                return;
+            }
+
+            Data.Queue.RemoveAll(x => x == player.Name);
+            Data.Queue.Insert(previousRecord.Position, player.Name);
+            
+            Data.PreviousQueueRecords.Remove(previousRecord);
         }
         
         /// <summary>

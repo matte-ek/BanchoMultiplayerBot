@@ -12,7 +12,7 @@ namespace BanchoMultiplayerBot.Bancho.Commands
         public static IReadOnlyList<CommandResponse> SuccessfulResponses => [ 
             new CommandResponse
             {
-                Message = "Room name: ",
+                Message = "Players: ",
                 Type = CommandResponseType.StartsWith
             }
         ];

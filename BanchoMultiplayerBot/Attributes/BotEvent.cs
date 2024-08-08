@@ -16,6 +16,7 @@ public enum BotEventType
     MessageSent,
     LobbyMessageReceived,
     CommandExecuted,
+    TimerEarlyWarning,
     TimerElapsed,
     BehaviourEvent
 }

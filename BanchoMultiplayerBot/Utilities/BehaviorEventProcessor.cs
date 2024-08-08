@@ -3,6 +3,7 @@ using BanchoMultiplayerBot.Attributes;
 using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Interfaces;
 using BanchoSharp.EventArgs;
+using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
 using Serilog;
 using ITimer = BanchoMultiplayerBot.Interfaces.ITimer;
@@ -80,6 +81,9 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
         lobby.MultiplayerLobby.OnHostChanged += OnHostChanged;
         lobby.MultiplayerLobby.OnHostChangingMap += OnHostChangingMap;
         lobby.MultiplayerLobby.OnSettingsUpdated += OnSettingsUpdated;
+
+        // Register other stuff
+        lobby.BanchoConnection.MessageHandler.OnMessageReceived += OnMessageReceived;
     }
 
     /// <summary>
@@ -102,7 +106,10 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
         lobby.MultiplayerLobby.OnHostChanged -= OnHostChanged;
         lobby.MultiplayerLobby.OnHostChangingMap -= OnHostChangingMap;
         lobby.MultiplayerLobby.OnSettingsUpdated -= OnSettingsUpdated;
-        
+
+        // Unregister other stuff
+        lobby.BanchoConnection.MessageHandler.OnMessageReceived -= OnMessageReceived;
+
         // Cancel any running tasks
         _cancellationTokenSource?.Cancel();
     }
@@ -162,6 +169,11 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
 
     #region Bot Events
 
+    private async void OnMessageReceived(IPrivateIrcMessage msg)
+    {
+        await ExecuteBotCallback(BotEventType.MessageReceived, msg);
+    }
+
     public async Task OnBehaviorEvent(string name, object? param = null)
     {
         await ExecuteBotCallbackScoped(BotEventType.BehaviourEvent, name, param);
@@ -173,6 +185,11 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
     }
     
     public async Task OnTimerElapsed(ITimer timer)
+    {
+        await ExecuteBotCallback(BotEventType.TimerElapsed, timer);
+    }
+    
+    public async Task OnTimerEarlyWarningElapsed(ITimer timer)
     {
         await ExecuteBotCallback(BotEventType.TimerElapsed, timer);
     }

@@ -14,14 +14,17 @@ public class Timer(ITimerProvider timerProvider, string name) : ITimer
 
     public DateTime EndTime { get; set; }
 
+    public int EarlyWarning { get; set; }
+    
     public ITimerProvider TimerProvider { get; } = timerProvider;
-
-    public void Start(TimeSpan duration)
+    
+    public void Start(TimeSpan duration, int earlyWarning = 0)
     {
         Log.Verbose("Timer ({Name}): Starting timer with duration {Duration}", Name, duration);
         
         StartTime = DateTime.UtcNow;
         EndTime = StartTime + duration;
+        EarlyWarning = earlyWarning;
         IsActive = true;
     }
 

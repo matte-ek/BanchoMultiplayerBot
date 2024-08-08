@@ -20,12 +20,10 @@ public class CommandEventContext(IPrivateIrcMessage message, string[] arguments,
     
     public MultiplayerPlayer? Player { get; set; }
 
-    private readonly IMessageHandler _messageHandler = messageHandler;
-    
     public void Reply(string message)
     {
         var channel = Message.IsDirect ? Message.Sender : Message.Recipient;
         
-        _messageHandler.SendMessage(channel, message);
+        messageHandler.SendMessage(channel, message);
     }
 }

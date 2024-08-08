@@ -1,7 +1,6 @@
 ﻿using BanchoMultiplayerBot.Bancho;
 using BanchoMultiplayerBot.Interfaces;
 using BanchoSharp.Multiplayer;
-using System.Text.Json.Nodes;
 using BanchoMultiplayerBot.Database;
 using BanchoMultiplayerBot.Database.Models;
 using BanchoMultiplayerBot.Providers;
@@ -36,7 +35,9 @@ namespace BanchoMultiplayerBot
         /// </summary>
         public IBehaviorEventProcessor? BehaviorEventProcessor { get; private set; }
         
-        private TimerProvider? _timerProvider;
+        public ITimerProvider? TimerProvider { get; private set; }
+        
+        public IVoteProvider? VoteProvider { get; private set; }
         
         private string _channelId = string.Empty;
         
@@ -111,12 +112,28 @@ namespace BanchoMultiplayerBot
             }
         }
 
+        public async Task<LobbyConfiguration> GetLobbyConfiguration()
+        {
+            await using var context = new BotDbContext();
+
+            var configuration = await context.LobbyConfigurations.FirstOrDefaultAsync(x => x.Id == LobbyConfigurationId);
+            if (configuration == null)
+            {
+                Log.Error("Lobby ({LobbyConfigId}): Failed to find lobby configuration.", LobbyConfigurationId);
+
+                throw new InvalidOperationException("Failed to find lobby configuration.");
+            }
+
+            return configuration;
+        }
+
         private async Task BuildInstance()
         {
             var lobbyConfiguration = await GetLobbyConfiguration();
 
             BehaviorEventProcessor = new BehaviorEventProcessor(this);
-            _timerProvider = new TimerProvider(this);
+            TimerProvider = new TimerProvider(this);
+            VoteProvider = new VoteProvider(this);
             
             // Load the default behaviors
             BehaviorEventProcessor.RegisterBehavior("HostQueueBehavior");
@@ -131,7 +148,8 @@ namespace BanchoMultiplayerBot
             }
 
             BehaviorEventProcessor.Start();
-            await _timerProvider.Start();
+            await TimerProvider.Start();
+            await VoteProvider.Start();
             
             // Make sure we have a database entry for this lobby instance
             var recentRoomInstance = await GetRecentRoomInstance(_channelId);
@@ -157,10 +175,16 @@ namespace BanchoMultiplayerBot
 
         private async Task ShutdownInstance()
         {
-            if (_timerProvider != null)
+            if (TimerProvider != null)
             {
-                await _timerProvider.Stop();
-                _timerProvider = null;
+                await TimerProvider.Stop();
+                TimerProvider = null;
+            }
+            
+            if (VoteProvider != null)
+            {
+                await VoteProvider.Stop();
+                VoteProvider = null;
             }
 
             BehaviorEventProcessor?.Stop();
@@ -245,21 +269,6 @@ namespace BanchoMultiplayerBot
                 attemptedChannel);
 
             await BanchoConnection.BanchoClient?.MakeTournamentLobbyAsync(lobbyConfiguration.Name)!;
-        }
-
-        private async Task<LobbyConfiguration> GetLobbyConfiguration()
-        {
-            await using var context = new BotDbContext();
-            
-            var configuration = await context.LobbyConfigurations.FirstOrDefaultAsync(x => x.Id == LobbyConfigurationId);
-            if (configuration == null)
-            {
-                Log.Error("Lobby ({LobbyConfigId}): Failed to find lobby configuration.", LobbyConfigurationId);
-                
-                throw new InvalidOperationException("Failed to find lobby configuration.");
-            }
-            
-            return configuration;
         }
 
         private async Task<LobbyRoomInstance?> GetRecentRoomInstance(string? channelId = null)

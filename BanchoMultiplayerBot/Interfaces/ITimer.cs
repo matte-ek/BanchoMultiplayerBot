@@ -12,7 +12,9 @@ public interface ITimer
     
     public ITimerProvider TimerProvider { get; }
     
-    public void Start(TimeSpan duration);
+    public int EarlyWarning { get; set; }
+    
+    public void Start(TimeSpan duration, int earlyWarning = 0);
     
     public void Stop();
 }
