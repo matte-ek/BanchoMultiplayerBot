@@ -161,14 +161,14 @@ public class TimerProvider(ILobby lobby) : ITimerProvider
                 
                 timer.IsActive = false;
 
-                if (lobby.BehaviorEventDispatcher == null)
+                if (lobby.BehaviorEventProcessor == null)
                 {
                     Log.Warning("TimerProvider ({LobbyIndex}): BehaviorEventDispatcher is null, cannot trigger timer elapsed event", lobby.LobbyConfigurationId);
                     
                     continue;
                 }
                 
-                await lobby.BehaviorEventDispatcher.OnTimerElapsed(timer);
+                await lobby.BehaviorEventProcessor.OnTimerElapsed(timer);
             }
         }
         

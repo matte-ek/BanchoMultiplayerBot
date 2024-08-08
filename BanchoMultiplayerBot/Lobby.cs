@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 using BanchoMultiplayerBot.Database;
 using BanchoMultiplayerBot.Database.Models;
 using BanchoMultiplayerBot.Providers;
+using BanchoMultiplayerBot.Utilities;
 using BanchoSharp.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -33,17 +34,13 @@ namespace BanchoMultiplayerBot
         /// <summary>
         /// Event dispatcher for behavior events
         /// </summary>
-        public IBehaviorEventDispatcher? BehaviorEventDispatcher { get; private set; }
-
-        /// <summary>
-        /// A list of behavior class names to be loaded into the lobby instance
-        /// </summary>
-        private List<string> _behaviors = [];
-
-        private string _channelId = string.Empty;
-        private bool _isCreatingInstance = false;
-
+        public IBehaviorEventProcessor? BehaviorEventProcessor { get; private set; }
+        
         private TimerProvider? _timerProvider;
+        
+        private string _channelId = string.Empty;
+        
+        private bool _isCreatingInstance;
 
         public Lobby(BanchoConnection banchoConnection, int lobbyConfigurationId)
         {
@@ -72,7 +69,6 @@ namespace BanchoMultiplayerBot
         public async Task ConnectAsync()
         {
             IsReady = false;
-            _isCreatingInstance = false;
             
             if (BanchoConnection.BanchoClient == null)
             {
@@ -82,24 +78,23 @@ namespace BanchoMultiplayerBot
             if (MultiplayerLobby != null)
             {
                 Log.Verbose("Lobby ({LobbyConfigId}): Lobby instance already exists, disposing of previous instance...", LobbyConfigurationId);
-                
                 await ShutdownInstance();
             }
-
-            string existingChannel = string.Empty;
-
-            // Check if there is an existing channel for this lobby configuration
+            
+            var lobbyConfiguration = await GetLobbyConfiguration();
             var previousInstance = await GetRecentRoomInstance();
+            var existingChannel = string.Empty;
+            
+            // If we have a previous instance, attempt to join via that channel instead.
             if (previousInstance != null)
             {
                 existingChannel = previousInstance.Channel;
             }
             
-            var lobbyConfiguration = await GetLobbyConfiguration();
-
-            _channelId = existingChannel ?? string.Empty;
-
-            if (existingChannel != null)
+            _channelId = existingChannel;
+            _isCreatingInstance = existingChannel.Length == 0;
+            
+            if (!_isCreatingInstance)
             {
                 Log.Verbose("Lobby ({LobbyConfigId}): Attempting to join existing channel '{ExistingChannel}' for lobby '{LobbyName}'...",
                     LobbyConfigurationId,
@@ -111,8 +106,6 @@ namespace BanchoMultiplayerBot
             else
             {
                 Log.Verbose("Lobby ({LobbyConfigId}): Creating new channel for lobby '{LobbyName}'", LobbyConfigurationId, lobbyConfiguration.Name);
-
-                _isCreatingInstance = true;
                 
                 await BanchoConnection.BanchoClient?.MakeTournamentLobbyAsync(lobbyConfiguration.Name)!;
             }
@@ -122,35 +115,35 @@ namespace BanchoMultiplayerBot
         {
             var lobbyConfiguration = await GetLobbyConfiguration();
 
-            BehaviorEventDispatcher = new BehaviorEventDispatcher(this);
+            BehaviorEventProcessor = new BehaviorEventProcessor(this);
             _timerProvider = new TimerProvider(this);
             
             // Load the default behaviors
-            BehaviorEventDispatcher.RegisterBehavior("HostQueueBehavior");
+            BehaviorEventProcessor.RegisterBehavior("HostQueueBehavior");
     
             // Load custom behaviors
             if (lobbyConfiguration.Behaviours != null)
             {
                 foreach (var behavior in lobbyConfiguration.Behaviours)
                 {
-                    BehaviorEventDispatcher.RegisterBehavior(behavior);
+                    BehaviorEventProcessor.RegisterBehavior(behavior);
                 }
             }
 
-            BehaviorEventDispatcher.Start();
+            BehaviorEventProcessor.Start();
             await _timerProvider.Start();
             
             // Make sure we have a database entry for this lobby instance
             var recentRoomInstance = await GetRecentRoomInstance(_channelId);
             if (recentRoomInstance == null)
             {
+                await using var context = new BotDbContext();
+
                 var newInstance = new LobbyRoomInstance()
                 {
                     Channel = _channelId,
                     LobbyConfigurationId = LobbyConfigurationId
                 };
-                
-                await using var context = new BotDbContext();
                 
                 context.LobbyRoomInstances.Add(newInstance);
                 
@@ -170,8 +163,8 @@ namespace BanchoMultiplayerBot
                 _timerProvider = null;
             }
 
-            BehaviorEventDispatcher?.Stop();
-            BehaviorEventDispatcher = null;
+            BehaviorEventProcessor?.Stop();
+            BehaviorEventProcessor = null;
 
             MultiplayerLobby = null;
             
@@ -182,14 +175,21 @@ namespace BanchoMultiplayerBot
         {
             if (BanchoConnection.BanchoClient == null)
             {
-                Log.Warning("Lobby ({LobbyConfigId}): BanchoConnection.BanchoClient is null during lobby creation event.", LobbyConfigurationId);
+                Log.Warning("Lobby ({LobbyConfigId}): BanchoConnection.BanchoClient is null during lobby creation event", LobbyConfigurationId);
+                return;
+            }
+
+            if (!_isCreatingInstance)
+            {
+                // This event isn't for us.
                 return;
             }
 
             _channelId = lobby.ChannelName;
             
-            MultiplayerLobby = new MultiplayerLobby(BanchoConnection.BanchoClient, long.Parse(lobby.ChannelName[4..]),
-                lobby.ChannelName);
+            // I don't think there should be any issues using the multiplayer lobby provided from the event,
+            // but we'll create our own anyway.
+            MultiplayerLobby = new MultiplayerLobby(BanchoConnection.BanchoClient, long.Parse(lobby.ChannelName[4..]), lobby.ChannelName);
 
             await BuildInstance();
         }
@@ -255,6 +255,7 @@ namespace BanchoMultiplayerBot
             if (configuration == null)
             {
                 Log.Error("Lobby ({LobbyConfigId}): Failed to find lobby configuration.", LobbyConfigurationId);
+                
                 throw new InvalidOperationException("Failed to find lobby configuration.");
             }
             

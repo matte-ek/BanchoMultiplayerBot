@@ -1,9 +1,9 @@
-﻿using BanchoMultiplayerBot.Interfaces;
+﻿using BanchoMultiplayerBot.Attributes;
+using BanchoMultiplayerBot.Interfaces;
 using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Database.Repositories;
-using BanchoMultiplayerBot.Events;
 using BanchoMultiplayerBot.Extensions;
-using BanchoMultiplayerBot.Utilities;
+using BanchoMultiplayerBot.Providers;
 using BanchoSharp.Multiplayer;
 using Serilog;
 
@@ -63,21 +63,45 @@ namespace BanchoMultiplayerBot.Behaviors
         public async Task OnManagerMatchFinished()
         {
             await SkipHost();
+            
+            context.SendMessage(GetCurrentQueueMessage(true));
         }
         
         [BotEvent(BotEventType.CommandExecuted, "Queue")]
-        public void OnQueueCommandExecuted()
+        public void OnQueueCommandExecuted(CommandEventContext commandEventContext)
         {
+            commandEventContext.Reply(GetCurrentQueueMessage());
         }
         
         [BotEvent(BotEventType.CommandExecuted, "QueuePosition")]
-        public void OnQueuePositionCommandExecuted()
+        public void OnQueuePositionCommandExecuted(CommandEventContext commandEventContext)
         {
+            if (commandEventContext.Player == null)
+            {
+                return;
+            }
+
+            var queuePosition = Data.Queue.FindIndex(x => x.ToIrcNameFormat().Equals(commandEventContext.Player.Name.ToIrcNameFormat()));
+
+            commandEventContext.Reply(queuePosition == -1
+                ? "Couldn't find player in queue."
+                : $"Queue position for {commandEventContext.Message.Sender}: #{(queuePosition + 1).ToString()}");
         }
         
         [BotEvent(BotEventType.CommandExecuted, "Skip")]
-        public async Task OnSkipCommandExecuted()
+        public async Task OnSkipCommandExecuted(CommandEventContext commandEventContext)
         {
+            if (commandEventContext.Player == null)
+            {
+                return;
+            }
+
+            if (commandEventContext.Player.Name.ToIrcNameFormat() == Data.Queue.FirstOrDefault()?.ToIrcNameFormat())
+            {
+                await SkipHost();
+
+                return;
+            }
         }
         
         [BotEvent(BotEventType.CommandExecuted, "ForceSkip")]
@@ -93,6 +117,41 @@ namespace BanchoMultiplayerBot.Behaviors
         [BotEvent(BotEventType.CommandExecuted, "SetQueuePosition")]
         public async Task OnSetQueuePositionCommandExecuted()
         {
+        }
+        
+        /// <summary>
+        /// Send the first 5 people in the queue in the lobby chat. The player names will include a 
+        /// zero width space to avoid tagging people, however this can be ignored for the host
+        /// via the tagHost argument.
+        /// </summary>
+        private string GetCurrentQueueMessage(bool tagHost = false)
+        {
+            var queueStr = "";
+            var cleanPlayerNamesQueue = new List<string>();
+
+            // Add a zero width space to the player names to avoid mentioning them
+            Data.Queue.ForEach(playerName => cleanPlayerNamesQueue.Add($"{playerName[0]}\u200B{playerName[1..]}"));
+
+            // Replace the host with the original name, if requested.
+            if (tagHost && cleanPlayerNamesQueue.Count != 0)
+            {
+                cleanPlayerNamesQueue.RemoveAt(0);
+                cleanPlayerNamesQueue.Insert(0, Data.Queue.First());
+            }
+
+            // Compile a queue string that is shorter than 100 characters.
+            foreach (var name in cleanPlayerNamesQueue)
+            {
+                if (queueStr.Length > 100)
+                {
+                    queueStr = queueStr[..^2] + "...";
+                    break;
+                }
+
+                queueStr += name + (name != cleanPlayerNamesQueue.Last() ? ", " : string.Empty);
+            }
+
+            return $"Queue: {queueStr}";
         }
         
         /// <summary>

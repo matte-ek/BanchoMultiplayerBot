@@ -25,7 +25,7 @@ namespace BanchoMultiplayerBot.Interfaces
         /// <summary>
         /// Event dispatcher for behavior events
         /// </summary>
-        public IBehaviorEventDispatcher? BehaviorEventDispatcher { get; }
+        public IBehaviorEventProcessor? BehaviorEventProcessor { get; }
         
         /// <summary>
         /// Attempts to connect to an existing channel, or creates a new one if none is provided
