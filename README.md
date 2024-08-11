@@ -2,21 +2,71 @@
 
 Multiplayer bot for osu! written in C#, powered by [BanchoSharp](https://github.com/hburn7/BanchoSharp)
 
-Preview (Web interface):
-![image](https://github.com/matte-ek/BanchoMultiplayerBot/assets/49276951/1cfbbcb3-15a5-4ca2-ab6c-e138ea26b29e)
+## v2.0 branch
 
-## Why?
-There are already a lot of good osu multiplayer bots, (such as [osu!ahr](https://github.com/Meowhal/osu-ahr) and [osu bot framework v3](https://github.com/jramseygreen/osu_bot_framework-v3)), however they had some missing features that I wanted to have, and I was limited to add functionally in a fork as I wasn't (and isn't) that familiar enough with Python or JS. To add to that, creating my own bot sounded like a fun project, which is how this bot was born.
+### Why?
 
-To clearly what I meant with extra features:
-* Completely abstract the whole "separate lobby config" stuff, configure the lobbies once within the UI and forget about it. It'll save them and either rejoin/create them for you, with their respective configs.
-* Ability to fully recover and pick up where it left of during a normal restart, network issues, bancho restart etc. 
-* Ability for me to add more features in the future, for example map pp information.
+Been wanting to re-write the bot (or parts of the bot) for a while, both due to the messy code and "execution flow", but also due to general stability issues. Some of the initial goals of V2 where:
+* Handle events and bancho commands better
+  * Previously, bancho tournament commands were executed "manually" and had verification code so the command executed successfully all over the place
+  * The "!mp settings" event basically ran the whole show for the auto rotate stuff, therefore I had hacked together code to skip rotating whenever I had to do "!mp settings" outside of the "after map finish" event.
+  * All of this combined caused some random errors to occour, where players would get skipped twice and whatnot, and trying to debug and resolve issues in that spaghetti wasn't really easy.
+* More or less stateless
+  * Earlier versions would attempt to save runtime stuff to a file called `lobby_states.json` in a really stupid way, not only would a lot of data not get stored in the first place, but this is also counting on the fact that the bot will *always* exit gracefully.
+  * Obviosuly the bot will still have to connect to Bancho, join channels and stuff so it's not fully stateless, but stopping the bot and restarting shouldn't have any effect on the lobbies at all.
+* Better lobby configuration handling
+  * Previous lobby configurations should never get lost, even if the initial channel is gone and a re-creating the channel failed.
+* Handle user commands automatically
+  * Previously the commands were all parsed manually inside of a `OnMessageReceived` event, which can become annoying very fast with arguments/permissions etc.
+* New external (as in not tied to the bot application) front-end with osu! OAuth support
+ 
+### Progress
 
-This is a bit more complicated to get up and running than other bots as of now, if you just want a normal osu! auto host rotate bot up and running, I would highly recommend the mentioned alternatives above for now. The reason to this is mostly due to the WebUI, might add functionally for something like Discord in the future. If you don't really care about accessing the bot remotely, it shouldn't be too complicated though.
+As of `2024-08-11` most of the user facing features are pretty much 1:1 to v1, with the exception of announcements. However the API and frontend is not completed yet, and there will also be a lot of stability and testing to be done. While the earlier version may have buggy code, it's up-time is very good. 
 
-## Setup
-Information on how to setup and use the bot are avaliable on the [wiki](https://github.com/matte-ek/BanchoMultiplayerBot/wiki/Setup#installation).
+### Implementation Details
+
+To make things easier and cleaner on the bot side, I've decided to move out Bancho and bancho connection related stuff to it's own project `BanchoMultiplayerBot.Bancho`, of which will completely abstract:
+* Connecting and maintaining the connection to Bancho
+* Handling rate limting and other message releated stuff
+* Handling execution of Bancho commands
+
+The new event system treats behavious similarly to a controller in ASP, where a new instance of the behavior will be created for each event, and the appropriate event will be executed inside of the behavior. A behavior will therefore not have to handle subscribing and unsubscribing to events, nor will it have to deal with saving/loading data. A fully functional behavior can therefore be implemented as such:
+```cs
+public class TestBehavior(BehaviorEventContext context) : IBehavior
+{
+    [BanchoEvent(BanchoEventType.MatchStarted)]
+    public void OnMatchStarted()
+    {
+        context.SendMessage("Good luck!");
+    }
+}
+```
+
+Dealing with data inside of a behavior is dealt via `BehaviorDataProvider<T>` and `BehaviorConfigProvider<T>`. The data provider should be used for dynamic data related to the current lobby itself, such as the current queue for example. While the config provider should be used for static configuration such as the minimum/maximum map length etc. There is still some minor things I probably want to change with these, so they aren't really final at all. 
+
+Timers and votes are also a somewhat common thing to deal with, and for that the `VoteProvider` and `TimerProvider` can be used, see below example for a timer:
+```cs
+public class TestBehavior(BehaviorEventContext context) : IBehavior
+{
+    [BanchoEvent(BanchoEventType.MatchStarted)]
+    public void OnMatchStarted()
+    {
+        _context.SendMessage("Waiting for 30 seconds...");
+        _context.TimerProvider.FindOrCreateTimer("TestTimer").Start(TimeSpan.FromSeconds(30));
+    }
+
+    [BotEvent(BotEventType.TimerElapsed, "TestTimer")]
+    public void OnMatchStarted()
+    {
+        _context.SendMessage("30 seconds has passed!");
+    }
+}
+```
+
+You can also for example send arbitrary events to all behaviors in the lobby with `BehaviorEventProcessor.OnBehaviorEvent("MyEvent", optionalParameter)`.
+
+Commands can now also be created more easily, by implementing the `IPlayerCommand` interface. Commands can also be processed in an event by the attribute `[BotEvent(BotEventType.CommandExecuted, "MyCommand")]`.
 
 ## Additional Thanks
 [hburn7 (Stage)](https://github.com/hburn7) for BanchoSharp and other help
