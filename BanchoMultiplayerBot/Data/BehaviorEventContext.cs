@@ -13,6 +13,10 @@ public sealed class BehaviorEventContext(ILobby lobby, CancellationToken cancell
     
     public ICommandHandler CommandHandler => Lobby.BanchoConnection.CommandHandler;
 
+    public ITimerProvider TimerProvider => Lobby.TimerProvider!;
+
+    public IVoteProvider VoteProvider => Lobby.VoteProvider!;
+
     /// <summary>
     /// The channel name of the multiplayer lobby, formatted as "#mp_channel-id".
     /// </summary>
