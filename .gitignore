@@ -10,3 +10,4 @@ appsettings.json
 *.db
 *.svg
 log*.txt
+BanchoMultiplayerBot.Host.Console/Program.cs

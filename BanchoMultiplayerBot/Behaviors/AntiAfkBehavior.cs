@@ -2,10 +2,11 @@
 using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Interfaces;
 using BanchoSharp.Interfaces;
+using BanchoSharp.Multiplayer;
 
 namespace BanchoMultiplayerBot.Behaviors;
 
-public class AntiAfkBehavior(BotEventContext context) : IBehavior
+public class AntiAfkBehavior(BehaviorEventContext context) : IBehavior
 {
     private const int AfkTimerSeconds = 30;
 
@@ -18,7 +19,6 @@ public class AntiAfkBehavior(BotEventContext context) : IBehavior
         }
 
         context.Lobby.BanchoConnection.MessageHandler.SendMessage("BanchoBot", $"!stat {context.MultiplayerLobby.Host.Name}");
-
         context.Lobby.TimerProvider?.FindOrCreateTimer("AfkTimer").Start(TimeSpan.FromSeconds(AfkTimerSeconds));
     }
 

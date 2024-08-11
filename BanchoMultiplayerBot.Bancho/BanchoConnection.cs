@@ -1,7 +1,9 @@
 ﻿using BanchoMultiplayerBot.Bancho.Data;
 using BanchoMultiplayerBot.Bancho.Interfaces;
 using BanchoSharp;
+using Prometheus;
 using Serilog;
+using System.Threading;
 
 namespace BanchoMultiplayerBot.Bancho
 {
@@ -17,8 +19,13 @@ namespace BanchoMultiplayerBot.Bancho
         
         public event Action? OnReady;
 
+        public CancellationToken? ConnectionCancellationToken => _cancellationTokenSource?.Token;
+
         private readonly BanchoClientConfiguration _banchoConfiguration;
         private ConnectionHandler? _connectionWatchdog;
+        private CancellationTokenSource? _cancellationTokenSource;
+
+        private static readonly Gauge ConnectionHealth = Metrics.CreateGauge("bot_connection_health", "Bancho connection health");
 
         public BanchoConnection(BanchoClientConfiguration banchoClientConfiguration) 
         {
@@ -29,8 +36,23 @@ namespace BanchoMultiplayerBot.Bancho
             CommandHandler = new CommandHandler(MessageHandler);
         }
 
-        public async Task ConnectAsync()
+        public Task StartAsync()
         {
+            _ = Task.Run(ConnectAsync);
+
+            return Task.CompletedTask;
+        }
+
+
+        public async Task StopAsync()
+        {
+            await DisconnectAsync();
+        }
+
+        private async Task ConnectAsync()
+        {
+            _cancellationTokenSource = new CancellationTokenSource();
+
             // Make sure we've fully disconnected before continuing,
             // we more or less want a fully reset state.
             await DisconnectAsync();
@@ -41,12 +63,26 @@ namespace BanchoMultiplayerBot.Bancho
                                     false));
 
             SubscribeEvents();
+            
+            Log.Information("BanchoConnection: Connecting to Bancho...");
 
-            await BanchoClient.ConnectAsync();
+            try
+            {
+                await BanchoClient.ConnectAsync();
+            }
+            catch (Exception e)
+            {
+                Log.Error("BanchoConnection: Exception during connection to Bancho, {Exception}", e);
+                return;
+            }
+
+            Log.Information("BanchoConnection: Bancho connection terminated");
         }
 
-        public async Task DisconnectAsync()
+        private async Task DisconnectAsync()
         {
+            ConnectionHealth.Set(0);
+
             if (_connectionWatchdog?.IsRunning == true)
             {
                 _connectionWatchdog.OnConnectionLost -= OnConnectionLost;
@@ -63,6 +99,8 @@ namespace BanchoMultiplayerBot.Bancho
 
             if (BanchoClient != null)
             {
+                Log.Information("BanchoConnection: Disconnecting from Bancho...");
+                
                 await BanchoClient.DisconnectAsync();
 
                 UnsubscribeEvents();
@@ -82,7 +120,11 @@ namespace BanchoMultiplayerBot.Bancho
                 return;
             }
 
+            Log.Information("BanchoConnection: Authenticated with Bancho successfully");
+            
             IsConnected = true;
+
+            ConnectionHealth.Set(1);
 
             // Once we got a connection successfully up and running, make sure to initiate
             // the connection watchdog immediately
@@ -99,6 +141,8 @@ namespace BanchoMultiplayerBot.Bancho
         private void OnConnectionLost()
         {
             IsConnected = false;
+            _cancellationTokenSource?.Cancel();
+            ConnectionHealth.Set(0);
 
             Log.Error("BanchoConnection: Connection lost, attempting to reconnect in 20 seconds...");
 

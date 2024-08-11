@@ -15,6 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BanchoMultiplayerBot.Bancho\BanchoMultiplayerBot.Bancho.csproj" />
     <ProjectReference Include="..\BanchoMultiplayerBot.Database\BanchoMultiplayerBot.Database.csproj" />
+    <ProjectReference Include="..\BanchoMultiplayerBot.Osu\BanchoMultiplayerBot.Osu.csproj" />
   </ItemGroup>
 
 </Project>

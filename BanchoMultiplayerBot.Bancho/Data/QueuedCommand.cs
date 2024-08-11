@@ -7,7 +7,7 @@ namespace BanchoMultiplayerBot.Bancho.Data
 
         public required string Command { get; set; }
 
-        public DateTime DateTime { get; set; } = DateTime.Now;
+        public DateTime DateTime { get; set; } = DateTime.UtcNow;
 
         public required IReadOnlyList<CommandResponse> SuccessfulResponses { get; set; }
 

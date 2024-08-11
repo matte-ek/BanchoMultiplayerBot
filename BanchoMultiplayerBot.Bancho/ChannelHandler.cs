@@ -1,5 +1,6 @@
 ﻿using BanchoMultiplayerBot.Bancho.Interfaces;
 using BanchoSharp.Interfaces;
+using Serilog;
 
 namespace BanchoMultiplayerBot.Bancho
 {
@@ -14,6 +15,18 @@ namespace BanchoMultiplayerBot.Bancho
         public event Action<IChatChannel>? OnChannelJoined;
         public event Action<string>? OnChannelJoinFailure;
         public event Action<IChatChannel>? OnChannelLeft;
+        
+        private readonly Dictionary<string, int> _channelIds = new();
+
+        public int? GetChannelId(string channelName)
+        {
+            if (_channelIds.TryGetValue(channelName, out var channelId))
+            {
+                return channelId;
+            }
+
+            return null;
+        }
 
         public void Start()
         {
@@ -26,6 +39,7 @@ namespace BanchoMultiplayerBot.Bancho
             banchoConnection.BanchoClient.OnChannelJoined += BanchoOnChannelJoined;
             banchoConnection.BanchoClient.OnChannelParted += BanchoOnChannelParted;
             banchoConnection.BanchoClient.OnChannelJoinFailure += BanchoOnChannelJoinFailure;
+            banchoConnection.BanchoClient.OnMessageReceived += OnMessageReceived;
         }
 
         public void Stop()
@@ -39,8 +53,9 @@ namespace BanchoMultiplayerBot.Bancho
             banchoConnection.BanchoClient.OnChannelJoined -= BanchoOnChannelJoined;
             banchoConnection.BanchoClient.OnChannelParted -= BanchoOnChannelParted;
             banchoConnection.BanchoClient.OnChannelJoinFailure -= BanchoOnChannelJoinFailure;
+            banchoConnection.BanchoClient.OnMessageReceived -= OnMessageReceived;
         }
-
+        
         private void BanchoOnLobbyCreated(IMultiplayerLobby lobby)
         {
             OnLobbyCreated?.Invoke(lobby);
@@ -59,6 +74,26 @@ namespace BanchoMultiplayerBot.Bancho
         private void BanchoOnChannelJoinFailure(string chatChannel)
         {
             OnChannelJoinFailure?.Invoke(chatChannel);
+        }
+        
+        private void OnMessageReceived(IIrcMessage msg)
+        {
+            if (msg.Command != "332") // RPL_TOPIC
+            {
+                return;
+            }
+
+            try
+            {
+                var multiplayerId = msg.RawMessage[msg.RawMessage.IndexOf("#mp_", StringComparison.Ordinal)..msg.RawMessage.IndexOf(" :", StringComparison.Ordinal)];
+                var numberId = msg.RawMessage[(msg.RawMessage.LastIndexOf("#", StringComparison.Ordinal) + 1)..];
+    
+                _channelIds.TryAdd(multiplayerId, int.Parse(numberId));
+            }
+            catch (Exception e)
+            {
+                Log.Error("ChannelHandler: Error while parsing channel ID from message {msg.RawMessage}, {e.Message}", msg.RawMessage, e);
+            }
         }
     }
 }

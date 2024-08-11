@@ -5,7 +5,7 @@ using Serilog;
 
 namespace BanchoMultiplayerBot.Data;
 
-public sealed class BotEventContext(ILobby lobby, CancellationToken cancellationToken)
+public sealed class BehaviorEventContext(ILobby lobby, CancellationToken cancellationToken)
 {
     public ILobby Lobby { get; init; } = lobby;
     
@@ -27,7 +27,7 @@ public sealed class BotEventContext(ILobby lobby, CancellationToken cancellation
     {
         if (Lobby.MultiplayerLobby == null)
         {
-            Log.Error("BotEventContext: Attempt to send message while multiplayer lobby is null");
+            Log.Error("BehaviorEventContext: Attempt to send message while multiplayer lobby is null");
             throw new InvalidOperationException("Attempt to send message while multiplayer lobby is null.");
         }
 

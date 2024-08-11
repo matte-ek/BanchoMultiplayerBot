@@ -1,6 +1,8 @@
 ﻿using BanchoMultiplayerBot.Bancho.Interfaces;
 using Serilog;
 using System.Net.Sockets;
+using System.Threading;
+using Prometheus;
 
 namespace BanchoMultiplayerBot.Bancho
 {
@@ -8,15 +10,16 @@ namespace BanchoMultiplayerBot.Bancho
     {
         public bool IsRunning { get; private set; } = false;
 
+        public event Action? OnConnectionLost;
+
         private readonly TcpClient _tcpClient = tcpClient;
         private readonly IMessageHandler _messageHandler = messageHandler;
 
         private Task? _watchdogTask = null!;
         private bool _exitRequested = false;
 
-        private DateTime _lastMessageReceived = DateTime.Now;
-
-        public event Action? OnConnectionLost;
+        private DateTime _lastMessageReceived = DateTime.UtcNow;
+        private DateTime _lastTestMessageSent = DateTime.UtcNow;
 
         public void Start()
         {
@@ -32,7 +35,7 @@ namespace BanchoMultiplayerBot.Bancho
 
             _exitRequested = true;
 
-            if (_watchdogTask == null || _watchdogTask.Status != TaskStatus.Running)
+            if (_watchdogTask == null || _watchdogTask.Status == TaskStatus.RanToCompletion || _watchdogTask.Status == TaskStatus.Faulted || _watchdogTask.Status == TaskStatus.Canceled)
             {
                 Log.Warning("ConnectionHandler: Watchdog task is not running during Stop()");
                 
@@ -92,7 +95,7 @@ namespace BanchoMultiplayerBot.Bancho
             }
 
             // Additional fail-safe message check
-            if (!((DateTime.Now - _lastMessageReceived).TotalMinutes > 5))
+            if (!((DateTime.UtcNow - _lastMessageReceived).TotalMinutes > 5))
             {
                 return true;
             }
@@ -100,18 +103,21 @@ namespace BanchoMultiplayerBot.Bancho
             // We realistically should be receiving at least one message in 5 minutes during normal operation, so if we haven't
             // attempted to send a dummy message to see if the connection is still alive. We won't be signaling that the connection
             // is lost, since we're not sure if it's actually lost or not.
+            if ((DateTime.UtcNow - _lastTestMessageSent).TotalMinutes > 5)
+            {
+                Log.Warning("ConnectionHandler: No messages received in 5 minutes, sending dummy message to test connection");
 
-            Log.Warning("ConnectionHandler: No messages received in 5 minutes, sending dummy message to test connection");
-
-            _messageHandler.SendMessage("dummy message", "dummy message");
+                _messageHandler.SendMessage("BanchoBot", "dummy message");  
+                
+                _lastTestMessageSent = DateTime.UtcNow;
+            }
 
             return true;
-
         }
 
         private void MessageHandler_OnMessageReceived(BanchoSharp.Interfaces.IPrivateIrcMessage obj)
         {
-            _lastMessageReceived = DateTime.Now;
+            _lastMessageReceived = DateTime.UtcNow;
         }
 
         // See https://stackoverflow.com/a/6993334

@@ -15,6 +15,7 @@ public enum BanchoEventType
     OnPlayerDisconnected,
     OnHostChanged,
     OnHostChangingMap,
+    OnMapChanged,
     OnSettingsUpdated,
     AllPlayersReady
 }

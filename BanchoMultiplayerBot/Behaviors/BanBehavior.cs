@@ -10,10 +10,11 @@ using Serilog;
 
 namespace BanchoMultiplayerBot.Behaviors
 {
-    public class BanBehavior(BotEventContext context) : IBehavior
+    public class BanBehavior(BehaviorEventContext context) : IBehavior, IBehaviorDataConsumer
     {
         private readonly BehaviorDataProvider<BanBehaviorData> _dataProvider = new(context.Lobby);
         private BanBehaviorData Data => _dataProvider.Data;
+        public async Task SaveData() => await _dataProvider.SaveData();
 
         [BanchoEvent(BanchoEventType.OnPlayerJoined)]
         public async Task OnPlayerJoined(MultiplayerPlayer player)
@@ -68,7 +69,7 @@ namespace BanchoMultiplayerBot.Behaviors
 
             var user = await userRepository.FindUser(playerName);
 
-            return user?.Bans.Where(x => x.Active && (x.Expire == null || x.Expire > DateTime.Now)).ToList() ?? Enumerable.Empty<PlayerBan>();
+            return user?.Bans.Where(x => x.Active && (x.Expire == null || x.Expire > DateTime.UtcNow)).ToList() ?? Enumerable.Empty<PlayerBan>();
         }
     }
 }

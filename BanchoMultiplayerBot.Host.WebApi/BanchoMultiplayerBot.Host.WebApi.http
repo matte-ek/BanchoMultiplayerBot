@@ -1,0 +1,6 @@
+@BanchoMultiplayerBot.Host.WebApi_HostAddress = http://localhost:5215
+
+GET {{BanchoMultiplayerBot.Host.WebApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

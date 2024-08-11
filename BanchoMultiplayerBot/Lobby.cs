@@ -13,6 +13,14 @@ namespace BanchoMultiplayerBot
 {
     public class Lobby : ILobby
     {
+        /// <summary>
+        /// The main bot instance
+        /// </summary>
+        public Bot Bot { get; init; }
+        
+        /// <summary>
+        /// The bancho connection instance
+        /// </summary>
         public BanchoConnection BanchoConnection { get; init; }
 
         /// <summary>
@@ -43,9 +51,10 @@ namespace BanchoMultiplayerBot
         
         private bool _isCreatingInstance;
 
-        public Lobby(BanchoConnection banchoConnection, int lobbyConfigurationId)
+        public Lobby(Bot bot, int lobbyConfigurationId)
         {
-            BanchoConnection = banchoConnection;
+            Bot = bot;
+            BanchoConnection = bot.BanchoConnection;
 
             BanchoConnection.ChannelHandler.OnChannelJoined += OnChannelJoined;
             BanchoConnection.ChannelHandler.OnChannelJoinFailure += OnChannelJoinedFailure;
@@ -78,7 +87,7 @@ namespace BanchoMultiplayerBot
 
             if (MultiplayerLobby != null)
             {
-                Log.Verbose("Lobby ({LobbyConfigId}): Lobby instance already exists, disposing of previous instance...", LobbyConfigurationId);
+                Log.Verbose("Lobby: Lobby instance already exists, disposing of previous instance...");
                 await ShutdownInstance();
             }
             
@@ -97,8 +106,7 @@ namespace BanchoMultiplayerBot
             
             if (!_isCreatingInstance)
             {
-                Log.Verbose("Lobby ({LobbyConfigId}): Attempting to join existing channel '{ExistingChannel}' for lobby '{LobbyName}'...",
-                    LobbyConfigurationId,
+                Log.Verbose("Lobby: Attempting to join existing channel '{ExistingChannel}' for lobby '{LobbyName}'...",
                     existingChannel,
                     lobbyConfiguration.Name);
 
@@ -106,7 +114,7 @@ namespace BanchoMultiplayerBot
             }
             else
             {
-                Log.Verbose("Lobby ({LobbyConfigId}): Creating new channel for lobby '{LobbyName}'", LobbyConfigurationId, lobbyConfiguration.Name);
+                Log.Verbose("Lobby: Creating new channel for lobby '{LobbyName}'", lobbyConfiguration.Name);
                 
                 await BanchoConnection.BanchoClient?.MakeTournamentLobbyAsync(lobbyConfiguration.Name)!;
             }
@@ -119,7 +127,7 @@ namespace BanchoMultiplayerBot
             var configuration = await context.LobbyConfigurations.FirstOrDefaultAsync(x => x.Id == LobbyConfigurationId);
             if (configuration == null)
             {
-                Log.Error("Lobby ({LobbyConfigId}): Failed to find lobby configuration.", LobbyConfigurationId);
+                Log.Error("Lobby: Failed to find lobby configuration.");
 
                 throw new InvalidOperationException("Failed to find lobby configuration.");
             }
@@ -136,7 +144,13 @@ namespace BanchoMultiplayerBot
             VoteProvider = new VoteProvider(this);
             
             // Load the default behaviors
+            BehaviorEventProcessor.RegisterBehavior("RoomManagerBehavior");
+            BehaviorEventProcessor.RegisterBehavior("AbortVoteBehavior");
+            BehaviorEventProcessor.RegisterBehavior("AntiAfkBehavior");
+            BehaviorEventProcessor.RegisterBehavior("AutoStartBehavior");
             BehaviorEventProcessor.RegisterBehavior("HostQueueBehavior");
+            BehaviorEventProcessor.RegisterBehavior("MapManagerBehavior");
+            BehaviorEventProcessor.RegisterBehavior("FunCommandsBehavior");
     
             // Load custom behaviors
             if (lobbyConfiguration.Behaviours != null)
@@ -148,6 +162,7 @@ namespace BanchoMultiplayerBot
             }
 
             BehaviorEventProcessor.Start();
+
             await TimerProvider.Start();
             await VoteProvider.Start();
             
@@ -170,7 +185,7 @@ namespace BanchoMultiplayerBot
 
             IsReady = true;
             
-            Log.Verbose("Lobby ({LobbyConfigId}): Lobby instance built successfully", LobbyConfigurationId);
+            Log.Verbose("Lobby: Lobby instance built successfully");
         }
 
         private async Task ShutdownInstance()
@@ -192,14 +207,14 @@ namespace BanchoMultiplayerBot
 
             MultiplayerLobby = null;
             
-            Log.Verbose("Lobby ({LobbyConfigId}): Lobby instance shutdown successfully", LobbyConfigurationId);
+            Log.Verbose("Lobby: Lobby instance shutdown successfully");
         }
         
         private async void OnLobbyCreated(IMultiplayerLobby lobby)
         {
             if (BanchoConnection.BanchoClient == null)
             {
-                Log.Warning("Lobby ({LobbyConfigId}): BanchoConnection.BanchoClient is null during lobby creation event", LobbyConfigurationId);
+                Log.Warning("Lobby: BanchoConnection.BanchoClient is null during lobby creation event");
                 return;
             }
 
@@ -222,7 +237,7 @@ namespace BanchoMultiplayerBot
         {
             if (BanchoConnection.BanchoClient == null)
             {
-                Log.Warning("Lobby ({LobbyConfigId}): BanchoConnection.BanchoClient is null during channel join failure.", LobbyConfigurationId);
+                Log.Warning("Lobby: BanchoConnection.BanchoClient is null during channel join failure.");
                 return;
             }
 
@@ -238,9 +253,7 @@ namespace BanchoMultiplayerBot
                 return;
             }
             
-            Log.Verbose("Lobby ({LobbyConfigId}): Joined channel {Channel} successfully, building lobby instance...",
-                LobbyConfigurationId,
-                channel.ChannelName);
+            Log.Verbose("Lobby: Joined channel {Channel} successfully, building lobby instance...", channel.ChannelName);
 
             MultiplayerLobby = new MultiplayerLobby(BanchoConnection.BanchoClient, long.Parse(channel.ChannelName[4..]),
                 channel.ChannelName);
@@ -252,7 +265,7 @@ namespace BanchoMultiplayerBot
         {
             if (BanchoConnection.BanchoClient == null)
             {
-                Log.Warning("Lobby({LobbyConfigId}): BanchoConnection.BanchoClient is null during channel join failure.", LobbyConfigurationId);
+                Log.Warning("Lobby: BanchoConnection.BanchoClient is null during channel join failure.");
                 return;
             }
 
@@ -264,8 +277,7 @@ namespace BanchoMultiplayerBot
 
             var lobbyConfiguration = await GetLobbyConfiguration();
 
-            Log.Warning("Lobby ({LobbyConfigId}): Failed to join channel {AttemptedChannel}, creating new lobby instead.",
-                LobbyConfigurationId,
+            Log.Warning("Lobby: Failed to join channel {AttemptedChannel}, creating new lobby instead.",
                 attemptedChannel);
 
             await BanchoConnection.BanchoClient?.MakeTournamentLobbyAsync(lobbyConfiguration.Name)!;

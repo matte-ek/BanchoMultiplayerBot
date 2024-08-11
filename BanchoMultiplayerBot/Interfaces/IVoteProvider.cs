@@ -2,7 +2,7 @@
 
 public interface IVoteProvider
 {
-    public IVote FindOrCreateVote(string name);
+    public IVote FindOrCreateVote(string name, string description);
 
     public Task Start();
     public Task Stop();

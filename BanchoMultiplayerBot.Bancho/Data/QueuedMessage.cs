@@ -12,7 +12,7 @@ namespace BanchoMultiplayerBot.Bancho.Data
 
         public string Content { get; set; } = string.Empty;
 
-        public DateTime Created { get; set; } = DateTime.Now;
+        public DateTime Created { get; set; } = DateTime.UtcNow;
 
         public DateTime Sent { get; set; }
 

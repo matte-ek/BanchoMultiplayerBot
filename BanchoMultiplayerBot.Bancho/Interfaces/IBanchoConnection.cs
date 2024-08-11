@@ -10,8 +10,8 @@ namespace BanchoMultiplayerBot.Bancho.Interfaces
 
         public bool IsConnected { get; }
 
-        public Task ConnectAsync();
-
-        public Task DisconnectAsync();
+        public Task StartAsync();
+        
+        public Task StopAsync();
     }
 }

@@ -26,4 +26,9 @@ public class Score
     public int Mods { get; set; }
 
     public DateTime Time { get; set; }
+    
+    public float CalculateAccuracy()
+    {
+        return ((Count300 * 300 + Count100 * 100 + Count50 * 50) / (float)((Count300 + Count100 + Count50 + CountMiss) * 300)) * 100;
+    }
 }

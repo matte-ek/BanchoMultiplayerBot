@@ -1,7 +1,9 @@
 ﻿using BanchoMultiplayerBot.Attributes;
 using BanchoMultiplayerBot.Bancho.Commands;
+using BanchoMultiplayerBot.Behaviors.Config;
 using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Interfaces;
+using BanchoMultiplayerBot.Providers;
 using Serilog;
 using ITimer = BanchoMultiplayerBot.Interfaces.ITimer;
 
@@ -9,30 +11,21 @@ namespace BanchoMultiplayerBot.Behaviors;
 
 public class AutoStartBehavior : IBehavior
 {
-    private readonly BotEventContext _context;
+    private readonly BehaviorEventContext _context;
+ 
+    private readonly BehaviorConfigProvider<AutoStartConfig> _configProvider;
+    private AutoStartConfig Config => _configProvider.Data;
     
     private readonly ITimer? _autoStartTimer;
     private readonly IVote? _startVote;
-
-    /// <summary>
-    /// The auto start timer duration in seconds when a new map is selected
-    /// </summary>
-    private const int NewMapTimerSeconds = 90;
-
-    /// <summary>
-    /// When the timer should start an early warning message before the match starts
-    /// </summary>
-    private const int StartEarlyWarning = 10;
-
-    private const int StartTimerMinimumSeconds = 1;
-    private const int StartTimerMaximumSeconds = 500;
-
-    public AutoStartBehavior(BotEventContext botEventContext)
+    
+    public AutoStartBehavior(BehaviorEventContext behaviorEventContext)
     {
-        _context = botEventContext;
+        _context = behaviorEventContext;
+        _configProvider = new BehaviorConfigProvider<AutoStartConfig>(_context.Lobby);
 
         _autoStartTimer = _context.Lobby.TimerProvider?.FindOrCreateTimer("AutoStartTimer");
-        _startVote = _context.Lobby.VoteProvider?.FindOrCreateVote("StartVote");
+        _startVote = _context.Lobby.VoteProvider?.FindOrCreateVote("StartVote", "Start the match");
     }
 
     [BotEvent(BotEventType.CommandExecuted, "Start")]
@@ -103,7 +96,7 @@ public class AutoStartBehavior : IBehavior
     [BotEvent(BotEventType.BehaviourEvent, "MapManagerNewMap")]
     public void OnNewMap()
     {
-        StartTimer(TimeSpan.FromSeconds(NewMapTimerSeconds), false);
+        StartTimer(TimeSpan.FromSeconds(Config.NewMapTimer), false);
     }
     
     [BotEvent(BotEventType.TimerElapsed, "AutoStartTimer")]
@@ -126,14 +119,14 @@ public class AutoStartBehavior : IBehavior
 
     private void StartTimer(TimeSpan length, bool announceTimer)
     {
-        if (length.TotalSeconds <= StartTimerMinimumSeconds || length.TotalSeconds >= StartTimerMaximumSeconds)
+        if (length.TotalSeconds <= Config.StartTimerMinimumSeconds || length.TotalSeconds >= Config.StartTimerMaximumSeconds)
         {
             Log.Warning("AutoStartBehavior: Ignoring start timer request with invalid duration {Duration}", length);
             return;
         }
         
         // Start the timer with an early warning of 10 seconds
-        _autoStartTimer?.Start(length, StartEarlyWarning);
+        _autoStartTimer?.Start(length, Config.StartEarlyWarning);
 
         if (announceTimer)
         {

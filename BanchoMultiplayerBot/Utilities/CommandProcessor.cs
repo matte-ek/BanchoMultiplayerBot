@@ -27,6 +27,8 @@ public class CommandProcessor(Bot bot)
 
     private void RegisterCommands()
     {
+        Log.Verbose("CommandProcessor: Registering commands...");
+
         var commands = AppDomain.CurrentDomain
             .GetAssemblies()
             .SelectMany(s => s.GetTypes())
@@ -58,7 +60,7 @@ public class CommandProcessor(Bot bot)
 
         var args = message.Content.Split(' ');
         var command =
-            _commands.FirstOrDefault(x => x.Command == args[0][1..] || x.Aliases?.Contains(args[0][1..]) == true);
+            _commands.FirstOrDefault(x => x.Command.ToLower() == args[0][1..].ToLower() || x.Aliases?.Contains(args[0][1..]) == true);
 
         if (command == null)
         {

@@ -9,6 +9,9 @@ namespace BanchoMultiplayerBot.Database.Models
         [Required]
         public int LobbyConfigurationId { get; set; }
 
+        [Required]
+        public string BehaviorName { get; set; } = string.Empty;
+
         /// <summary>
         /// Dynamic JSON data for behaviour
         /// </summary>

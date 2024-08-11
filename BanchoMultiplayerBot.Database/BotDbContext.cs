@@ -16,6 +16,7 @@ namespace BanchoMultiplayerBot.Database
         public DbSet<LobbyConfiguration> LobbyConfigurations { get; set; }
         public DbSet<LobbyRoomInstance> LobbyRoomInstances { get; set; }
         public DbSet<LobbyBehaviorData> LobbyBehaviorData { get; set; }
+        public DbSet<LobbyBehaviorConfig> LobbyBehaviorConfig { get; set; }
         public DbSet<LobbyTimer> LobbyTimers { get; set; }
         public DbSet<LobbyVote> LobbyVotes { get; set; }
 

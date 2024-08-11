@@ -41,12 +41,14 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
         var methods = behaviorType.GetMethods(BindingFlags.Public | BindingFlags.Instance);
         foreach (var method in methods)
         {
+            var ignoreArgs = method.GetParameters().Length == 0;
+
             // Check if the method has the BanchoEvent attribute, if so, add it to the list of events
             // that will be executed when the event is triggered
             var banchoEventAttribute = method.GetCustomAttribute<BanchoEvent>();
             if (banchoEventAttribute != null)
             {
-                _events.Add(new BanchoBehaviorEvent(behavior, method, behaviorType, banchoEventAttribute.Type));
+                _events.Add(new BanchoBehaviorEvent(behavior, method, behaviorType, ignoreArgs, banchoEventAttribute.Type));
             }
             
             // Check if the method has the BanchoEvent attribute, if so, add it to the list of events
@@ -54,9 +56,11 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
             var botEventAttribute = method.GetCustomAttribute<BotEvent>();
             if (botEventAttribute != null)
             {
-                _events.Add(new BotBehaviorEvent(behavior, method, behaviorType, botEventAttribute.Type, botEventAttribute.OptionalScope));
+                _events.Add(new BotBehaviorEvent(behavior, method, behaviorType, ignoreArgs, botEventAttribute.Type, botEventAttribute.OptionalScope));
             }
         }
+
+        Log.Verbose("BehaviorEventDispatcher: Registered behaviour {BehaviorName} successfully", behavior);
     }
 
     /// <summary>
@@ -80,6 +84,8 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
         lobby.MultiplayerLobby.OnPlayerDisconnected += OnPlayerDisconnected;
         lobby.MultiplayerLobby.OnHostChanged += OnHostChanged;
         lobby.MultiplayerLobby.OnHostChangingMap += OnHostChangingMap;
+        lobby.MultiplayerLobby.OnAllPlayersReady += OnAllPlayersReady;
+        lobby.MultiplayerLobby.OnBeatmapChanged += OnBeatmapChanged;
         lobby.MultiplayerLobby.OnSettingsUpdated += OnSettingsUpdated;
 
         // Register other stuff
@@ -105,6 +111,8 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
         lobby.MultiplayerLobby.OnPlayerDisconnected -= OnPlayerDisconnected;
         lobby.MultiplayerLobby.OnHostChanged -= OnHostChanged;
         lobby.MultiplayerLobby.OnHostChangingMap -= OnHostChangingMap;
+        lobby.MultiplayerLobby.OnAllPlayersReady -= OnAllPlayersReady;
+        lobby.MultiplayerLobby.OnBeatmapChanged -= OnBeatmapChanged;
         lobby.MultiplayerLobby.OnSettingsUpdated -= OnSettingsUpdated;
 
         // Unregister other stuff
@@ -150,10 +158,20 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
     {
         await ExecuteBanchoCallback(BanchoEventType.OnHostChangingMap);
     }
-    
+
+    private async void OnAllPlayersReady()
+    {
+        await ExecuteBanchoCallback(BanchoEventType.AllPlayersReady);
+    }
+
     private async void OnSettingsUpdated()
     {
         await ExecuteBanchoCallback(BanchoEventType.OnSettingsUpdated);
+    }
+    
+    private async void OnBeatmapChanged(BeatmapShell beatmapShell)
+    {
+        await ExecuteBanchoCallback(BanchoEventType.OnMapChanged, beatmapShell);
     }
     
     private async Task ExecuteBanchoCallback(BanchoEventType banchoEventType, object? param = null)
@@ -186,12 +204,12 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
     
     public async Task OnTimerElapsed(ITimer timer)
     {
-        await ExecuteBotCallback(BotEventType.TimerElapsed, timer);
+        await ExecuteBotCallbackScoped(BotEventType.TimerElapsed, timer.Name, timer);
     }
     
     public async Task OnTimerEarlyWarningElapsed(ITimer timer)
     {
-        await ExecuteBotCallback(BotEventType.TimerElapsed, timer);
+        await ExecuteBotCallbackScoped(BotEventType.TimerEarlyWarning, timer.Name, timer);
     }
     
     private async Task ExecuteBotCallbackScoped(BotEventType botEventType, string scope, object? param = null)
@@ -219,37 +237,54 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
         foreach (var behaviorEvent in behaviorEvents)
         {
             // Create a new instance of the behavior class
-            var instance = Activator.CreateInstance(behaviorEvent.BehaviorType, new BotEventContext(lobby, _cancellationTokenSource!.Token));
+            var instance = Activator.CreateInstance(behaviorEvent.BehaviorType, new BehaviorEventContext(lobby, _cancellationTokenSource!.Token)) as IBehavior;
 
-            // Invoke the method on the behavior class instance
-            var methodTask = behaviorEvent.Method.Invoke(instance, [param]);
-            
-            // If we have a return value, it's a task, so await it
-            if (methodTask != null)
+            try
             {
-                await (Task)methodTask;
+                Log.Verbose("BehaviorEventDispatcher: Executing {CallbackName}.{MethodName}() ...", behaviorEvent.Name, behaviorEvent.Method.Name);
+
+                // Invoke the method on the behavior class instance
+                var methodTask = behaviorEvent.Method.Invoke(instance, behaviorEvent.IgnoreArguments ? [] : [param]);
+
+                // If we have a return value, it's a task, so await it
+                if (methodTask != null)
+                {
+                    await (Task)methodTask;
+                }
+
+                // If the behavior class implements IBehaviorDataConsumer, save the data
+                if (instance is IBehaviorDataConsumer dataBehavior)
+                {
+                    await dataBehavior.SaveData();
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error("BehaviorEventDispatcher: Exception while executing callback {CallbackName}.{MethodName}(), {Exception}", behaviorEvent.Name, behaviorEvent.Method.Name, e);
             }
         }
     }
 
-    private abstract class BehaviorEvent(string name, MethodInfo method, Type behaviorType)
+    private abstract class BehaviorEvent(string name, MethodInfo method, Type behaviorType, bool ignoreArgs)
     {
-        public string Name { get; set; } = name;
+        public string Name { get; } = name;
         
-        public MethodInfo Method { get; init; } = method;
+        public MethodInfo Method { get; } = method;
+
+        public bool IgnoreArguments { get; } = ignoreArgs;
         
-        public Type BehaviorType { get; init; } = behaviorType;
+        public Type BehaviorType { get; } = behaviorType;
     }
 
-    private class BanchoBehaviorEvent(string name, MethodInfo method, Type behaviorType, BanchoEventType banchoEventType) : BehaviorEvent(name, method, behaviorType)
+    private class BanchoBehaviorEvent(string name, MethodInfo method, Type behaviorType, bool ignoreArgs, BanchoEventType banchoEventType) : BehaviorEvent(name, method, behaviorType, ignoreArgs)
     {
-        public BanchoEventType BanchoEventType { get; init; } = banchoEventType;
+        public BanchoEventType BanchoEventType { get; } = banchoEventType;
     }
     
-    private class BotBehaviorEvent(string name, MethodInfo method, Type behaviorType, BotEventType botEventType, string? optionalScope) : BehaviorEvent(name, method, behaviorType)
+    private class BotBehaviorEvent(string name, MethodInfo method, Type behaviorType, bool ignoreArgs, BotEventType botEventType, string? optionalScope) : BehaviorEvent(name, method, behaviorType, ignoreArgs)
     {
-        public BotEventType BotEventType { get; init; } = botEventType;
+        public BotEventType BotEventType { get; } = botEventType;
 
-        public string? OptionalScope { get; init; } = optionalScope;
+        public string? OptionalScope { get; } = optionalScope;
     }
 }

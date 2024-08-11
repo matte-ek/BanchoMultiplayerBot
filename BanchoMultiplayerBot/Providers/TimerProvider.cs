@@ -35,7 +35,7 @@ public class TimerProvider(ILobby lobby) : ITimerProvider
         
         if (!_isRunning)
         {
-            Log.Warning("TimerProvider ({LobbyIndex}): Attempt to stop timer provider while it is not running", lobby.LobbyConfigurationId);
+            Log.Warning("TimerProvider: Attempt to stop timer provider while it is not running");
             return;
         }
         
@@ -43,7 +43,7 @@ public class TimerProvider(ILobby lobby) : ITimerProvider
 
         if (_workerTask == null)
         {
-            Log.Warning("TimerProvider ({LobbyIndex}): Attempt to stop timer provider while worker task is null", lobby.LobbyConfigurationId);
+            Log.Warning("TimerProvider: Attempt to stop timer provider while worker task is null");
             return;
         }
 
@@ -53,7 +53,7 @@ public class TimerProvider(ILobby lobby) : ITimerProvider
         }
         catch (TimeoutException)
         {
-            Log.Warning("TimerProvider ({LobbyIndex}): Worker task did not complete within 1 second, something is up", lobby.LobbyConfigurationId);
+            Log.Warning("TimerProvider: Worker task did not complete within 1 second, something is up");
         }
     }
     
@@ -100,13 +100,13 @@ public class TimerProvider(ILobby lobby) : ITimerProvider
                 // as the relevant event probably shouldn't be triggered anymore
                 newTimer.IsActive = false;
                 
-                Log.Warning("TimerProvider ({LobbyIndex}): Timer {Name} was marked as inactive as more than 45 seconds have passed since it ended", lobby.LobbyConfigurationId, timer.Name);
+                Log.Warning("TimerProvider: Timer {Name} was marked as inactive as more than 45 seconds have passed since it ended", timer.Name);
             }
 
             _timers.Add(newTimer);
         }
         
-        Log.Verbose("TimerProvider ({LobbyIndex}): Loaded {Count} timer(s) from database", lobby.LobbyConfigurationId , timers.Count);
+        Log.Verbose("TimerProvider: Loaded {Count} timer(s) from database", timers.Count);
     }
 
     /// <summary>
@@ -149,7 +149,7 @@ public class TimerProvider(ILobby lobby) : ITimerProvider
     /// </summary>
     private async Task TaskWorker()
     {
-        Log.Verbose("TimerProvider ({LobbyIndex}): Worker task for lobby started", lobby.LobbyConfigurationId);
+        Log.Verbose("TimerProvider: Worker task for lobby started");
         
         while (_isRunning)
         {
@@ -158,13 +158,13 @@ public class TimerProvider(ILobby lobby) : ITimerProvider
             // Trigger early warning events
             foreach (var timer in _timers.Where(timer => timer.IsActive && timer.EarlyWarning != 0 && DateTime.UtcNow >= timer.EndTime.AddSeconds(-timer.EarlyWarning)).ToList())
             {
-                Log.Verbose("TimerProvider ({LobbyIndex}): Timer {Name} early warning triggered", lobby.LobbyConfigurationId, timer.Name);
+                Log.Verbose("TimerProvider: Timer {Name} early warning triggered", timer.Name);
 
                 timer.EarlyWarning = 0;
                 
                 if (lobby.BehaviorEventProcessor == null)
                 {
-                    Log.Warning("TimerProvider ({LobbyIndex}): BehaviorEventDispatcher is null, cannot trigger timer early warning event", lobby.LobbyConfigurationId);
+                    Log.Warning("TimerProvider: BehaviorEventDispatcher is null, cannot trigger timer early warning event");
                     continue;
                 }
                 
@@ -174,13 +174,13 @@ public class TimerProvider(ILobby lobby) : ITimerProvider
             // Trigger elapsed timer events
             foreach (var timer in _timers.Where(timer => timer.IsActive && DateTime.UtcNow >= timer.EndTime).ToList())
             {
-                Log.Verbose("TimerProvider ({LobbyIndex}): Timer {Name} elapsed", lobby.LobbyConfigurationId, timer.Name);
+                Log.Verbose("TimerProvider: Timer {Name} elapsed", timer.Name);
                 
                 timer.IsActive = false;
 
                 if (lobby.BehaviorEventProcessor == null)
                 {
-                    Log.Warning("TimerProvider ({LobbyIndex}): BehaviorEventDispatcher is null, cannot trigger timer elapsed event", lobby.LobbyConfigurationId);
+                    Log.Warning("TimerProvider: BehaviorEventDispatcher is null, cannot trigger timer elapsed event");
                     continue;
                 }
                 
@@ -188,6 +188,6 @@ public class TimerProvider(ILobby lobby) : ITimerProvider
             }
         }
         
-        Log.Verbose("TimerProvider ({LobbyIndex}): Worker task stopped", lobby.LobbyConfigurationId);
+        Log.Verbose("TimerProvider: Worker task stopped");
     }
 }

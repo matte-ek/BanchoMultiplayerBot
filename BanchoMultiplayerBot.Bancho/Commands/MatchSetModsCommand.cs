@@ -17,7 +17,7 @@ public class MatchSetModsCommand : IBanchoCommand
         },
         new CommandResponse
         {
-            Message = "Enabled ",
+            Message = "Disabled ",
             Type = CommandResponseType.StartsWith
         }
     ];

@@ -12,9 +12,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BanchoMultiplayerBot", "BanchoMultiplayerBot\BanchoMultiplayerBot.csproj", "{B5968673-2BD2-40ED-8059-70FC1EC00C28}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BanchoMultiplayerBot", "BanchoMultiplayerBot\BanchoMultiplayerBot.csproj", "{B5968673-2BD2-40ED-8059-70FC1EC00C28}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BanchoMultiplayerBot.Database", "BanchoMultiplayerBot.Database\BanchoMultiplayerBot.Database.csproj", "{47800804-DA67-4471-BC88-247D46547CF3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BanchoMultiplayerBot.Database", "BanchoMultiplayerBot.Database\BanchoMultiplayerBot.Database.csproj", "{47800804-DA67-4471-BC88-247D46547CF3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BanchoMultiplayerBot.Osu", "BanchoMultiplayerBot.Osu\BanchoMultiplayerBot.Osu.csproj", "{7F5411B6-95C6-4279-92E8-D6BFDD2B4E1D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BanchoMultiplayerBot.Host.WebApi", "BanchoMultiplayerBot.Host.WebApi\BanchoMultiplayerBot.Host.WebApi.csproj", "{E8B83C52-9F28-4FAF-8541-468F677E4696}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -38,6 +42,14 @@ Global
 		{47800804-DA67-4471-BC88-247D46547CF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{47800804-DA67-4471-BC88-247D46547CF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{47800804-DA67-4471-BC88-247D46547CF3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F5411B6-95C6-4279-92E8-D6BFDD2B4E1D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F5411B6-95C6-4279-92E8-D6BFDD2B4E1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F5411B6-95C6-4279-92E8-D6BFDD2B4E1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F5411B6-95C6-4279-92E8-D6BFDD2B4E1D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E8B83C52-9F28-4FAF-8541-468F677E4696}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E8B83C52-9F28-4FAF-8541-468F677E4696}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E8B83C52-9F28-4FAF-8541-468F677E4696}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E8B83C52-9F28-4FAF-8541-468F677E4696}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

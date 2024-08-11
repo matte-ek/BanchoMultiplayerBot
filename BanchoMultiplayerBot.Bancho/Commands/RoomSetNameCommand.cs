@@ -3,7 +3,7 @@ using BanchoMultiplayerBot.Bancho.Interfaces;
 
 namespace BanchoMultiplayerBot.Bancho.Commands;
 
-public class MatchSetNameCommand : IBanchoCommand
+public class RoomSetNameCommand : IBanchoCommand
 {
     public static string Command => "!mp name";
 

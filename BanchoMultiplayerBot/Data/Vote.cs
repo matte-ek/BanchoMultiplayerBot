@@ -1,11 +1,14 @@
 ﻿using BanchoMultiplayerBot.Interfaces;
 using BanchoSharp.Multiplayer;
+using Serilog;
 
 namespace BanchoMultiplayerBot.Data;
 
-public class Vote(string name, ILobby lobby) : IVote
+public class Vote(string name, string description, ILobby lobby) : IVote
 {
     public string Name { get; } = name;
+
+    public string Description { get; } = description;
 
     public ILobby Lobby { get; } = lobby;
     
@@ -13,23 +16,27 @@ public class Vote(string name, ILobby lobby) : IVote
 
     public DateTime StartTime { get; set; }
 
-    public List<string> Votes { get; set; } = new();
+    public List<string> Votes { get; set; } = [];
     
     public bool PlayerVote(MultiplayerPlayer player)
     {
         if (Lobby.MultiplayerLobby == null)
         {
+            Log.Warning("Vote: Multiplayer lobby is null");
+            
             return false;
         }
         
+        // If this is the first vote, set the start time and activate the vote.
         if (!IsActive)
         {
             Votes.Clear();
-            
+
             StartTime = DateTime.UtcNow;
             IsActive = true;
         }
 
+        // Make sure our current votes are valid.
         ValidateVotes();
         
         if (!Votes.Contains(player.Name))
@@ -41,15 +48,24 @@ public class Vote(string name, ILobby lobby) : IVote
         
         if (Votes.Count >= requiredVotes)
         {
+            Log.Verbose("Vote: Passed vote {Vote} successfully", Name);
+
+            Lobby.BanchoConnection.MessageHandler.SendMessage(Lobby.MultiplayerLobby!.ChannelName, $"{Description} vote passed! ({Votes.Count}/{requiredVotes})");
+
             IsActive = false;
+
             return true;
         }
-        
+
+        Lobby.BanchoConnection.MessageHandler.SendMessage(Lobby.MultiplayerLobby!.ChannelName, $"{Description} vote ({Votes.Count}/{requiredVotes})");
+
         return false;
     }
     
     public void Abort()
     {
+        Log.Verbose("Vote: Aborted vote {Vote} with {Votes} vote(s)", Name, Votes.Count);
+
         IsActive = false;
     }
 
@@ -65,6 +81,8 @@ public class Vote(string name, ILobby lobby) : IVote
 
         foreach (var vote in Votes.ToList().Where(vote => Lobby.MultiplayerLobby.Players.All(x => x.Name != vote)))
         {
+            Log.Verbose("Vote: Removed player '{PlayerName}' from vote {Vote}, player disconnected", vote, Name);
+
             Votes.Remove(vote);
         }
     }

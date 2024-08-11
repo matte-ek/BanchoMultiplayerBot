@@ -30,6 +30,46 @@ public class ScoreRepository : IDisposable
         return await _botDbContext.Scores.LongCountAsync();
     }
 
+    public async Task<int?> GetMapPlayCountByLobbyId(int lobbyId, int mapId)
+    {
+        var mostPlayedMaps = await _botDbContext.Scores
+            .Where(x => x.LobbyId == lobbyId)
+            .GroupBy(x => x.BeatmapId)
+            .Select(g => new { BeatmapId = g.Key, Count = g.Select(x => x.GameId).Distinct().Count() })
+            .OrderByDescending(x => x.Count)
+            .Select(x => x.BeatmapId)
+            .ToListAsync();
+        
+        var position = mostPlayedMaps.IndexOf(mapId);
+
+        return position != -1 ? position + 1 : null;
+    }
+    
+    public async Task<IReadOnlyList<Score>> GetScoresByMapId(int mapId, int count = 10)
+    {
+        return await _botDbContext.Scores
+            .Where(x => x.BeatmapId == mapId)
+            .OrderByDescending(x => x.Time)
+            .Take(count)
+            .ToListAsync();
+    }
+
+    public async Task<IReadOnlyList<Score>> GetScoresByMapAndPlayerId(int playerId, int mapId)
+    {
+        return await _botDbContext.Scores
+            .Where(x => x.PlayerId == playerId && x.BeatmapId == mapId)
+            .OrderByDescending(x => x.Time)
+            .ToListAsync();
+    }
+
+    public async Task<Score?> GetPlayerBestScore(int playerId)
+    {
+        return await _botDbContext.Scores
+            .Where(x => x.PlayerId == playerId)
+            .OrderByDescending(x => x.TotalScore)
+            .FirstOrDefaultAsync();
+    } 
+
     public void Dispose()
     {
         Dispose(true);

@@ -1,4 +1,5 @@
 ﻿using BanchoMultiplayerBot.Attributes;
+using BanchoMultiplayerBot.Behaviors.Data;
 using BanchoMultiplayerBot.Interfaces;
 using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Database.Repositories;
@@ -9,26 +10,31 @@ using Serilog;
 
 namespace BanchoMultiplayerBot.Behaviors
 {
-    public class HostQueueBehavior(BotEventContext context) : IBehavior
+    public class HostQueueBehavior(BehaviorEventContext context) : IBehavior, IBehaviorDataConsumer
     {
         private readonly BehaviorDataProvider<HostQueueBehaviorData> _dataProvider = new(context.Lobby);
         private HostQueueBehaviorData Data => _dataProvider.Data;
+        
+        public async Task SaveData() => await _dataProvider.SaveData();
 
-        [BotEvent(BotEventType.BotStarted)]
-        public async Task Setup()
+        [BotEvent(BotEventType.BehaviourEvent, "HostQueueSkipHost")]
+        public async Task OnSkipRequested() => await SkipHost();
+        
+        [BanchoEvent(BanchoEventType.OnSettingsUpdated)]
+        public async Task OnSettingsUpdated()
         {
             // Since we might be picking up where we left off, we need to ensure the queue is valid
             // since some players might have left while the bot was offline
             await EnsureQueueValid();
         }
-        
+
         [BanchoEvent(BanchoEventType.OnPlayerJoined)]
         public async Task OnPlayerJoined(MultiplayerPlayer player)
         {
             using var userRepository = new UserRepository();
             var user = await userRepository.FindOrCreateUser(player.Name);
             
-            if (user.Bans.Count != 0)
+            if (user.Bans.Any())
             {
                 Log.Warning("HostQueueBehavior: Player {PlayerName} is banned, skipping queue", player.Name);
                 return;
@@ -109,7 +115,7 @@ namespace BanchoMultiplayerBot.Behaviors
             }
 
             // Else initiate a vote
-            var skipVote = context.Lobby.VoteProvider!.FindOrCreateVote("SkipVote");
+            var skipVote = context.Lobby.VoteProvider!.FindOrCreateVote("SkipVote", "Skip the host");
             if (skipVote.PlayerVote(commandEventContext.Player))
             {
                 await SkipHost();
@@ -194,7 +200,7 @@ namespace BanchoMultiplayerBot.Behaviors
             Data.Queue.RemoveAll(x => x == player.Name);
             Data.Queue.Insert(position, player.Name);
         }
-        
+
         /// <summary>
         /// Send the first 5 people in the queue in the lobby chat. The player names will include a 
         /// zero width space to avoid tagging people, however this can be ignored for the host
@@ -263,7 +269,7 @@ namespace BanchoMultiplayerBot.Behaviors
                 return;
             }
         
-            context.Lobby.VoteProvider?.FindOrCreateVote("SkipVote").Abort();
+            context.Lobby.VoteProvider?.FindOrCreateVote("SkipVote", "Skip the host").Abort();
             
             RotateQueue();
             
@@ -357,7 +363,7 @@ namespace BanchoMultiplayerBot.Behaviors
                 var user = await userRepo.FindOrCreateUser(multiplayerPlayer.Name);
                 
                 // Make sure we don't add any banned players to the queue
-                if (user.Bans.Count == 0)
+                if (user.Bans.Count != 0)
                 {
                     continue;
                 }
@@ -371,8 +377,6 @@ namespace BanchoMultiplayerBot.Behaviors
         /// <summary>
         /// Will check for any host bans or auto-skip settings and return whether the player is a valid host candidate.
         /// </summary>
-        /// <param name="playerName"></param>
-        /// <returns></returns>
         private static async Task<bool> IsPlayerHostCandidate(string playerName)
         {
             using var userRepository = new UserRepository();

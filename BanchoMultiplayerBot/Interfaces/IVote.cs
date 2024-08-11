@@ -5,7 +5,9 @@ namespace BanchoMultiplayerBot.Interfaces;
 public interface IVote
 {
     public string Name { get; }
-    
+
+    public string Description { get; }
+
     public ILobby Lobby { get; }
     
     public bool IsActive { get; set; }

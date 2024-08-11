@@ -12,13 +12,13 @@ public class VoteProvider(ILobby lobby) : IVoteProvider
     private readonly ILobby _lobby = lobby;
     private readonly List<IVote> _votes = [];
 
-    public IVote FindOrCreateVote(string name)
+    public IVote FindOrCreateVote(string name, string description)
     {
         var vote = _votes.FirstOrDefault(x => x.Name == name);
 
         if (vote == null)
         {
-            vote = new Vote(name, _lobby);
+            vote = new Vote(name, description, _lobby);
             _votes.Add(vote);
         }
 
@@ -45,7 +45,7 @@ public class VoteProvider(ILobby lobby) : IVoteProvider
 
         foreach (var vote in votes)
         {
-            var newVote = new Vote(vote.Name, _lobby)
+            var newVote = new Vote(vote.Name, vote.Description, _lobby)
             {
                 IsActive = vote.IsActive,
                 Votes = vote.Votes,
@@ -55,13 +55,13 @@ public class VoteProvider(ILobby lobby) : IVoteProvider
             if ((DateTime.UtcNow - newVote.StartTime).TotalSeconds > 120 && newVote.IsActive)
             {
                 newVote.IsActive = false;
-                Log.Warning("VoteProvider ({LobbyIndex}): Vote {VoteName} has been active for over 2 minutes, aborting", _lobby.LobbyConfigurationId, newVote.Name);
+                Log.Warning("VoteProvider: Vote {VoteName} has been active for over 2 minutes, aborting", newVote.Name);
             }
             
             _votes.Add(newVote);
         }
         
-        Log.Verbose("VoteProvider ({LobbyIndex}): Loaded {VoteCount} votes", _lobby.LobbyConfigurationId, _votes.Count);
+        Log.Verbose("VoteProvider: Loaded {VoteCount} vote(s) from database", _votes.Count);
     }
     
     private async Task SaveVotes()
@@ -78,6 +78,7 @@ public class VoteProvider(ILobby lobby) : IVoteProvider
                 {
                     LobbyId = _lobby.LobbyConfigurationId,
                     Name = vote.Name,
+                    Description = vote.Description,
                     IsActive = vote.IsActive,
                     Votes = vote.Votes,
                     StartTime = vote.StartTime
@@ -86,6 +87,7 @@ public class VoteProvider(ILobby lobby) : IVoteProvider
                 context.LobbyVotes.Add(existingVote);
             }
 
+            existingVote.Description = vote.Description;
             existingVote.IsActive = vote.IsActive;
             existingVote.Votes = vote.Votes;
             existingVote.StartTime = vote.StartTime;

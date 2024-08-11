@@ -4,6 +4,7 @@ using BanchoSharp.Interfaces;
 using Microsoft.VisualBasic;
 using Serilog;
 using System.Collections.Concurrent;
+using Prometheus;
 
 namespace BanchoMultiplayerBot.Bancho
 {
@@ -25,6 +26,9 @@ namespace BanchoMultiplayerBot.Bancho
 
         private Task? _messagePumpTask = null;
         private bool _exitRequested = false;
+
+        private static readonly Counter MessagesSentCounter = Metrics.CreateCounter("bot_messages_sent", "Number of messages sent");
+        private static readonly Counter MessagesReceivedCounter = Metrics.CreateCounter("bot_messages_received", "Number of messages received");
 
         public void SendMessage(string channel, string message)
         {
@@ -80,7 +84,7 @@ namespace BanchoMultiplayerBot.Bancho
                 _banchoConnection.BanchoClient.OnPrivateMessageSent -= BanchoOnPrivateMessageSent;
             }
 
-            if (_messagePumpTask == null || _messagePumpTask.Status != TaskStatus.Running)
+            if (_messagePumpTask == null || _messagePumpTask.Status == TaskStatus.RanToCompletion || _messagePumpTask.Status == TaskStatus.Faulted || _messagePumpTask.Status == TaskStatus.Canceled)
             {
                 Log.Warning("MessageHandler: Message pump task is not running during Stop()");
                 _messagePumpTask = null;
@@ -89,7 +93,7 @@ namespace BanchoMultiplayerBot.Bancho
 
             // Since the message pump task is being blocked by the message queue, we'll send a dummy message
             // to make sure the loop starts processing something.
-            SendMessage("dummy", "dummy");
+            SendMessage("BanchoBot", "dummy");
 
             _messagePumpTask?.Wait();
             _messagePumpTask = null;
@@ -98,7 +102,7 @@ namespace BanchoMultiplayerBot.Bancho
         private async Task MessagePumpTask()
         {
             const int maxMessageLength = 400;
-            const int messageBurstCount = 9;
+            const int messageBurstCount = 6;
             const int messageAge = 6;
 
             IsRunning = true;
@@ -162,14 +166,22 @@ namespace BanchoMultiplayerBot.Bancho
             IsRunning = false;
         }
 
-        private void BanchoOnPrivateMessageReceived(IPrivateIrcMessage msg)
+        private void BanchoOnPrivateMessageReceived(IPrivateIrcMessage e)
         {
-            OnMessageReceived?.Invoke(msg);
+            Log.Information($"MessageHandler: [{e.Recipient}] {e.Sender}: {e.Content}");
+
+            MessagesReceivedCounter.Inc();
+
+            OnMessageReceived?.Invoke(e);
         }
 
-        private void BanchoOnPrivateMessageSent(IPrivateIrcMessage msg)
+        private void BanchoOnPrivateMessageSent(IPrivateIrcMessage e)
         {
-            OnMessageSent?.Invoke(msg);
+            Log.Information($"MessageHandler: [{e.Recipient}] {e.Sender}: {e.Content}");
+
+            MessagesSentCounter.Inc();
+
+            OnMessageSent?.Invoke(e);
         }
     }
 }

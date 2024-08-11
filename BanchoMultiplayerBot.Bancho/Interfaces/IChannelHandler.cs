@@ -9,6 +9,8 @@ namespace BanchoMultiplayerBot.Bancho.Interfaces
         public event Action<string>? OnChannelJoinFailure;
         public event Action<IChatChannel>? OnChannelLeft;
 
+        public int? GetChannelId(string channelName);
+        
         public void Start();
         public void Stop();
     }

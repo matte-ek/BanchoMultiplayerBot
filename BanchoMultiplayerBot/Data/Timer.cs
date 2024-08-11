@@ -20,7 +20,7 @@ public class Timer(ITimerProvider timerProvider, string name) : ITimer
     
     public void Start(TimeSpan duration, int earlyWarning = 0)
     {
-        Log.Verbose("Timer ({Name}): Starting timer with duration {Duration}", Name, duration);
+        Log.Verbose("Timer: Starting timer {Name} with duration {Duration}", Name, duration);
         
         StartTime = DateTime.UtcNow;
         EndTime = StartTime + duration;
@@ -30,7 +30,7 @@ public class Timer(ITimerProvider timerProvider, string name) : ITimer
 
     public void Stop()
     {
-        Log.Verbose("Timer ({Name}): Stopping timer", Name);
+        Log.Verbose("Timer: Stopping timer {Name}", Name);
         IsActive = false;
     }
 }

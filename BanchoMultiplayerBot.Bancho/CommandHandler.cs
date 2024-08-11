@@ -1,5 +1,6 @@
 ﻿using BanchoMultiplayerBot.Bancho.Data;
 using BanchoMultiplayerBot.Bancho.Interfaces;
+using Prometheus;
 using Serilog;
 
 namespace BanchoMultiplayerBot.Bancho
@@ -10,6 +11,10 @@ namespace BanchoMultiplayerBot.Bancho
         private int _lastSpamFilterCount = 0;
 
         private readonly Dictionary<string, List<QueuedCommand>> _queuedCommands = [];
+
+        private static readonly Counter SentCommandsCounter = Metrics.CreateCounter("bot_commands_sent", "The amount of commands attempted to be executed");
+        private static readonly Counter CommandsFailedToSendCounter = Metrics.CreateCounter("bot_commands_message_failed", "The amount of commands that failed to send their message");
+        private static readonly Counter CommandsMessageRetriedCounter = Metrics.CreateCounter("bot_commands_message_retried", "The amount of commands that resent the message due to timeout");
 
         public CommandHandler(IMessageHandler messageHandler)
         {
@@ -23,17 +28,24 @@ namespace BanchoMultiplayerBot.Bancho
             {
                 Log.Verbose("CommandHandler: Executing command {Command} in {Channel}", T.Command, channel);
 
+                if (!_queuedCommands.ContainsKey(channel))
+                {
+                    _queuedCommands[channel] = [];
+                }
+
                 async Task SendMessage()
                 {
                     _queuedCommands[channel].Add(new QueuedCommand()
                     {
                         Command = T.Command,
                         SuccessfulResponses = T.SuccessfulResponses,
-                        DateTime = DateTime.Now
+                        DateTime = DateTime.UtcNow
                     });
 
                     var cookie = _messageHandler.SendMessageTracked(channel, GetCommandString(T.Command, args, T.AppendSpamFilter));
-                
+
+                    SentCommandsCounter.Inc();
+
                     // Wait for the message to be sent
                     int timeout = 0;
                     while (!cookie.MessageSent)
@@ -41,6 +53,9 @@ namespace BanchoMultiplayerBot.Bancho
                         if (timeout++ > 10)
                         {
                             Log.Error("CommandHandler: Failed to send command {Command} to {Channel}, send timeout reached", T.Command, channel);
+
+                            CommandsFailedToSendCounter.Inc();
+
                             break;
                         }
 
@@ -67,6 +82,8 @@ namespace BanchoMultiplayerBot.Bancho
                         if (attempts > 5)
                         {
                             _queuedCommands[channel].RemoveAll(x => x.Command == T.Command);
+
+                            CommandsMessageRetriedCounter.Inc();
 
                             Log.Error("CommandHandler: Failed to execute command {Command} in {Channel}, response timeout reached", T.Command, channel);
 

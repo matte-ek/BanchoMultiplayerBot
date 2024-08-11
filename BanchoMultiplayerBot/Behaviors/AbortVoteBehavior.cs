@@ -5,18 +5,20 @@ using BanchoMultiplayerBot.Interfaces;
 
 namespace BanchoMultiplayerBot.Behaviors;
 
-public class AbortVoteBehavior(BotEventContext context) : IBehavior
+public class AbortVoteBehavior(BehaviorEventContext context) : IBehavior
 {
+    private readonly IVote _abortVote = context.Lobby.VoteProvider!.FindOrCreateVote("AbortVote", "Abort the match");
+
     [BanchoEvent(BanchoEventType.MatchAborted)]
     public void OnMatchAborted()
     {
-        context.Lobby.VoteProvider?.FindOrCreateVote("AbortVote").Abort();
+        _abortVote.Abort();
     }
     
     [BanchoEvent(BanchoEventType.MatchFinished)]
     public void OnMatchFinished()
     {
-        context.Lobby.VoteProvider?.FindOrCreateVote("AbortVote").Abort();
+        _abortVote.Abort();
     }
     
     [BotEvent(BotEventType.CommandExecuted, "Abort")]
@@ -27,8 +29,7 @@ public class AbortVoteBehavior(BotEventContext context) : IBehavior
             return;
         }
         
-        var abortVote = context.Lobby.VoteProvider!.FindOrCreateVote("AbortVote");
-        if (abortVote.PlayerVote(commandEventContext.Player))
+        if (_abortVote.PlayerVote(commandEventContext.Player))
         {
             await context.ExecuteCommandAsync<MatchAbortCommand>();
         }

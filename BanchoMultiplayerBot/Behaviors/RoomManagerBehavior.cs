@@ -7,16 +7,20 @@ using BanchoSharp.Multiplayer;
 
 namespace BanchoMultiplayerBot.Behaviors
 {
-    public class RoomManagerBehavior(BotEventContext context) : IBehavior
+    public class RoomManagerBehavior(BehaviorEventContext context) : IBehavior
     {
         [BanchoEvent(BanchoEventType.MatchStarted)]
         public async Task OnMatchStarted()
         {
+            // If there are no players in the lobby, we should abort the match.
             if (context.MultiplayerLobby.Players.Count == 0)
             {
                 await context.ExecuteCommandAsync<MatchAbortCommand>();
             }
         }
+
+        [BanchoEvent(BanchoEventType.MatchAborted)]
+        public async Task OnMatchAborted() => await OnMatchFinished();
 
         [BanchoEvent(BanchoEventType.MatchFinished)]
         public async Task OnMatchFinished()
@@ -56,11 +60,6 @@ namespace BanchoMultiplayerBot.Behaviors
 
         private async Task EnsureMatchSettings(LobbyConfiguration configuration)
         {
-            if (configuration.Size == null)
-            {
-                return;
-            }
-
             var teamMode = ((int)(configuration.TeamMode ?? LobbyFormat.HeadToHead)).ToString();
             var scoreMode = ((int)(configuration.ScoreMode ?? WinCondition.Score)).ToString();
             var size = configuration.Size.ToString() ?? "16";
@@ -96,6 +95,11 @@ namespace BanchoMultiplayerBot.Behaviors
                 return;
             }
 
+            await context.ExecuteCommandAsync<MatchSetModsCommand>([GenerateModsCommand(modsCommandNonSpacing)]);
+        }
+
+        private static string GenerateModsCommand(string modsCommandNonSpacing)
+        {
             // TODO: Move this madness elsewhere, it probably shouldn't be here.
             // We need to translate the mods command to the format that bancho expects.
             // For example "!mp mods HR HD"
@@ -117,7 +121,7 @@ namespace BanchoMultiplayerBot.Behaviors
                 newMod = true;
             }
 
-            await context.ExecuteCommandAsync<MatchSetModsCommand>([modsCommand]);
+            return modsCommand;
         }
     }
 }

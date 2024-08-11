@@ -6,6 +6,14 @@ namespace BanchoMultiplayerBot.Interfaces
 {
     public interface ILobby
     {
+        /// <summary>
+        /// The main bot instance
+        /// </summary>
+        public Bot Bot { get; init; }
+        
+        /// <summary>
+        /// The bancho connection instance
+        /// </summary>
         public BanchoConnection BanchoConnection { get; init; }
         
         /// <summary>
