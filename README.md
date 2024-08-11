@@ -57,7 +57,7 @@ public class TestBehavior(BehaviorEventContext context) : IBehavior
     }
 
     [BotEvent(BotEventType.TimerElapsed, "TestTimer")]
-    public void OnMatchStarted()
+    public void OnTestTimerElapsed()
     {
         _context.SendMessage("30 seconds has passed!");
     }
