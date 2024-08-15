@@ -48,7 +48,7 @@ namespace BanchoMultiplayerBot.Bancho
 
                     // Wait for the message to be sent
                     int timeout = 0;
-                    while (!cookie.MessageSent)
+                    while (!cookie.IsSent)
                     {
                         if (timeout++ > 10)
                         {

@@ -241,7 +241,7 @@ namespace BanchoMultiplayerBot.Behaviors
             var finishTime = Data.MatchStartTime.Add(Data.BeatmapInfo.Length);
             
             // Add a few seconds to account for people loading/finishing the map
-            finishTime = finishTime.AddSeconds(15);
+            finishTime = finishTime.AddSeconds(5);
             
             // If we know where the map actually starts (as in the break at the beginning of a song),
             // we can be a bit more clever and try to account for that.

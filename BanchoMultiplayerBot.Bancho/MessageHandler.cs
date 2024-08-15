@@ -5,6 +5,7 @@ using Microsoft.VisualBasic;
 using Serilog;
 using System.Collections.Concurrent;
 using Prometheus;
+using TimeProvider = BanchoMultiplayerBot.Bancho.Data.TimeProvider;
 
 namespace BanchoMultiplayerBot.Bancho
 {
@@ -12,7 +13,7 @@ namespace BanchoMultiplayerBot.Bancho
     /// Utility class to handle sending and receiving messages from Bancho,
     /// also handles rate limiting automatically.
     /// </summary>
-    public class MessageHandler(IBanchoConnection banchoConnection) : IMessageHandler
+    public class MessageHandler(IBanchoConnection banchoConnection, ITimeProvider? timeProvider = null) : IMessageHandler
     {
         public bool IsRunning { get; private set; } = false;
 
@@ -21,11 +22,14 @@ namespace BanchoMultiplayerBot.Bancho
         public event Action<IPrivateIrcMessage>? OnMessageSent;
 
         private readonly IBanchoConnection _banchoConnection = banchoConnection;
+        private readonly ITimeProvider _timeProvider = timeProvider ?? new TimeProvider();
 
-        private BlockingCollection<QueuedMessage> _messageQueue = new(20);
+        private BlockingCollection<QueuedMessage> _messageQueue = new(50);
 
         private Task? _messagePumpTask = null;
-        private bool _exitRequested = false;
+        
+        private CancellationTokenSource? _cancellationTokenSource;
+        private CancellationToken _cancellationToken => _cancellationTokenSource!.Token;
 
         private static readonly Counter MessagesSentCounter = Metrics.CreateCounter("bot_messages_sent", "Number of messages sent");
         private static readonly Counter MessagesReceivedCounter = Metrics.CreateCounter("bot_messages_received", "Number of messages received");
@@ -68,7 +72,7 @@ namespace BanchoMultiplayerBot.Bancho
             }
 
             // Start the message pump
-            _exitRequested = false;
+            _cancellationTokenSource = new CancellationTokenSource();
             _messagePumpTask = Task.Run(MessagePumpTask);
         }
 
@@ -76,7 +80,7 @@ namespace BanchoMultiplayerBot.Bancho
         {
             Log.Verbose("MessageHandler: Stopping message pump...");
 
-            _exitRequested = true;
+            _cancellationTokenSource?.Cancel();
 
             if (_banchoConnection.BanchoClient != null)
             {
@@ -94,7 +98,7 @@ namespace BanchoMultiplayerBot.Bancho
             // Since the message pump task is being blocked by the message queue, we'll send a dummy message
             // to make sure the loop starts processing something.
             SendMessage("BanchoBot", "dummy");
-
+            
             _messagePumpTask?.Wait();
             _messagePumpTask = null;
         }
@@ -102,7 +106,7 @@ namespace BanchoMultiplayerBot.Bancho
         private async Task MessagePumpTask()
         {
             const int maxMessageLength = 400;
-            const int messageBurstCount = 6;
+            const int messageBurstCount = 10;
             const int messageAge = 6;
 
             IsRunning = true;
@@ -115,26 +119,36 @@ namespace BanchoMultiplayerBot.Bancho
             {
                 var message = _messageQueue.Take();
 
-                if (_exitRequested || _banchoConnection.BanchoClient == null)
+                if (_cancellationToken.IsCancellationRequested || _banchoConnection.BanchoClient == null)
                 {
                     break;
                 }
-
+                
                 bool shouldThrottle;
 
                 do
                 {
-                    shouldThrottle = sentMessages.Count >= messageBurstCount - 1;
+                    // Remove old messages that are more than messageAge seconds old
+                    sentMessages.RemoveAll(x => (_timeProvider.UtcNow - x.Sent).TotalSeconds > messageAge);
 
-                    // Remove old messages that are more than 5 seconds old
-                    sentMessages.RemoveAll(x => (DateTime.UtcNow - x.Sent).TotalSeconds > messageAge);
-
+                    shouldThrottle = sentMessages.Count >= messageBurstCount;
+                    
                     if (!shouldThrottle) continue;
 
-                    Thread.Sleep(1000);
+                    try
+                    {
+                        await Task.Delay(50, _cancellationToken);
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        break;
+                    }
+                    
                 } while (shouldThrottle);
 
-                message.Sent = DateTime.UtcNow;
+                if (_cancellationToken.IsCancellationRequested) break;
+                
+                message.Sent = _timeProvider.UtcNow;
 
                 // Maybe trimming the message would be a better idea here, but realistically this shouldn't happen,
                 // and this check is more of a fail-safe than anything.
@@ -149,8 +163,8 @@ namespace BanchoMultiplayerBot.Bancho
 
                     if (message.TrackCookie != null)
                     {
-                        message.TrackCookie.MessageSent = true;
-                        message.TrackCookie.SentTime = DateTime.UtcNow;
+                        message.TrackCookie.IsSent = true;
+                        message.TrackCookie.SentTime = _timeProvider.UtcNow;
                     }
                 }
                 catch (Exception e)

@@ -1,10 +1,11 @@
 ﻿using BanchoSharp;
+using BanchoSharp.Interfaces;
 
 namespace BanchoMultiplayerBot.Bancho.Interfaces
 {
     public interface IBanchoConnection
     {
-        public BanchoClient? BanchoClient { get; }
+        public IBanchoClient? BanchoClient { get; }
 
         public IMessageHandler MessageHandler { get; }
 

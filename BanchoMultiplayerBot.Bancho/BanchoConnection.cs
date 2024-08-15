@@ -4,6 +4,7 @@ using BanchoSharp;
 using Prometheus;
 using Serilog;
 using System.Threading;
+using BanchoSharp.Interfaces;
 
 namespace BanchoMultiplayerBot.Bancho
 {
@@ -11,7 +12,7 @@ namespace BanchoMultiplayerBot.Bancho
     {
         public bool IsConnected { get; set; } = false;
 
-        public BanchoClient? BanchoClient { get; private set; } = null!;
+        public IBanchoClient? BanchoClient { get; private set; } = null!;
 
         public IMessageHandler MessageHandler { get; }
         public ICommandHandler CommandHandler { get; }

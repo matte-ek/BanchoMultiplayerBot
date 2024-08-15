@@ -20,6 +20,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BanchoMultiplayerBot.Osu", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BanchoMultiplayerBot.Host.WebApi", "BanchoMultiplayerBot.Host.WebApi\BanchoMultiplayerBot.Host.WebApi.csproj", "{E8B83C52-9F28-4FAF-8541-468F677E4696}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BanchoMultiplayerBot.Tests", "BanchoMultiplayerBot.Tests\BanchoMultiplayerBot.Tests.csproj", "{CCE9A18D-5F05-4A43-A24C-59DC399BE0A1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -50,6 +52,10 @@ Global
 		{E8B83C52-9F28-4FAF-8541-468F677E4696}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E8B83C52-9F28-4FAF-8541-468F677E4696}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E8B83C52-9F28-4FAF-8541-468F677E4696}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CCE9A18D-5F05-4A43-A24C-59DC399BE0A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CCE9A18D-5F05-4A43-A24C-59DC399BE0A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CCE9A18D-5F05-4A43-A24C-59DC399BE0A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CCE9A18D-5F05-4A43-A24C-59DC399BE0A1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

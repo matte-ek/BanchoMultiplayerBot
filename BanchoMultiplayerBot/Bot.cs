@@ -1,5 +1,6 @@
 ﻿using BanchoMultiplayerBot.Bancho;
 using BanchoMultiplayerBot.Bancho.Data;
+using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Database;
 using BanchoMultiplayerBot.Interfaces;
 using BanchoMultiplayerBot.Osu;
@@ -9,13 +10,13 @@ using Serilog;
 
 namespace BanchoMultiplayerBot
 {
-    public class Bot(BanchoClientConfiguration banchoClientConfiguration, string osuApiKey)
+    public class Bot(BotConfiguration botConfiguration)
     {
         public List<ILobby> Lobbies { get; } = [];
         
-        public BanchoConnection BanchoConnection { get; } = new(banchoClientConfiguration);
+        public BanchoConnection BanchoConnection { get; } = new(botConfiguration.BanchoClientConfiguration);
 
-        public OsuApi OsuApi { get; } = new(osuApiKey);
+        public OsuApi OsuApi { get; } = new(botConfiguration.OsuApiKey);
 
         public PerformancePointCalculator? PerformancePointCalculator { get; } = new();
         

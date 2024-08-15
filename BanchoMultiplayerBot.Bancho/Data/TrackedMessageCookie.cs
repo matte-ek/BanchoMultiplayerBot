@@ -2,7 +2,7 @@
 {
     public class TrackedMessageCookie
     {
-        public bool MessageSent { get; set; } = false;
+        public bool IsSent { get; set; } = false;
 
         public DateTime SentTime { get; set; }
     }
