@@ -264,8 +264,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
     {
         using var userRepository = new UserRepository();
 
-        var highestScorePlayer = recentScores.Where(x => x.Score?.Rank != "F").MaxBy(x => x.Player.Score);
-
+        var highestScorePlayer = recentScores.MaxBy(x => x.Player.Score);
         if (context.MultiplayerLobby.Players.Count >= 3 && highestScorePlayer is not null)
         {
             var user = await userRepository.FindUser(highestScorePlayer.Player.Name) ??

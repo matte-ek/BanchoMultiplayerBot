@@ -10,7 +10,7 @@ using Serilog;
 
 namespace BanchoMultiplayerBot
 {
-    public class Bot(BotConfiguration botConfiguration)
+    public class Bot(IBotConfiguration botConfiguration)
     {
         public List<ILobby> Lobbies { get; } = [];
         

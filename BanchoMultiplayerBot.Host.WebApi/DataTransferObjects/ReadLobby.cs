@@ -10,6 +10,8 @@ public class ReadLobby
 
     public int PlayerCount { get; set; }
 
+    public IEnumerable<string>? Behaviors { get; set; } = null!;
+    
     public IEnumerable<ReadPlayer>? Players { get; set; } = null;
 
     public ReadPlayer? Host { get; set; } = null;

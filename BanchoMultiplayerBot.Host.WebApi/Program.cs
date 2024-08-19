@@ -1,11 +1,21 @@
+using System.Net.Http.Headers;
+using System.Security.Claims;
+using System.Text.Json;
 using BanchoMultiplayerBot;
 using BanchoMultiplayerBot.Bancho.Data;
 using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Database;
+using BanchoMultiplayerBot.Host.WebApi.Extensions;
+using BanchoMultiplayerBot.Host.WebApi.Hubs;
+using BanchoMultiplayerBot.Host.WebApi.Providers;
+using BanchoMultiplayerBot.Host.WebApi.Services;
+using BanchoMultiplayerBot.Interfaces;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
-// Setup logging
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Verbose()
     .WriteTo.Console()
@@ -20,30 +30,42 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSignalR();
 
-// Migrate the database 
+// Setup and migrate database
+await using (var context = new BotDbContext())
 {
-    await using var context = new BotDbContext();
-    context.Database.Migrate();
+    await context.Database.MigrateAsync();
 }
 
-// Load configuration
-var userConfig = new ConfigurationBuilder()
-    .AddUserSecrets<Program>()
-    .Build();
+// Setup services
+builder.Services.AddSingleton<IBotConfiguration>(new BotConfigurationProvider(builder.Configuration));
+builder.Services.AddSingleton<Bot>();
 
-var configuration = new BotConfiguration
+builder.Services.AddScoped<BehaviorService>();
+builder.Services.AddScoped<LobbyService>();
+
+// Setup authentication
+builder.Services.AddAuthentication(options =>
 {
-    BanchoClientConfiguration = new BanchoClientConfiguration()
-    {
-        IsBotAccount = false,
-        Username = userConfig["OsuUsername"]!,
-        Password = userConfig["OsuPassword"]!
-    },
-    OsuApiKey = userConfig["OsuApiKey"]!
-};
+    options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+})
+.AddBotCookieAuthentication(builder.Configuration)
+.AddBotOsuAuth(builder.Configuration);
 
-builder.Services.AddSingleton(new Bot(configuration));
+// Setup CORS policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("DefaultPolicy", policy =>
+    {
+        policy.WithOrigins(builder.Configuration["Bot:FrontendUrl"]!);
+        policy.AllowCredentials();
+        policy.AllowAnyHeader();
+        policy.AllowAnyMethod();
+    });
+});
 
 var app = builder.Build();
 
@@ -53,10 +75,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-await app.Services.GetRequiredService<Bot>().StartAsync();
+//await app.Services.GetRequiredService<Bot>().StartAsync();
+
+app.UseCors("DefaultPolicy");
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
 
-app.Run();
+app.MapControllers();
+app.MapHub<LobbyEventHub>("/hubs/lobby");
+
+await app.RunAsync();
+
+await app.Services.GetRequiredService<Bot>().StopAsync();
