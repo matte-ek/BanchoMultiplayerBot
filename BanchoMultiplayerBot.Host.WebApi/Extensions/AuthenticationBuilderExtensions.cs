@@ -1,9 +1,11 @@
 ﻿using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Json;
+using BanchoMultiplayerBot.Database.Repositories;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OAuth;
+using Serilog;
 
 namespace BanchoMultiplayerBot.Host.WebApi.Extensions;
 
@@ -59,11 +61,41 @@ public static class AuthenticationBuilderExtensions
 
                     var response = await context.Backchannel.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, context.HttpContext.RequestAborted);
                     response.EnsureSuccessStatusCode();
-
+                    
                     var user = JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
                     context.RunClaimActions(user);
+
+                    if (!await HandleUserAuthentication(context.Principal!.Claims))
+                    {
+                        Log.Error("User authentication failed: is not an administrator");
+                        context.Fail("User is not an administrator");
+                        throw new Exception("User is not an administrator");
+                    }
+                    
+                    Log.Information("User {Username} successfully authenticated", context.Principal!.Identity!.Name);
+                },
+                OnRemoteFailure = context =>
+                {
+                    context.Response.Redirect($"{configuration["Bot:FrontendUrl"]}");
+                    context.HandleResponse();
+                    return Task.CompletedTask;
                 }
             };
         });
+    }
+
+    private static async Task<bool> HandleUserAuthentication(IEnumerable<Claim> claims)
+    {
+        var username = claims.FirstOrDefault(x => x.Type == ClaimTypes.Name)?.Value;
+        
+        if (username == null)
+        {
+            throw new Exception("Could not find username claim");
+        }
+        
+        var userRepo = new UserRepository();
+        var user = await userRepo.FindOrCreateUser(username);
+
+        return user.Administrator;
     }
 }

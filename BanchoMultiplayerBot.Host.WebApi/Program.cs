@@ -27,6 +27,8 @@ Log.Logger = new LoggerConfiguration()
 
 var builder = WebApplication.CreateBuilder(args);
 
+Log.Information("Starting BanchoMultiplayerBot with environment {Environment}", builder.Environment.EnvironmentName);
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

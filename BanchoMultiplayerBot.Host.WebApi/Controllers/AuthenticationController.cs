@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
 
 namespace BanchoMultiplayerBot.Host.WebApi.Controllers;
 
@@ -21,31 +22,23 @@ public class AuthenticationController(IConfiguration configuration) : Controller
         return Challenge(properties, "osu");
     }
 
-    [HttpGet("osu-callback")]
-    public async Task<ActionResult> OsuResponse()
+    [HttpGet("validate")]
+    [Authorize]
+    public ActionResult Validate()
     {
-        var result = await HttpContext.AuthenticateAsync("osu");
+        var username = HttpContext.User.Claims.First(x => x.Type == ClaimTypes.Name)!.Value;
+        var id = HttpContext.User.Claims.First(x => x.Type == ClaimTypes.NameIdentifier)!.Value;
 
-        if (!result.Succeeded || result.Principal == null)
+        return Ok(new UserIdentity()
         {
-            throw new UnauthorizedAccessException();
-        }
+            Id = id,
+            Username = username
+        });
+    }
 
-        // TODO: Add user administrator check
-        
-        var claims = result.Principal.Identities.First().Claims.Select(c => new Claim(c.Type, c.Value)).ToList();
-        var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        var principal = new ClaimsPrincipal(claimsIdentity);
-
-        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
-
-        return Redirect("/");
-    }   
-    
-     [HttpGet("validate")]
-     [Authorize]
-     public ActionResult Validate()
-     {
-         return Ok();
-     }
+    private class UserIdentity
+    {
+        public string Id { get; set; }
+        public string Username { get; set; }
+    }
 }
