@@ -292,7 +292,9 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             return;
         }
 
-        var leaderboardScores = await context.Lobby.Bot.OsuApi.GetMapLeaderboardScores(Data.LastPlayedBeatmapInfo.Id);
+        // TODO: Deal with this.
+        //var leaderboardScores = await context.Lobby.Bot.OsuApiClient.GetMapLeaderboardScores(Data.LastPlayedBeatmapInfo.Id);
+        var leaderboardScores = new List<ScoreModel>(); 
         if (leaderboardScores == null || !leaderboardScores.Any())
         {
             return;
@@ -374,8 +376,9 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
     {
         var players = context.MultiplayerLobby.Players.Where(x => x.Id != null && x.Score > 0).ToList();
         var playerIds = players.Select(x => x.Id!.Value.ToString()).ToList();
-        var scores = await context.Lobby.Bot.OsuApi.GetRecentScores(playerIds);
-
+        //var scores = await context.Lobby.Bot.OsuApiClient.GetRecentScores(playerIds);
+        var scores = new List<ScoreModel>();
+        
         return players.Select((player, index) => new PlayerScoreResult(player, scores[index]?.BeatmapId == Data.LastPlayedBeatmapInfo?.Id.ToString() ? scores[index] : null)).ToList();
     }
 }

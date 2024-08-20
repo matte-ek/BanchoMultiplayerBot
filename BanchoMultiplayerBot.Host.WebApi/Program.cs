@@ -77,7 +77,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-//await app.Services.GetRequiredService<Bot>().StartAsync();
+await app.Services.GetRequiredService<Bot>().StartAsync();
 
 app.UseCors("DefaultPolicy");
 

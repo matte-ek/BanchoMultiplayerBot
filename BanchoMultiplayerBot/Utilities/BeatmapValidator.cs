@@ -4,38 +4,42 @@ using BanchoMultiplayerBot.Database.Models;
 using BanchoMultiplayerBot.Database.Repositories;
 using BanchoMultiplayerBot.Osu.Models;
 using BanchoSharp.Multiplayer;
+using OsuSharp.Enums;
+using OsuSharp.Models.Beatmaps;
 using Serilog;
 
 namespace BanchoMultiplayerBot.Utilities;
-
 
 /// <summary>
 /// Utility class to check if a map is within a lobby's regulations
 /// </summary>
 public class MapValidator(LobbyConfiguration lobbyConfiguration, MapManagerBehaviorConfig mapManagerBehaviorConfig)
 {
-    public async Task<MapStatus> ValidateBeatmap(BeatmapModel beatmap)
+    public async Task<MapStatus> ValidateBeatmap(DifficultyAttributes difficultyAttributes, BeatmapExtended? beatmapInfo)
     {
-        if (await IsBannedBeatmap(beatmap))
-            return MapStatus.Banned;
-        if (!IsAllowedBeatmapGameMode(beatmap))
-            return MapStatus.GameMode;
-        if (!IsAllowedBeatmapLength(beatmap))
-            return MapStatus.Length;
-        if (!IsAllowedBeatmapStarRating(beatmap))
+        // Allow validation with only difficulty attributes
+        if (beatmapInfo != null)
+        {
+            if (await IsBannedBeatmap(beatmapInfo))
+                return MapStatus.Banned;
+            if (!IsAllowedBeatmapGameMode(beatmapInfo))
+                return MapStatus.GameMode;
+            if (!IsAllowedBeatmapLength(beatmapInfo))
+                return MapStatus.Length;   
+            //if (!IsDownloadable(beatmapInfo))
+            //    return MapStatus.Removed;
+        }
+        
+        if (!IsAllowedBeatmapStarRating(difficultyAttributes))
             return MapStatus.StarRating;
-        if (!IsDownloadable(beatmap))
-            return MapStatus.Removed;
-
+        
         return MapStatus.Ok;
     }
-    
-    private bool IsAllowedBeatmapStarRating(BeatmapModel beatmap)
+
+    private bool IsAllowedBeatmapStarRating(DifficultyAttributes beatmap)
     {
         if (!mapManagerBehaviorConfig.LimitStarRating)
             return true;
-        if (beatmap.DifficultyRating == null)
-            return false;
 
         var minRating = mapManagerBehaviorConfig.MinimumStarRating;
         var maxRating = mapManagerBehaviorConfig.MaximumStarRating;
@@ -46,74 +50,45 @@ public class MapValidator(LobbyConfiguration lobbyConfiguration, MapManagerBehav
             maxRating += mapManagerBehaviorConfig.StarRatingErrorMargin.Value;
         }
 
-        var mapStarRating = float.Parse(beatmap.DifficultyRating, CultureInfo.InvariantCulture);
-
-        return maxRating >= mapStarRating && mapStarRating >= minRating;
+        return maxRating >= beatmap.StarRating && beatmap.StarRating >= minRating;
     }
 
-    private bool IsAllowedBeatmapLength(BeatmapModel beatmap)
+    private bool IsAllowedBeatmapLength(BeatmapExtended beatmap)
     {
         if (!mapManagerBehaviorConfig.LimitMapLength)
             return true;
-        if (beatmap.TotalLength == null)
-            return false;
 
-        var mapLength = int.Parse(beatmap.TotalLength, CultureInfo.InvariantCulture);
-
-        return mapManagerBehaviorConfig.MaximumMapLength >= mapLength && mapLength >= mapManagerBehaviorConfig.MinimumMapLength;
+        return mapManagerBehaviorConfig.MaximumMapLength >= beatmap.TotalLength.TotalSeconds &&
+               beatmap.TotalLength.TotalSeconds >= mapManagerBehaviorConfig.MinimumMapLength;
     }
 
-    private bool IsAllowedBeatmapGameMode(BeatmapModel beatmap)
+    private bool IsAllowedBeatmapGameMode(BeatmapExtended beatmap)
     {
         if (lobbyConfiguration.Mode == null)
             return true;
-
-        // Game modes are defined in the API as:
-        // 0 - osu!standard
-        // 1 - osu!taiko
-        // 2 - osu!catch
-        // 3 - osu!mania
-
-        var beatmapMode = beatmap.Mode;
-
-        if (beatmapMode != null)
+        
+        return lobbyConfiguration.Mode switch
         {
-            return lobbyConfiguration.Mode switch
-            {
-                GameMode.osu => beatmapMode == "0",
-                GameMode.osuTaiko => beatmapMode == "1",
-                GameMode.osuCatch => beatmapMode == "2",
-                GameMode.osuMania => beatmapMode == "3",
-                _ => false
-            };
-        }
-
-        Log.Error($"No beatmap mode for map {beatmap.BeatmapId}");
-
-        return false;
+            GameMode.osu => beatmap.Ruleset == Ruleset.Osu,
+            GameMode.osuTaiko => beatmap.Ruleset == Ruleset.Taiko,
+            GameMode.osuCatch => beatmap.Ruleset == Ruleset.Catch,
+            GameMode.osuMania => beatmap.Ruleset == Ruleset.Mania,
+            _ => false
+        };
     }
 
-    private static async Task<bool> IsBannedBeatmap(BeatmapModel beatmap)
+    private static async Task<bool> IsBannedBeatmap(BeatmapExtended beatmap)
     {
-        if (beatmap.BeatmapsetId == null ||
-            beatmap.BeatmapId == null)
-            return false;
-
         using var mapBanRepository = new MapBanRepository();
 
-        return await mapBanRepository.IsMapBanned(int.Parse(beatmap.BeatmapsetId), int.Parse(beatmap.BeatmapId));
+        return await mapBanRepository.IsMapBanned(beatmap.SetId, beatmap.Id);
     }
 
-    private static bool IsDownloadable(BeatmapModel beatmap)
+    private static bool IsDownloadable(BeatmapExtended beatmap)
     {
-        if (beatmap.DownloadUnavailable == null)
-            return true;
-        if (beatmap.AudioUnavailable == null)
-            return true;
-        
-        return !(beatmap.DownloadUnavailable == "1" || beatmap.AudioUnavailable == "1");
+        return (beatmap as Beatmap).Set?.Availability?.IsDownloadDisabled == true;
     }
-    
+
     public enum MapStatus
     {
         Ok,

@@ -6,5 +6,6 @@ public interface IBotConfiguration
 {
     public BanchoClientConfiguration BanchoClientConfiguration { get; init; }
 
-    public string OsuApiKey { get; init; }
+    public string OsuApiClientId { get; init; }
+    public string OsuApiClientSecret { get; init; }
 }

@@ -68,11 +68,17 @@ You can also for example send arbitrary events to all behaviors in the lobby wit
 
 Commands can now also be created more easily, by implementing the `IPlayerCommand` interface. Commands can also be processed in an event by the attribute `[BotEvent(BotEventType.CommandExecuted, "MyCommand")]`.
 
+## Libraries used
+
+* [BanchoSharp](https://github.com/hburn7/BanchoSharp) by [hburn7 (Stage)](https://github.com/hburn7) - Bancho client library used to interact with bancho
+* [osu-sharp](https://github.com/minisbett/osu-sharp) by [minisbett](https://github.com/minisbett) - osu!api library used to interact with the osu!api
+* [rosu-pp](https://github.com/MaxOhn/rosu-pp) by [MaxOhn](https://github.com/MaxOhn) - Performance point calculating library used to calculate performance points
+
+(And also the "bigger" ones such as the ASP.NET stack, SeriLog, EntityFrameworkCore, Newtonsoft.Json, Moq, prometheus-net)
+
 ## Additional Thanks
 [hburn7 (Stage)](https://github.com/hburn7) for BanchoSharp and other help
 
 [iWeeti](https://github.com/iWeeti) for a [very nice statistics website](https://github.com/iWeeti/weetisoft-osu) built for the bot
 
-[MaxOhn](https://github.com/MaxOhn) for rosu-pp that the bot uses to calculate performance points
-
-[bitknox](https://github.com/bitknox) for giving me cool ideas and additional help
+[bitknox](https://github.com/bitknox) for giving me cool ideas for the project and additional help
