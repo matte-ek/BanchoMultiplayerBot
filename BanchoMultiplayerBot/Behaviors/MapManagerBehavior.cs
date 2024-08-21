@@ -73,7 +73,7 @@ namespace BanchoMultiplayerBot.Behaviors
             try
             {
                 var beatmapInfo = await OsuApi.GetBeatmapAsync(beatmapShell.Id);
-                var beatmapAttributes = await OsuApi.GetDifficultyAttributesAsync(beatmapShell.Id, "1");
+                var beatmapAttributes = await OsuApi.GetDifficultyAttributesAsync(beatmapShell.Id);
                 
                 if (beatmapInfo == null || beatmapAttributes == null)
                 {
@@ -286,13 +286,13 @@ namespace BanchoMultiplayerBot.Behaviors
                 var ppInfo = await context.Lobby.Bot.PerformancePointCalculator.CalculatePerformancePoints(beatmapInfo.Id, (int)mods);
                 if (ppInfo != null)
                 {
-                    context.SendMessage($"(AR: {difficultyAttributes.AR} | CS: {beatmapModel.CircleSize} | OD: {beatmapModel.OverallDifficulty} | HP: {beatmapModel.HealthDrain} | 100%: {ppInfo.Performance100}pp | 98%: {ppInfo.Performance98}pp | 95%: {ppInfo.Performance95}pp)");
+                    context.SendMessage($"(AR: {beatmapModel.ApproachRate} | CS: {beatmapModel.CircleSize} | OD: {beatmapModel.OverallDifficulty} | HP: {beatmapModel.HealthDrain} | 100%: {ppInfo.Performance100}pp | 98%: {ppInfo.Performance98}pp | 95%: {ppInfo.Performance95}pp)");
 
                     return;
                 }
             }
          
-            context.SendMessage($"(AR: {difficultyAttributes.AR} | CS: {beatmapModel.CircleSize} | OD: {beatmapModel.OverallDifficulty} | HP: {beatmapModel.HealthDrain})");
+            context.SendMessage($"(AR: {beatmapModel.ApproachRate} | CS: {beatmapModel.CircleSize} | OD: {beatmapModel.OverallDifficulty} | HP: {beatmapModel.HealthDrain})");
         }
 
         /// <summary>

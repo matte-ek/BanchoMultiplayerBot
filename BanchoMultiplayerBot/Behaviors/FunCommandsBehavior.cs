@@ -9,6 +9,8 @@ using BanchoMultiplayerBot.Interfaces;
 using BanchoMultiplayerBot.Osu.Models;
 using BanchoMultiplayerBot.Providers;
 using BanchoSharp.Multiplayer;
+using OsuSharp.Enums;
+using OsuSharp.Models.Events;
 using Serilog;
 
 namespace BanchoMultiplayerBot.Behaviors;
@@ -58,7 +60,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         
         var mapManagerDataProvider = new BehaviorDataProvider<MapManagerBehaviorData>(context.Lobby);
         var scores = await scoreRepository.GetScoresByMapAndPlayerId(commandEventContext.Player.Id.Value, mapManagerDataProvider.Data.BeatmapInfo.Id);
-                
+        
         var failCount = scores.Count(x => x.Rank == 1);
         var passCount = scores.Count - failCount;
         var passFail =  failCount >= passCount ? "fail" : "pass";
@@ -244,6 +246,8 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         using var gameRepository = new GameRepository();
 
         var playerFinishCount = recentScores.Count;
+        
+        // TODO: Where is fail? (Grade.F)
         var playerPassedCount = recentScores.Count(x => x.Score?.Rank != "F");
 
         var game = new Game()
@@ -278,7 +282,8 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             var user = await userRepository.FindUser(result.Player.Name) ??
                        await userRepository.CreateUser(result.Player.Name);
 
-            if (result.Score?.Rank != "F")
+            // TODO: Where is fail? (Grade.F)
+            if (result.Score?.Grade != Grade.F)
                 user.MatchesPlayed++;
         }
 
@@ -292,9 +297,11 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             return;
         }
 
-        // TODO: Deal with this.
+        // TODO: This probably isn't needed as score appears to contains rank data.
+        
         //var leaderboardScores = await context.Lobby.Bot.OsuApiClient.GetMapLeaderboardScores(Data.LastPlayedBeatmapInfo.Id);
-        var leaderboardScores = new List<ScoreModel>(); 
+         
+        /*
         if (leaderboardScores == null || !leaderboardScores.Any())
         {
             return;
@@ -302,13 +309,13 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
 
         foreach (var score in recentScores)
         {
-            var leaderboardScore = leaderboardScores.FirstOrDefault(x => x?.ScoreId == score?.Score?.ScoreId);
+            var leaderboardScore = leaderboardScores.FirstOrDefault(x => x?.ScoreId == score?.Score?.RankGlobal);
             if (leaderboardScore == null)
             {
                 continue;
             }
 
-            var leaderboardPosition = leaderboardScores.ToList().FindIndex(x => x?.ScoreId == score?.Score?.ScoreId);
+            var leaderboardPosition = leaderboardScores.ToList().FindIndex(x => x?.ScoreId == score?.Score?.Id);
             if (leaderboardPosition == -1)
             {
                 continue;
@@ -321,6 +328,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
                 context.SendMessage($"Congratulations {score.Player.Name} for getting #{leaderboardPosition + 1} on the map's leaderboard!");
             }
         }
+        */
     }
 
     private async Task StoreScoreData(IReadOnlyList<PlayerScoreResult> recentScores, Game game)
@@ -339,26 +347,24 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
 
                 var score = result.Score;
                 var user = await userRepository.FindOrCreateUser(result.Player.Name);
-
-                var newScore = new Score()
+                
+                await scoreRepository.Add(new Score()
                 {
                     UserId = user.Id,
                     PlayerId = result.Player.Id,
                     LobbyId = context.Lobby.LobbyConfigurationId,
                     GameId = game.Id,
-                    OsuScoreId = score.ScoreId == null ? null : long.Parse(score.ScoreId),
-                    BeatmapId = long.Parse(score.BeatmapId!),
-                    TotalScore = long.Parse(score.Score!),
-                    Rank = score.GetRankId(),
-                    MaxCombo = int.Parse(score.Maxcombo!),
-                    Count300 = int.Parse(score.Count300!),
-                    Count100 = int.Parse(score.Count100!),
-                    Count50 = int.Parse(score.Count50!),
-                    CountMiss = int.Parse(score.Countmiss!),
-                    Mods = int.Parse(score.EnabledMods!),
-                };
-
-                await scoreRepository.Add(newScore);
+                    OsuScoreId = score.Id,
+                    BeatmapId = score.Beatmap!.Id,
+                    TotalScore = score.TotalScore,
+                    Rank = (int)score.Grade, // TODO: Verify this.
+                    MaxCombo = score.MaxCombo,
+                    Count300 = score.Statistics.Count300,
+                    Count100 = score.Statistics.Count100,
+                    Count50 = score.Statistics.Count50,
+                    CountMiss = score.Statistics.Misses,
+                    Mods = score.Mods, // TODO: Fix me.
+                });
             }
         }
         catch (Exception e)
@@ -375,10 +381,12 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
     private async Task<IReadOnlyList<PlayerScoreResult>> GetRecentScores()
     {
         var players = context.MultiplayerLobby.Players.Where(x => x.Id != null && x.Score > 0).ToList();
-        var playerIds = players.Select(x => x.Id!.Value.ToString()).ToList();
-        //var scores = await context.Lobby.Bot.OsuApiClient.GetRecentScores(playerIds);
-        var scores = new List<ScoreModel>();
+        var grabScoreTask = players.Select(player => context.Lobby.Bot.OsuApiClient.GetUserScoresAsync(player.Id!.Value, UserScoreType.Recent, false, true, null, 1)).ToList();
+
+        await Task.WhenAll(grabScoreTask);
         
-        return players.Select((player, index) => new PlayerScoreResult(player, scores[index]?.BeatmapId == Data.LastPlayedBeatmapInfo?.Id.ToString() ? scores[index] : null)).ToList();
+        var scores = grabScoreTask.Select(x => x.Result?.FirstOrDefault()).ToList();
+        
+        return players.Select(player => new PlayerScoreResult(player, scores.First(x => x?.UserId == player.Id!))).ToList();
     }
 }
