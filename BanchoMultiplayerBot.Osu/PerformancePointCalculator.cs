@@ -2,8 +2,9 @@
 using System.Globalization;
 using System.Runtime.InteropServices;
 using BanchoMultiplayerBot.Osu.Data;
+using BanchoMultiplayerBot.Osu.Extensions;
 using BanchoMultiplayerBot.Osu.Interfaces;
-using BanchoMultiplayerBot.Osu.Models;
+using OsuSharp.Models.Scores;
 using Serilog;
 
 namespace BanchoMultiplayerBot.Osu;
@@ -38,7 +39,7 @@ public class PerformancePointCalculator
     /// <summary>
     /// Calculates the pp for an individual score.
     /// </summary>
-    public async Task<PlayPerformanceInfo?> CalculateScorePerformancePoints(int beatmapId, ScoreModel scoreModel)
+    public async Task<PlayPerformanceInfo?> CalculateScorePerformancePoints(int beatmapId, Score scoreModel)
     {
         if (!await DownloadBeatmapFile(beatmapId))
         {
@@ -48,16 +49,16 @@ public class PerformancePointCalculator
         try
         {
             return (PlayPerformanceInfo?)await CalculateBeatmapPerformancePoints(beatmapId,
-                int.Parse(scoreModel.EnabledMods!),
-                int.Parse(scoreModel.Count300!),
-                int.Parse(scoreModel.Count100!),
-                int.Parse(scoreModel.Count50!),
-                int.Parse(scoreModel.Countmiss!),
-                int.Parse(scoreModel.Maxcombo!));
+                scoreModel.GetModsBitset(),
+                (scoreModel.Statistics.Count300),
+                (scoreModel.Statistics.Count100),
+                (scoreModel.Statistics.Count50),
+                (scoreModel.Statistics.Misses),
+                (scoreModel.MaxCombo));
         }
         catch (Exception e)
         {
-            Log.Error("PerformancePointCalculator: Error while calculating pp for score {ScoreId}, {e.Message}", scoreModel.ScoreId, e);
+            Log.Error("PerformancePointCalculator: Error while calculating pp for score {ScoreId}, {e.Message}", scoreModel.Id, e);
             return null;
         }
     }

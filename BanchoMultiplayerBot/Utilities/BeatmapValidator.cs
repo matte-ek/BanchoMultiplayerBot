@@ -1,12 +1,9 @@
-﻿using System.Globalization;
-using BanchoMultiplayerBot.Behaviors.Config;
+﻿using BanchoMultiplayerBot.Behaviors.Config;
 using BanchoMultiplayerBot.Database.Models;
 using BanchoMultiplayerBot.Database.Repositories;
-using BanchoMultiplayerBot.Osu.Models;
 using BanchoSharp.Multiplayer;
 using OsuSharp.Enums;
 using OsuSharp.Models.Beatmaps;
-using Serilog;
 
 namespace BanchoMultiplayerBot.Utilities;
 
@@ -50,7 +47,7 @@ public class MapValidator(LobbyConfiguration lobbyConfiguration, MapManagerBehav
             maxRating += mapManagerBehaviorConfig.StarRatingErrorMargin.Value;
         }
 
-        return maxRating >= beatmap.StarRating && beatmap.StarRating >= minRating;
+        return maxRating >= beatmap.DifficultyRating && beatmap.DifficultyRating >= minRating;
     }
 
     private bool IsAllowedBeatmapLength(BeatmapExtended beatmap)

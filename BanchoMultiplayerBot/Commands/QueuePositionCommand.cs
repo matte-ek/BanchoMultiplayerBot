@@ -3,7 +3,7 @@ using BanchoMultiplayerBot.Interfaces;
 
 namespace BanchoMultiplayerBot.Commands;
 
-public class QueuePosition : IPlayerCommand
+public class QueuePositionCommand : IPlayerCommand
 {
     public string Command => "QueuePosition";
 

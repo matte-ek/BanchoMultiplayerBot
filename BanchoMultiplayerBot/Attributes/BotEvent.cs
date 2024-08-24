@@ -10,8 +10,7 @@ public class BotEvent(BotEventType type, string? optionalScope = null) : Attribu
 
 public enum BotEventType
 {
-    BotStarted,
-    BotStopped,
+    Initialize,
     MessageReceived,
     MessageSent,
     LobbyMessageReceived,

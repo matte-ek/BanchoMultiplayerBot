@@ -12,6 +12,8 @@ namespace BanchoMultiplayerBot.Database
 
         public DbSet<PlayerBan> PlayerBans { get; set; }
         public DbSet<MapBan> MapBans { get; set; }
+        
+        public DbSet<NoticeMessage> NoticeMessages { get; set; }
 
         public DbSet<LobbyConfiguration> LobbyConfigurations { get; set; }
         public DbSet<LobbyRoomInstance> LobbyRoomInstances { get; set; }

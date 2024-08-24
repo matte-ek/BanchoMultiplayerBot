@@ -5,6 +5,7 @@ using BanchoMultiplayerBot.Osu;
 using BanchoMultiplayerBot.Utilities;
 using Microsoft.EntityFrameworkCore;
 using OsuSharp;
+using OsuSharp.Enums;
 using Serilog;
 
 namespace BanchoMultiplayerBot
@@ -58,14 +59,8 @@ namespace BanchoMultiplayerBot
 
             var lobbyConfigurations = await context.LobbyConfigurations.ToListAsync();
             
-            foreach (var lobbyConfiguration in lobbyConfigurations)
+            foreach (var lobbyConfiguration in lobbyConfigurations.Where(lobbyConfiguration => !Lobbies.Any(x => x.LobbyConfigurationId == lobbyConfiguration.Id)))
             {
-                // If we've already loaded the lobby, ignore.
-                if (Lobbies.Any(x => x.LobbyConfigurationId == lobbyConfiguration.Id))
-                {
-                    continue;
-                }
-                
                 Lobbies.Add(new Lobby(this, lobbyConfiguration.Id));
                 
                 Log.Information("Bot: Loaded lobby configuration with id {LobbyConfigurationId}", lobbyConfiguration.Id);

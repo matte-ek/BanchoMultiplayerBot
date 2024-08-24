@@ -27,8 +27,25 @@ public class Score
 
     public DateTime Time { get; set; }
     
-    public float CalculateAccuracy()
+    public float GetAccuracy()
     {
         return ((Count300 * 300 + Count100 * 100 + Count50 * 50) / (float)((Count300 + Count100 + Count50 + CountMiss) * 300)) * 100;
+    }
+
+    public string GetRankString() => GetRankString(Rank);
+    
+    public static string GetRankString(int rank)
+    {
+        return rank switch
+        {
+            1 => "F",
+            2 => "D",
+            3 => "C",
+            4 => "B",
+            5 => "A",
+            6 => "S",
+            7 => "SS",
+            _ => "N/A"
+        };
     }
 }

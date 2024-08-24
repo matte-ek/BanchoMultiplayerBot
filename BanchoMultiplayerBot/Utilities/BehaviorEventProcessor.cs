@@ -192,6 +192,11 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
         await ExecuteBotCallback(BotEventType.MessageReceived, msg);
     }
 
+    public async Task OnInitializeEvent()
+    {
+        await ExecuteBotCallback(BotEventType.Initialize);
+    }
+    
     public async Task OnBehaviorEvent(string name, object? param = null)
     {
         await ExecuteBotCallbackScoped(BotEventType.BehaviourEvent, name, param);

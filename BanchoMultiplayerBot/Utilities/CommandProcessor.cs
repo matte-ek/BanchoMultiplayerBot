@@ -99,30 +99,29 @@ public class CommandProcessor(Bot bot)
             }
         }
         
-        var commandContext = new CommandEventContext(message, args.Skip(1).ToArray(), command, user, bot.BanchoConnection.MessageHandler);
+        var commandContext = new CommandEventContext(message, args.Skip(1).ToArray(), bot, command, user);
+        
+        // Execute the command in the context of a multiplayer lobby
+        if (!message.IsDirect)
+        {
+            // Execute the command in the context of a multiplayer lobby
+            foreach (var lobby in bot.Lobbies)
+            {
+                if (lobby.MultiplayerLobby == null ||
+                    lobby.MultiplayerLobby.ChannelName != message.Recipient ||
+                    lobby.BehaviorEventProcessor == null)
+                {
+                    continue;
+                }
 
+                commandContext.Lobby = lobby;
+                commandContext.Player = lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name.ToIrcNameFormat() == message.Sender.ToIrcNameFormat());
+            
+                await lobby.BehaviorEventProcessor.OnCommandExecuted(command.Command, commandContext);
+            }
+        }
+     
         // Execute the command in a global context
         await command.ExecuteAsync(commandContext);
-
-        if (message.IsDirect)
-        {
-            return;
-        }
-
-        // Execute the command in the context of a multiplayer lobby
-        foreach (var lobby in bot.Lobbies)
-        {
-            if (lobby.MultiplayerLobby == null ||
-                lobby.MultiplayerLobby.ChannelName != message.Recipient ||
-                lobby.BehaviorEventProcessor == null)
-            {
-                continue;
-            }
-
-            commandContext.Lobby = lobby;
-            commandContext.Player = lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name.ToIrcNameFormat() == message.Sender.ToIrcNameFormat());
-            
-            await lobby.BehaviorEventProcessor.OnCommandExecuted(command.Command, commandContext);
-        }
     }
 }

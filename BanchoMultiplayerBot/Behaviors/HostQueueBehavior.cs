@@ -42,7 +42,7 @@ namespace BanchoMultiplayerBot.Behaviors
 
             if (Data.Queue.Contains(player.Name))
             {
-                Log.Warning("HostQueueBehavior: Player {PlayerName} is already in the queue during join event", player.Name);
+                Log.Verbose("HostQueueBehavior: Player {PlayerName} is already in the queue during join event", player.Name);
                 return;
             }
             
@@ -50,7 +50,8 @@ namespace BanchoMultiplayerBot.Behaviors
             
             RestoreQueuePosition(player);
             
-            ApplyRoomHost();
+            if (context.Lobby.IsReady)
+                ApplyRoomHost();
         }
         
         [BanchoEvent(BanchoEventType.OnPlayerDisconnected)]

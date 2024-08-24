@@ -9,6 +9,12 @@ namespace BanchoMultiplayerBot.Behaviors
 {
     public class RoomManagerBehavior(BehaviorEventContext context) : IBehavior
     {
+        [BotEvent(BotEventType.Initialize)]
+        public async Task OnInitialize()
+        {
+            await context.ExecuteCommandAsync<RoomSettingsUpdateCommand>();
+        }
+
         [BanchoEvent(BanchoEventType.MatchStarted)]
         public async Task OnMatchStarted()
         {

@@ -10,4 +10,13 @@
     <PackageReference Include="Serilog" Version="4.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="BanchoSharp">
+      <HintPath>..\..\forks\BanchoSharp\BanchoSharp\bin\Release\net8.0\BanchoSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="OsuSharp">
+      <HintPath>..\..\forks\osu-sharp\OsuSharp\bin\Debug\net8.0\OsuSharp.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

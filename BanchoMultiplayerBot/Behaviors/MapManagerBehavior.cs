@@ -1,14 +1,11 @@
-﻿using System.Globalization;
-using BanchoMultiplayerBot.Attributes;
+﻿using BanchoMultiplayerBot.Attributes;
 using BanchoMultiplayerBot.Bancho.Commands;
 using BanchoMultiplayerBot.Behaviors.Config;
 using BanchoMultiplayerBot.Behaviors.Data;
 using BanchoMultiplayerBot.Data;
-using BanchoMultiplayerBot.Extensions;
 using BanchoMultiplayerBot.Interfaces;
 using BanchoMultiplayerBot.Osu;
 using BanchoMultiplayerBot.Osu.Exceptions;
-using BanchoMultiplayerBot.Osu.Models;
 using BanchoMultiplayerBot.Providers;
 using BanchoMultiplayerBot.Utilities;
 using BanchoSharp.Multiplayer;
@@ -91,7 +88,7 @@ namespace BanchoMultiplayerBot.Behaviors
                 // Special case for double-time, we want to check if
                 // the map was rejected for star rating
                 if (mapValidationResult == MapValidator.MapStatus.StarRating &&
-                    Config.MinimumStarRating >= Math.Round(beatmapAttributes.StarRating, 2) &&
+                    Config.MinimumStarRating >= Math.Round(beatmapAttributes.DifficultyRating, 2) &&
                     Config.AllowDoubleTime)
                 {
                     var doubleTimeMapAttributes = await OsuApi.GetDifficultyAttributesAsync(beatmapShell.Id, "DT");
@@ -105,7 +102,7 @@ namespace BanchoMultiplayerBot.Behaviors
 
                         if ((context.MultiplayerLobby.Mods & Mods.DoubleTime) != 0)
                         {
-                            await EnforceBeatmapRegulations(beatmapInfo, doubleTimeMapAttributes, MapValidator.MapStatus.Ok, ModsModel.DoubleTime);
+                            await EnforceBeatmapRegulations(beatmapInfo, doubleTimeMapAttributes, MapValidator.MapStatus.Ok, (int)Mods.DoubleTime);
 
                             return;
                         }
@@ -142,7 +139,7 @@ namespace BanchoMultiplayerBot.Behaviors
             }
         }
 
-        private async Task EnforceBeatmapRegulations(BeatmapExtended beatmapModel, DifficultyAttributes difficultyAttributes, MapValidator.MapStatus status, ModsModel mods = 0)
+        private async Task EnforceBeatmapRegulations(BeatmapExtended beatmapModel, DifficultyAttributes difficultyAttributes, MapValidator.MapStatus status, int mods = 0)
         {
             var lobbyConfig = await context.Lobby.GetLobbyConfiguration();
             var beatmapSet = (beatmapModel as Beatmap).Set;
@@ -158,7 +155,7 @@ namespace BanchoMultiplayerBot.Behaviors
                     Name = $"{beatmapSet?.Artist} - {beatmapSet?.Title}",
                     Length = beatmapModel.TotalLength,
                     DrainLength = beatmapModel.HitLength,
-                    StarRating = difficultyAttributes.StarRating
+                    StarRating = difficultyAttributes.DifficultyRating
                 };
 
                 Data.BeatmapFallbackId = Data.BeatmapInfo.Id;
@@ -182,9 +179,9 @@ namespace BanchoMultiplayerBot.Behaviors
                     context.SendMessage($"The selected beatmap you've picked is too long. Max map length: {TimeSpan.FromSeconds(Config.MaximumMapLength):mm\\:ss}");
                     break;
                 case MapValidator.MapStatus.StarRating:
-                    context.SendMessage(difficultyAttributes.StarRating >= Config.MaximumStarRating
-                        ? $"The selected beatmap's star rating is too high for the lobby ({difficultyAttributes.StarRating:0.00} > {Config.MaximumStarRating:0.0})."
-                        : $"The selected beatmap's star rating is too low for the lobby ({Config.MinimumStarRating:0.0} > {difficultyAttributes.StarRating:0.00}).");
+                    context.SendMessage(difficultyAttributes.DifficultyRating >= Config.MaximumStarRating
+                        ? $"The selected beatmap's star rating is too high for the lobby ({difficultyAttributes.DifficultyRating:0.00} > {Config.MaximumStarRating:0.0})."
+                        : $"The selected beatmap's star rating is too low for the lobby ({Config.MinimumStarRating:0.0} > {difficultyAttributes.DifficultyRating:0.00}).");
                     break;
                 case MapValidator.MapStatus.GameMode:
                     var modeName = lobbyConfig.Mode switch
@@ -270,10 +267,10 @@ namespace BanchoMultiplayerBot.Behaviors
         /// Will announce the beatmap in the chat, along with some information about it,
         /// such as star rating, status, length, bpm, etc.
         /// </summary>
-        private async Task AnnounceBeatmap(BeatmapExtended beatmapModel, DifficultyAttributes difficultyAttributes, ModsModel mods = 0)
+        private async Task AnnounceBeatmap(BeatmapExtended beatmapModel, DifficultyAttributes difficultyAttributes, int mods)
         {
             var beatmapInfo = Data.BeatmapInfo;
-            var starRatingRounded = Math.Round(difficultyAttributes.StarRating, 2);
+            var starRatingRounded = Math.Round(difficultyAttributes.DifficultyRating, 2);
             var beatmapSet = (beatmapModel as Beatmap).Set;
             
             context.SendMessage($"[https://osu.ppy.sh/b/{beatmapInfo.Id} {beatmapSet?.Artist} - {beatmapSet?.Title} [{beatmapModel.Version ?? string.Empty}]] - ([https://beatconnect.io/b/{beatmapInfo.SetId} BeatConnect Mirror] - [https://osu.direct/d/{beatmapInfo.SetId} osu.direct Mirror])");
@@ -283,7 +280,7 @@ namespace BanchoMultiplayerBot.Behaviors
             if (PerformancePointCalculator.IsAvailable && 
                 context.Lobby.Bot.PerformancePointCalculator != null)
             {
-                var ppInfo = await context.Lobby.Bot.PerformancePointCalculator.CalculatePerformancePoints(beatmapInfo.Id, (int)mods);
+                var ppInfo = await context.Lobby.Bot.PerformancePointCalculator.CalculatePerformancePoints(beatmapInfo.Id, mods);
                 if (ppInfo != null)
                 {
                     context.SendMessage($"(AR: {beatmapModel.ApproachRate} | CS: {beatmapModel.CircleSize} | OD: {beatmapModel.OverallDifficulty} | HP: {beatmapModel.HealthDrain} | 100%: {ppInfo.Performance100}pp | 98%: {ppInfo.Performance98}pp | 95%: {ppInfo.Performance95}pp)");

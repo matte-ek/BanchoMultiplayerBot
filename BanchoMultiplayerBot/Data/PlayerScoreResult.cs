@@ -1,5 +1,4 @@
-﻿using BanchoMultiplayerBot.Osu.Models;
-using BanchoSharp.Multiplayer;
+﻿using BanchoSharp.Multiplayer;
 using OsuSharp.Models.Scores;
 
 namespace BanchoMultiplayerBot.Data;

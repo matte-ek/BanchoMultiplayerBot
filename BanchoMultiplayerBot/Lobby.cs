@@ -160,11 +160,11 @@ namespace BanchoMultiplayerBot
                     BehaviorEventProcessor.RegisterBehavior(behavior);
                 }
             }
-
-            BehaviorEventProcessor.Start();
-
+            
             await TimerProvider.Start();
             await VoteProvider.Start();
+            
+            BehaviorEventProcessor.Start();
             
             // Make sure we have a database entry for this lobby instance
             var recentRoomInstance = await GetRecentRoomInstance(_channelId);
@@ -183,6 +183,8 @@ namespace BanchoMultiplayerBot
                 await context.SaveChangesAsync();
             }
 
+            await BehaviorEventProcessor.OnInitializeEvent();
+            
             IsReady = true;
             
             Log.Verbose("Lobby: Lobby instance built successfully");

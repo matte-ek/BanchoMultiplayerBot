@@ -6,7 +6,7 @@ using BanchoSharp.Multiplayer;
 
 namespace BanchoMultiplayerBot.Data;
 
-public class CommandEventContext(IPrivateIrcMessage message, string[] arguments, IPlayerCommand playerCommand, User user, IMessageHandler messageHandler)
+public class CommandEventContext(IPrivateIrcMessage message, string[] arguments, Bot bot, IPlayerCommand playerCommand, User user)
 {
     public IPrivateIrcMessage Message { get; } = message;
     
@@ -17,6 +17,8 @@ public class CommandEventContext(IPrivateIrcMessage message, string[] arguments,
     public User User { get; } = user;
 
     public ILobby? Lobby { get; set; }
+
+    public Bot Bot { get; set; } = bot;
     
     public MultiplayerPlayer? Player { get; set; }
 
@@ -24,6 +26,6 @@ public class CommandEventContext(IPrivateIrcMessage message, string[] arguments,
     {
         var channel = Message.IsDirect ? Message.Sender : Message.Recipient;
         
-        messageHandler.SendMessage(channel, message);
+        Bot.BanchoConnection.MessageHandler.SendMessage(channel, message);
     }
 }
