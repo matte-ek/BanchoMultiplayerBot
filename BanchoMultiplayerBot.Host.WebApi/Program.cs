@@ -1,18 +1,11 @@
-using System.Net.Http.Headers;
-using System.Security.Claims;
-using System.Text.Json;
 using BanchoMultiplayerBot;
-using BanchoMultiplayerBot.Bancho.Data;
-using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Database;
 using BanchoMultiplayerBot.Host.WebApi.Extensions;
 using BanchoMultiplayerBot.Host.WebApi.Hubs;
 using BanchoMultiplayerBot.Host.WebApi.Providers;
 using BanchoMultiplayerBot.Host.WebApi.Services;
 using BanchoMultiplayerBot.Interfaces;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -43,9 +36,11 @@ await using (var context = new BotDbContext())
 // Setup services
 builder.Services.AddSingleton<IBotConfiguration>(new BotConfigurationProvider(builder.Configuration));
 builder.Services.AddSingleton<Bot>();
+builder.Services.AddSingleton<LobbyTrackerService>();
 
 builder.Services.AddScoped<BehaviorService>();
 builder.Services.AddScoped<LobbyService>();
+builder.Services.AddScoped<HealthService>();
 
 // Setup authentication
 builder.Services.AddAuthentication(options =>
@@ -77,6 +72,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.Services.GetRequiredService<LobbyTrackerService>().Start();
+
 await app.Services.GetRequiredService<Bot>().StartAsync();
 
 app.UseCors("DefaultPolicy");
@@ -91,3 +88,5 @@ app.MapHub<LobbyEventHub>("/hubs/lobby");
 await app.RunAsync();
 
 await app.Services.GetRequiredService<Bot>().StopAsync();
+
+app.Services.GetRequiredService<LobbyTrackerService>().Stop();

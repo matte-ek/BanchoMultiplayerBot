@@ -8,6 +8,8 @@ public class BeatmapInfo
 
     public string Name { get; set; } = string.Empty;
     
+    public string Artist { get; set; } = string.Empty;
+    
     public TimeSpan Length { get; set; }
     
     public TimeSpan DrainLength { get; set; }

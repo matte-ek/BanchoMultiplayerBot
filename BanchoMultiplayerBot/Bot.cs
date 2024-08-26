@@ -1,4 +1,5 @@
 ﻿using BanchoMultiplayerBot.Bancho;
+using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Database;
 using BanchoMultiplayerBot.Interfaces;
 using BanchoMultiplayerBot.Osu;
@@ -20,6 +21,9 @@ namespace BanchoMultiplayerBot
 
         public PerformancePointCalculator? PerformancePointCalculator { get; } = new();
         
+        public event Action<ILobby>? OnLobbyCreated;
+        public event Action<ILobby>? OnLobbyRemoved;
+        
         private CommandProcessor? _commandProcessor;
 
         public async Task StartAsync()
@@ -30,7 +34,7 @@ namespace BanchoMultiplayerBot
             _commandProcessor.Start();
 
             BanchoConnection.OnReady += OnBanchoReady;
-            
+
             await LoadLobbiesFromDatabase();
             await BanchoConnection.StartAsync();
         }
@@ -51,6 +55,42 @@ namespace BanchoMultiplayerBot
             await BanchoConnection.StopAsync();
         }
         
+        public async Task ReloadLobbies()
+        {
+            if (!BanchoConnection.IsConnected)
+            {
+                throw new InvalidOperationException("Bot is not connected to Bancho.");
+            }
+            
+            await LoadLobbiesFromDatabase();
+
+            foreach (var lobby in Lobbies.Where(lobby => !(lobby.Health == LobbyHealth.Ok || lobby.Health == LobbyHealth.Idle)))
+            {
+                await lobby.ConnectAsync();
+            }
+        }
+        
+        public async Task DeleteLobby(int configurationId)
+        {
+            await using var context = new BotDbContext();
+            
+            var lobby = Lobbies.FirstOrDefault(x => x.LobbyConfigurationId == configurationId);
+
+            if (lobby == null)
+            {
+                throw new InvalidOperationException("Failed to find lobby configuration.");
+            }
+
+            await lobby.Dispose();
+            
+            Lobbies.Remove(lobby);
+            OnLobbyRemoved?.Invoke(lobby);
+
+            context.Remove(lobby);
+            
+            await context.SaveChangesAsync();
+        }
+        
         private async Task LoadLobbiesFromDatabase()
         {
             await using var context = new BotDbContext();
@@ -61,7 +101,11 @@ namespace BanchoMultiplayerBot
             
             foreach (var lobbyConfiguration in lobbyConfigurations.Where(lobbyConfiguration => !Lobbies.Any(x => x.LobbyConfigurationId == lobbyConfiguration.Id)))
             {
-                Lobbies.Add(new Lobby(this, lobbyConfiguration.Id));
+                var lobby = new Lobby(this, lobbyConfiguration.Id);
+                
+                Lobbies.Add(lobby);
+                
+                OnLobbyCreated?.Invoke(lobby);
                 
                 Log.Information("Bot: Loaded lobby configuration with id {LobbyConfigurationId}", lobbyConfiguration.Id);
             }
@@ -76,7 +120,7 @@ namespace BanchoMultiplayerBot
                 await lobby.ConnectAsync();
                 
                 var attempts = 0;
-                while (!lobby.IsReady)
+                while (!(lobby.Health == LobbyHealth.Ok || lobby.Health == LobbyHealth.Idle))
                 {
                     if (attempts++ > 20)
                     {

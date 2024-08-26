@@ -1,4 +1,5 @@
 ﻿using BanchoMultiplayerBot.Bancho;
+using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Interfaces;
 using BanchoSharp.Multiplayer;
 using BanchoMultiplayerBot.Database;
@@ -34,14 +35,24 @@ namespace BanchoMultiplayerBot
         public int LobbyConfigurationId { get; set; }
 
         /// <summary>
-        /// Whether the lobby is ready
+        /// The current state of the lobby
         /// </summary>
-        public bool IsReady { get; private set; }
+        public LobbyHealth Health { get; set; }
 
         /// <summary>
         /// Event dispatcher for behavior events
         /// </summary>
         public IBehaviorEventProcessor? BehaviorEventProcessor { get; private set; }
+        
+        /// <summary>
+        /// Whenever the lobby has started in a new channel
+        /// </summary>
+        public event Action? OnStarted;
+        
+        /// <summary>
+        /// Whenever the lobby has stopped in a previous channel
+        /// </summary>
+        public event Action? OnStopped;
         
         public ITimerProvider? TimerProvider { get; private set; }
         
@@ -70,6 +81,8 @@ namespace BanchoMultiplayerBot
             BanchoConnection.ChannelHandler.OnLobbyCreated -= OnLobbyCreated;
 
             await ShutdownInstance();
+            
+            MultiplayerLobby = null;
         }
 
         /// <summary>
@@ -78,7 +91,7 @@ namespace BanchoMultiplayerBot
         /// </summary>
         public async Task ConnectAsync()
         {
-            IsReady = false;
+            Health = LobbyHealth.Preparing;
             
             if (BanchoConnection.BanchoClient == null)
             {
@@ -109,6 +122,8 @@ namespace BanchoMultiplayerBot
                 Log.Verbose("Lobby: Attempting to join existing channel '{ExistingChannel}' for lobby '{LobbyName}'...",
                     existingChannel,
                     lobbyConfiguration.Name);
+                
+                Health = LobbyHealth.JoiningChannel;
 
                 await BanchoConnection.BanchoClient?.SendAsync($"JOIN {existingChannel}")!;
             }
@@ -116,10 +131,18 @@ namespace BanchoMultiplayerBot
             {
                 Log.Verbose("Lobby: Creating new channel for lobby '{LobbyName}'", lobbyConfiguration.Name);
                 
+                Health = LobbyHealth.CreatingChannel;
+                
                 await BanchoConnection.BanchoClient?.MakeTournamentLobbyAsync(lobbyConfiguration.Name)!;
             }
         }
 
+        public async Task RefreshAsync()
+        {
+            await ShutdownInstance();
+            await BuildInstance();
+        }
+        
         public async Task<LobbyConfiguration> GetLobbyConfiguration()
         {
             await using var context = new BotDbContext();
@@ -138,6 +161,8 @@ namespace BanchoMultiplayerBot
         private async Task BuildInstance()
         {
             var lobbyConfiguration = await GetLobbyConfiguration();
+            
+            Health = LobbyHealth.Initializing;
 
             BehaviorEventProcessor = new BehaviorEventProcessor(this);
             TimerProvider = new TimerProvider(this);
@@ -145,14 +170,12 @@ namespace BanchoMultiplayerBot
             
             // Load the default behaviors
             BehaviorEventProcessor.RegisterBehavior("RoomManagerBehavior");
-            BehaviorEventProcessor.RegisterBehavior("AbortVoteBehavior");
-            BehaviorEventProcessor.RegisterBehavior("AntiAfkBehavior");
-            BehaviorEventProcessor.RegisterBehavior("AutoStartBehavior");
-            BehaviorEventProcessor.RegisterBehavior("HostQueueBehavior");
-            BehaviorEventProcessor.RegisterBehavior("MapManagerBehavior");
-            BehaviorEventProcessor.RegisterBehavior("FunCommandsBehavior");
+            BehaviorEventProcessor.RegisterBehavior("BanBehavior");
+            BehaviorEventProcessor.RegisterBehavior("AnnouncementBehavior");
+            BehaviorEventProcessor.RegisterBehavior("HealthMonitorBehavior");
+            BehaviorEventProcessor.RegisterBehavior("StatisticsBehavior");
     
-            // Load custom behaviors
+            // Load custom specified behaviors
             if (lobbyConfiguration.Behaviours != null)
             {
                 foreach (var behavior in lobbyConfiguration.Behaviours)
@@ -185,7 +208,9 @@ namespace BanchoMultiplayerBot
 
             await BehaviorEventProcessor.OnInitializeEvent();
             
-            IsReady = true;
+            OnStarted?.Invoke();
+            
+            Health = LobbyHealth.Ok;
             
             Log.Verbose("Lobby: Lobby instance built successfully");
         }
@@ -207,7 +232,10 @@ namespace BanchoMultiplayerBot
             BehaviorEventProcessor?.Stop();
             BehaviorEventProcessor = null;
 
-            MultiplayerLobby = null;
+            OnStopped?.Invoke();
+            
+            if (Health != LobbyHealth.Initializing)
+                Health = LobbyHealth.Stopped; 
             
             Log.Verbose("Lobby: Lobby instance shutdown successfully");
         }
@@ -281,6 +309,8 @@ namespace BanchoMultiplayerBot
 
             Log.Warning("Lobby: Failed to join channel {AttemptedChannel}, creating new lobby instead.",
                 attemptedChannel);
+
+            Health = LobbyHealth.CreatingChannel;
 
             await BanchoConnection.BanchoClient?.MakeTournamentLobbyAsync(lobbyConfiguration.Name)!;
         }

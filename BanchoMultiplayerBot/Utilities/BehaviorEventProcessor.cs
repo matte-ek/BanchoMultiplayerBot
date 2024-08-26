@@ -15,6 +15,8 @@ namespace BanchoMultiplayerBot.Utilities;
 /// </summary>
 public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
 {
+    public event Action<string>? OnExternalBehaviorEvent;
+    
     private readonly List<BehaviorEvent> _events = [];
 
     private CancellationTokenSource? _cancellationTokenSource;
@@ -197,8 +199,15 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
         await ExecuteBotCallback(BotEventType.Initialize);
     }
     
-    public async Task OnBehaviorEvent(string name, object? param = null)
+    public async Task OnBehaviorEvent(string name, object? param = null, bool triggerExternalEvent = true)
     {
+        if (triggerExternalEvent)
+        {
+            // Fire of any external listeners, we don't really care about 
+            // what they have to say so we don't await them
+            _ = Task.Run(() => OnExternalBehaviorEvent?.Invoke(name));
+        }
+        
         await ExecuteBotCallbackScoped(BotEventType.BehaviourEvent, name, param);
     }
 

@@ -50,7 +50,7 @@ namespace BanchoMultiplayerBot.Behaviors
             
             RestoreQueuePosition(player);
             
-            if (context.Lobby.IsReady)
+            if (context.Lobby.Health != LobbyHealth.Initializing)
                 ApplyRoomHost();
         }
         

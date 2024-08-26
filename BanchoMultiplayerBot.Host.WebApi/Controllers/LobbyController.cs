@@ -11,33 +11,51 @@ namespace BanchoMultiplayerBot.Host.WebApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[AllowAnonymous]
 public class LobbyController(LobbyService lobbyService) : ControllerBase
 {
-    [HttpGet("{id}")]
+    [HttpGet("{id:int}")]
     public async Task<ActionResult> Get(int id)
     {
         var lobby = await lobbyService.GetById(id);
         return lobby == null ? NotFound() : Ok(lobby);
     }
-
-    [HttpGet("{id:int}/config")]
-    public async Task<ActionResult<LobbyConfiguration>> GetConfig(int id)
+    
+    [HttpPost("create")]
+    public async Task Create([FromBody] CreateLobbyModel request)
     {
-        var config = await lobbyService.GetLobbyConfiguration(id);
-        return config == null ? NotFound() : Ok(config);
+        await lobbyService.CreateLobby(request);
     }
 
-    [HttpPut("{id:int}/config")]
-    public async Task<ActionResult> UpdateConfig(int id, LobbyConfiguration newConfiguration)
+    [HttpDelete("{id:int}")]
+    public async Task Remove(int id)
     {
-        await lobbyService.UpdateLobbyConfiguration(id, newConfiguration);
-        return Ok();
+        await lobbyService.RemoveLobby(id);
     }
     
     [HttpGet("list")]
-    public async Task<IEnumerable<ReadLobbyList>> ListLobbies()
+    public async Task<IEnumerable<LobbyModel>> ListLobbies()
     {
         return await lobbyService.GetAllLobbies();
+    }
+    
+    [HttpPost("{id:int}/refresh")]
+    public async Task Refresh(int id, bool rejoinChannel = false)
+    {
+        await lobbyService.RefreshLobby(id, rejoinChannel);
+    }
+    
+    [HttpGet("{id:int}/config")]
+    public async Task<ActionResult<LobbyConfiguration>> GetConfig(int id)
+    {
+        var config = await lobbyService.GetConfiguration(id);
+        return config == null ? NotFound() : Ok(config);
+    }
+
+    [HttpPost("{id:int}/config")]
+    public async Task<ActionResult> UpdateConfig(int id, LobbyConfiguration newConfiguration)
+    {
+        await lobbyService.UpdateConfiguration(id, newConfiguration);
+        return Ok();
     }
 }

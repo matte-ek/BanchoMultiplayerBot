@@ -1,4 +1,5 @@
 ﻿using BanchoMultiplayerBot.Bancho;
+using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Database.Models;
 using BanchoSharp.Multiplayer;
 
@@ -27,9 +28,9 @@ namespace BanchoMultiplayerBot.Interfaces
         public int LobbyConfigurationId { get; set; }
 
         /// <summary>
-        /// Whether the lobby is ready
+        /// The current state of the lobby
         /// </summary>
-        public bool IsReady { get; }
+        public LobbyHealth Health { get; set; }
         
         /// <summary>
         /// Event dispatcher for behavior events
@@ -45,11 +46,26 @@ namespace BanchoMultiplayerBot.Interfaces
         /// Utility for managing votes within behaviors
         /// </summary>
         public IVoteProvider? VoteProvider { get; }
+
+        /// <summary>
+        /// Whenever the lobby has started in a new channel
+        /// </summary>
+        public event Action? OnStarted;
+        
+        /// <summary>
+        /// Whenever the lobby has stopped in a previous channel
+        /// </summary>
+        public event Action? OnStopped;
         
         /// <summary>
         /// Attempts to connect to an existing channel, or creates a new one if none is provided
         /// </summary>
         public Task ConnectAsync();
+
+        /// <summary>
+        /// Restarts the lobby instance, reloads behaviors and such
+        /// </summary>
+        public Task RefreshAsync();
         
         /// <summary>
         /// Disposes of the lobby and removes event handlers, called once during application lifetime

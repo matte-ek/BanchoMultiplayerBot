@@ -11,3 +11,4 @@ appsettings.json
 *.svg
 log*.txt
 BanchoMultiplayerBot.Host.Console/Program.cs
+BanchoMultiplayerBot.Host.WebApi/cache
