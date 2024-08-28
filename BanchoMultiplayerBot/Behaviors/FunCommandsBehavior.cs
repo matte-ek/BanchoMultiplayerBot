@@ -297,7 +297,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
 
         foreach (var score in recentScores)
         {
-            var leaderboardScore = recentScores.FirstOrDefault(x => x.Score?.RankGlobal <= 50);
+            var leaderboardScore = recentScores.FirstOrDefault(x => x.Score?.RankGlobal <= 50 && x.Score?.RankGlobal != 0);
             if (leaderboardScore == null)
             {
                 continue;
@@ -372,6 +372,8 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             {
                 await Task.Delay(index * 500);
                 
+                Log.Information($"FunCommandsBehavior: Executing osu! API call for {players[index].Name}");
+                
                 return await context.Lobby.Bot.OsuApiClient.GetUserScoresAsync(players[index].Id!.Value, UserScoreType.Recent, true, true, null, 1);
             }));
         }
@@ -379,6 +381,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         await Task.WhenAll(grabScoreTasks);
         
         return players.Select(player => new PlayerScoreResult(player, grabScoreTasks.Select(x => x.Result?.FirstOrDefault()).ToList()
-            .First(x => x?.UserId == player.Id!))).ToList();
+                .FirstOrDefault(x => x?.UserId == player.Id!)))
+                .ToList();
     }
 }

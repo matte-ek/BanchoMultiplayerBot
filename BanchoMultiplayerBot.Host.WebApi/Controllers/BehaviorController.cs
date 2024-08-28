@@ -1,4 +1,5 @@
-﻿using BanchoMultiplayerBot.Host.WebApi.Services;
+﻿using BanchoMultiplayerBot.Host.WebApi.DataTransferObjects;
+using BanchoMultiplayerBot.Host.WebApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,9 +17,9 @@ public class BehaviorController(BehaviorService behaviorService) : ControllerBas
     }
     
     [HttpPost("config")]
-    public async Task SetBehaviorConfig(int lobbyId, string behaviorName, [FromBody] string configuration)
+    public async Task SetBehaviorConfig(int lobbyId, string behaviorName, [FromBody] BehaviorConfigModel configuration)
     {
-        await BehaviorService.SetBehaviorConfig(lobbyId, behaviorName, configuration);
+        await BehaviorService.SetBehaviorConfig(lobbyId, behaviorName, configuration.Configuration);
     }
     
     [HttpGet("data")]

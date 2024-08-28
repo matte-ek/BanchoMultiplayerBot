@@ -2,7 +2,7 @@
 
 public class PlayerModel
 {
-    public int? OsuId { get; set; } = null;
+    public int? OsuId { get; set; }
 
     public string Name { get; set; } = string.Empty;
 }

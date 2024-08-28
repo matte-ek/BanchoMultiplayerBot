@@ -33,13 +33,13 @@ namespace BanchoMultiplayerBot.Behaviors
         {
             using var userRepository = new UserRepository();
             var user = await userRepository.FindOrCreateUser(player.Name);
-            
-            if (user.Bans.Any())
+
+            if (user.Bans.Count != 0)
             {
                 Log.Warning("HostQueueBehavior: Player {PlayerName} is banned, skipping queue", player.Name);
                 return;
             }
-
+            
             if (Data.Queue.Contains(player.Name))
             {
                 Log.Verbose("HostQueueBehavior: Player {PlayerName} is already in the queue during join event", player.Name);
@@ -314,8 +314,8 @@ namespace BanchoMultiplayerBot.Behaviors
 
             var currentQueuePosition = Data.Queue.FindIndex(x => x.ToIrcNameFormat() == player.Name.ToIrcNameFormat());
 
-            // We don't want to restore the position if the player currently is host
-            if (currentQueuePosition < 1)
+            // We don't want to restore the position if the player currently is host, or is at the end of the queue.
+            if (currentQueuePosition < 1 || currentQueuePosition == context.MultiplayerLobby.Players.Count - 1)
             {
                 return;
             }
@@ -334,11 +334,11 @@ namespace BanchoMultiplayerBot.Behaviors
             Data.PreviousQueueRecords.RemoveAll(x => DateTime.UtcNow > x.Time.AddMinutes(2));
             
             var previousRecord = Data.PreviousQueueRecords.FirstOrDefault(x => x.Name == player.Name);
-            if (previousRecord == null)
+            if (previousRecord == null || previousRecord.Position >= Data.Queue.Count)
             {
                 return;
             }
-
+            
             Data.Queue.RemoveAll(x => x == player.Name);
             Data.Queue.Insert(previousRecord.Position, player.Name);
             
@@ -358,7 +358,7 @@ namespace BanchoMultiplayerBot.Behaviors
             }
 
             // Add any players that are in the lobby but not in the queue
-            foreach (var multiplayerPlayer in context.MultiplayerLobby.Players.Where(multiplayerPlayer => !Data.Queue.Contains(multiplayerPlayer.Name.ToIrcNameFormat())))
+            foreach (var multiplayerPlayer in context.MultiplayerLobby.Players.Where(multiplayerPlayer => !Data.Queue.Any(x => x.ToIrcNameFormat() == multiplayerPlayer.Name.ToIrcNameFormat())))
             {
                 var userRepo = new UserRepository();
                 var user = await userRepo.FindOrCreateUser(multiplayerPlayer.Name);
@@ -371,6 +371,9 @@ namespace BanchoMultiplayerBot.Behaviors
                 
                 Data.Queue.Add(multiplayerPlayer.Name);
             }
+            
+            // Remove any duplicates from the queue (shouldn't happen, but just in case)
+            Data.Queue = Data.Queue.Distinct().ToList();
 
             ApplyRoomHost();
         }

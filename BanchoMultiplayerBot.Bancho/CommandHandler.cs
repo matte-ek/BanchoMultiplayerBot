@@ -12,6 +12,8 @@ namespace BanchoMultiplayerBot.Bancho
 
         private readonly Dictionary<string, List<QueuedCommand>> _queuedCommands = [];
 
+        private readonly object _queuedCommandsLock = new();
+
         private static readonly Counter SentCommandsCounter = Metrics.CreateCounter("bot_commands_sent", "The amount of commands attempted to be executed");
         private static readonly Counter CommandsFailedToSendCounter = Metrics.CreateCounter("bot_commands_message_failed", "The amount of commands that failed to send their message");
         private static readonly Counter CommandsMessageRetriedCounter = Metrics.CreateCounter("bot_commands_message_retried", "The amount of commands that resent the message due to timeout");
@@ -28,19 +30,25 @@ namespace BanchoMultiplayerBot.Bancho
             {
                 Log.Verbose("CommandHandler: Executing command {Command} in {Channel}", T.Command, channel);
 
-                if (!_queuedCommands.ContainsKey(channel))
+                lock (_queuedCommandsLock)
                 {
-                    _queuedCommands[channel] = [];
+                    if (!_queuedCommands.ContainsKey(channel))
+                    {
+                        _queuedCommands[channel] = [];
+                    }
                 }
 
                 async Task SendMessage()
                 {
-                    _queuedCommands[channel].Add(new QueuedCommand()
+                    lock (_queuedCommandsLock)
                     {
-                        Command = T.Command,
-                        SuccessfulResponses = T.SuccessfulResponses,
-                        DateTime = DateTime.UtcNow
-                    });
+                        _queuedCommands[channel].Add(new QueuedCommand()
+                        {
+                            Command = T.Command,
+                            SuccessfulResponses = T.SuccessfulResponses,
+                            DateTime = DateTime.UtcNow
+                        });
+                    }
 
                     var cookie = _messageHandler.SendMessageTracked(channel, GetCommandString(T.Command, args, T.AppendSpamFilter));
 
@@ -69,8 +77,16 @@ namespace BanchoMultiplayerBot.Bancho
                 int timeout = 0;
                 int attempts = 0;
 
-                while (!_queuedCommands[channel].Any(x => x.Command == T.Command && x.Responded))
+                while (true)
                 {
+                    lock (_queuedCommandsLock)
+                    {
+                        if (_queuedCommands[channel].Any(x => x.Command == T.Command && x.Responded))
+                        {
+                            break;
+                        }
+                    }
+                    
                     // If the command has not been responded to in 5 seconds, resend the command
                     if (timeout++ > 50)
                     {
@@ -81,8 +97,11 @@ namespace BanchoMultiplayerBot.Bancho
 
                         if (attempts > 5)
                         {
-                            _queuedCommands[channel].RemoveAll(x => x.Command == T.Command);
-
+                            lock (_queuedCommandsLock)
+                            {
+                                _queuedCommands[channel].RemoveAll(x => x.Command == T.Command);
+                            }
+                            
                             CommandsMessageRetriedCounter.Inc();
 
                             Log.Error("CommandHandler: Failed to execute command {Command} in {Channel}, response timeout reached", T.Command, channel);
@@ -94,7 +113,10 @@ namespace BanchoMultiplayerBot.Bancho
                     await Task.Delay(1000);
                 }
 
-                _queuedCommands[channel].RemoveAll(x => x.Command == T.Command);
+                lock (_queuedCommandsLock)
+                {
+                    _queuedCommands[channel].RemoveAll(x => x.Command == T.Command);
+                }
 
                 // We aren't responsible for parsing the response, just that it was received
                 // so we are done here, and can return true.
@@ -112,47 +134,50 @@ namespace BanchoMultiplayerBot.Bancho
                 return;
             }
 
-            if (!_queuedCommands.TryGetValue(msg.Recipient, out var commands))
+            lock (_queuedCommandsLock)
             {
-                return;
-            }
-
-            foreach (var command in commands)
-            {
-                if (command.Responded)
+                if (!_queuedCommands.TryGetValue(msg.Recipient, out var commands))
                 {
-                    continue;
+                    return;
                 }
 
-                foreach (var response in command.SuccessfulResponses)
+                foreach (var command in commands)
                 {
-                    switch (response.Type)
+                    if (command.Responded)
                     {
-                        case CommandResponseType.Exact:
-                            if (msg.Content == response.Message)
-                            {
-                                command.Responded = true;
-                            }
-
-                            break;
-                        case CommandResponseType.StartsWith:
-                            if (msg.Content.StartsWith(response.Message))
-                            {
-                                command.Responded = true;
-                            }
-
-                            break;
-                        case CommandResponseType.Contains:
-                            if (msg.Content.Contains(response.Message))
-                            {
-                                command.Responded = true;
-                            }
-
-                            break;
-                        default:
-                            break;
+                        continue;
                     }
-                }
+
+                    foreach (var response in command.SuccessfulResponses)
+                    {
+                        switch (response.Type)
+                        {
+                            case CommandResponseType.Exact:
+                                if (msg.Content == response.Message)
+                                {
+                                    command.Responded = true;
+                                }
+
+                                break;
+                            case CommandResponseType.StartsWith:
+                                if (msg.Content.StartsWith(response.Message))
+                                {
+                                    command.Responded = true;
+                                }
+
+                                break;
+                            case CommandResponseType.Contains:
+                                if (msg.Content.Contains(response.Message))
+                                {
+                                    command.Responded = true;
+                                }
+
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }   
             }
         }
 

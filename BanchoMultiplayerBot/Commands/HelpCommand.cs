@@ -19,7 +19,7 @@ namespace BanchoMultiplayerBot.Commands
 
         public Task ExecuteAsync(CommandEventContext message)
         {
-            message.Reply("Yep");
+            message.Reply("todo");
             
             return Task.CompletedTask;
         }

@@ -18,13 +18,15 @@ public class HealthMonitorBehavior(BehaviorEventContext context) : IBehavior, IB
     public void OnInitialize()
     {
         context.TimerProvider.FindOrCreateTimer("HealthMonitorTimer").Start(TimeSpan.FromMinutes(5));
+        
+        Data.LastEventTime = DateTime.UtcNow;
     }
     
     [BotEvent(BotEventType.TimerElapsed, "HealthMonitorTimer")]
     public void OnHealthMonitorTimerElapsed()
     {
         if ((DateTime.UtcNow - Data.LastEventTime).TotalHours > 1 &&
-            context.Lobby.Health == LobbyHealth.Ok || context.Lobby.Health == LobbyHealth.Idle)
+            (context.Lobby.Health == LobbyHealth.Ok || context.Lobby.Health == LobbyHealth.Idle))
         {
             Log.Warning("HealthMonitorBehavior: No events have been received in the past hour, assuming lobby is dead.");
                 

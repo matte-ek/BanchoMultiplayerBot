@@ -4,5 +4,5 @@ namespace BanchoMultiplayerBot.Bancho.Data;
 
 public class TimeProvider : ITimeProvider
 {
-    public DateTime UtcNow { get; } = DateTime.UtcNow;
+    public DateTime UtcNow => DateTime.UtcNow;
 }

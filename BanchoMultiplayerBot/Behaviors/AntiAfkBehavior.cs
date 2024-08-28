@@ -35,7 +35,7 @@ public class AntiAfkBehavior(BehaviorEventContext context) : IBehavior
         var playerNameEnd = message.Content.IndexOf(')');
         var playerName = message.Content[playerNameBegin..playerNameEnd];
 
-        if (context.MultiplayerLobby.Host.Name != playerName)
+        if (context.MultiplayerLobby.Players.Count == 0 || context.MultiplayerLobby.Host.Name != playerName)
         {
             return;
         }

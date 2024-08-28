@@ -13,8 +13,8 @@ public class AutoStartBehavior : IBehavior
 {
     private readonly BehaviorEventContext _context;
  
-    private readonly BehaviorConfigProvider<AutoStartConfig> _configProvider;
-    private AutoStartConfig Config => _configProvider.Data;
+    private readonly BehaviorConfigProvider<AutoStartBehaviorConfig> _configProvider;
+    private AutoStartBehaviorConfig Config => _configProvider.Data;
     
     private readonly ITimer? _autoStartTimer;
     private readonly IVote? _startVote;
@@ -22,7 +22,7 @@ public class AutoStartBehavior : IBehavior
     public AutoStartBehavior(BehaviorEventContext behaviorEventContext)
     {
         _context = behaviorEventContext;
-        _configProvider = new BehaviorConfigProvider<AutoStartConfig>(_context.Lobby);
+        _configProvider = new BehaviorConfigProvider<AutoStartBehaviorConfig>(_context.Lobby);
 
         _autoStartTimer = _context.Lobby.TimerProvider?.FindOrCreateTimer("AutoStartTimer");
         _startVote = _context.Lobby.VoteProvider?.FindOrCreateVote("StartVote", "Start the match");

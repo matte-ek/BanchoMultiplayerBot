@@ -136,6 +136,7 @@ public class LobbyTrackerService(Bot bot, IServiceScopeFactory serviceScopeFacto
             Lobby.MultiplayerLobby.OnMatchStarted += OnMatchStarted;
             Lobby.MultiplayerLobby.OnMatchFinished += OnMatchFinished;
             Lobby.MultiplayerLobby.OnMatchAborted += OnMatchAborted;
+            Lobby.MultiplayerLobby.OnSettingsUpdated += OnSettingsUpdated;
             Lobby.BehaviorEventProcessor.OnExternalBehaviorEvent += OnBehaviorEvent;
         }
 
@@ -161,6 +162,7 @@ public class LobbyTrackerService(Bot bot, IServiceScopeFactory serviceScopeFacto
             Lobby.MultiplayerLobby.OnMatchStarted -= OnMatchStarted;
             Lobby.MultiplayerLobby.OnMatchFinished -= OnMatchFinished;
             Lobby.MultiplayerLobby.OnMatchAborted -= OnMatchAborted;
+            Lobby.MultiplayerLobby.OnSettingsUpdated -= OnSettingsUpdated;
             Lobby.BehaviorEventProcessor.OnExternalBehaviorEvent -= OnBehaviorEvent;
         }
 
@@ -168,14 +170,19 @@ public class LobbyTrackerService(Bot bot, IServiceScopeFactory serviceScopeFacto
         {
             messageModel.Id = _messageId++;
             
-            Messages.Insert(0, messageModel);
+            Messages.Add(messageModel);
 
             if (Messages.Count > 500)
             {
-                Messages.RemoveAt(Messages.Count - 1);
+                Messages.RemoveAt(0);
             }
             
             BroadcastEvent("onMessage", messageModel);
+        }
+        
+        private void OnSettingsUpdated()
+        {
+            BroadcastEvent("onSettingsUpdated");
         }
         
         private void OnPlayerJoined(MultiplayerPlayer player)
@@ -200,7 +207,7 @@ public class LobbyTrackerService(Bot bot, IServiceScopeFactory serviceScopeFacto
         {
             if (eventName == "MapManagerNewMap")
             {
-                BroadcastEvent("onNewMap");
+                BroadcastEvent("onBeatmapChanged");
             }
         }
         

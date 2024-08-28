@@ -30,6 +30,8 @@ namespace BanchoMultiplayerBot.Behaviors
         [BanchoEvent(BanchoEventType.MatchStarted)]
         public async Task OnMatchStarted()
         {
+            Data.MatchStartTime = DateTime.UtcNow;
+            
             await ValidatePlayingMap();
         }
             
@@ -235,7 +237,7 @@ namespace BanchoMultiplayerBot.Behaviors
         
         [BotEvent(BotEventType.CommandExecuted, "TimeLeft")]
         public async Task OnTimeLeftCommandExecuted(CommandEventContext commandEventContext)
-        {
+        { 
             var finishTime = Data.MatchStartTime.Add(Data.BeatmapInfo.Length);
             
             // Add a few seconds to account for people loading/finishing the map
@@ -339,7 +341,8 @@ namespace BanchoMultiplayerBot.Behaviors
 
             try
             {
-                var mapIsValid = false;
+                var mapIsValid = true;
+                
                 if (!Config.AllowDoubleTime && (context.MultiplayerLobby.Mods & Mods.DoubleTime) != 0)
                 {
                     mapIsValid = false;

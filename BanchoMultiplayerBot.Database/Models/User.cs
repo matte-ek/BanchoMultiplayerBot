@@ -30,6 +30,6 @@
         
         public bool Administrator { get; set; } = false;
         
-        public ICollection<PlayerBan> Bans { get; } = null!;
+        public virtual ICollection<PlayerBan> Bans { get; } = [];
     }
 }

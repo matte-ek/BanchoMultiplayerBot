@@ -58,4 +58,10 @@ public class LobbyController(LobbyService lobbyService) : ControllerBase
         await lobbyService.UpdateConfiguration(id, newConfiguration);
         return Ok();
     }
+
+    [HttpGet("config/list")]
+    public async Task<IEnumerable<ConfigurationListModel>> GetConfigurations()
+    {
+        return await lobbyService.GetAllConfigurations();
+    }
 }

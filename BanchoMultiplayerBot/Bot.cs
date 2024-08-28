@@ -125,6 +125,7 @@ namespace BanchoMultiplayerBot
                     if (attempts++ > 20)
                     {
                         Log.Error("Bot: Lobby with id {LobbyIndex} did not become ready after 10 seconds.", lobby.LobbyConfigurationId);
+                        lobby.Health = LobbyHealth.ChannelCreationFailed;
                         break;
                     }
 

@@ -41,6 +41,7 @@ builder.Services.AddSingleton<LobbyTrackerService>();
 builder.Services.AddScoped<BehaviorService>();
 builder.Services.AddScoped<LobbyService>();
 builder.Services.AddScoped<HealthService>();
+builder.Services.AddScoped<MessageService>();
 
 // Setup authentication
 builder.Services.AddAuthentication(options =>

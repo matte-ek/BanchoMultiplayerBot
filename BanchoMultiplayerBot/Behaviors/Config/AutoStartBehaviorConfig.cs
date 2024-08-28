@@ -1,6 +1,6 @@
 ﻿namespace BanchoMultiplayerBot.Behaviors.Config;
 
-public class AutoStartConfig
+public class AutoStartBehaviorConfig
 {
     /// <summary>
     /// Whether the bot should automatically start the match when all players are ready.

@@ -14,9 +14,9 @@ public class MessageController(MessageService messageService) : ControllerBase
         return messageService.GetLobbyMessages(lobbyId, offset, limit);
     }
     
-    [HttpPost("lobby/{lobbyId:int}/send")]
-    public void SendMessage(int lobbyId, [FromBody] string message)
+    [HttpPost("lobby/send")]
+    public void SendMessage([FromBody] SendMessageModel message)
     {
-        messageService.SendLobbyMessage(lobbyId, message);
+        messageService.SendLobbyMessage(message.LobbyId, message.Content);
     }
 }

@@ -106,7 +106,7 @@ namespace BanchoMultiplayerBot.Bancho
         private async Task MessagePumpTask()
         {
             const int maxMessageLength = 400;
-            const int messageBurstCount = 10;
+            const int messageBurstCount = 5;
             const int messageAge = 6;
 
             IsRunning = true;
