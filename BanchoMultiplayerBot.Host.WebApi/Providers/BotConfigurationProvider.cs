@@ -9,7 +9,13 @@ public class BotConfigurationProvider(IConfiguration configuration) : IBotConfig
     {
         Username = configuration["Osu:Username"]!,
         Password = configuration["Osu:Password"]!,
-        IsBotAccount = configuration["Osu:BotAccount"] == "true"
+        MessageRateLimitCount = configuration.GetValue("Bot:MessageRateLimitCount", 8),
+        MessageRateLimitWindow = configuration.GetValue("Bot:MessageRateLimitWindow", 6),
+        BanchoReconnectDelay = configuration.GetValue("Bot:BanchoReconnectDelay", 30),
+        BanchoReconnectAttempts = configuration.GetValue("Bot:BanchoReconnectAttempts", 5),
+        BanchoReconnectAttemptDelay = configuration.GetValue("Bot:BanchoReconnectAttemptDelay", 10),
+        BanchoCommandTimeout = configuration.GetValue("Bot:BanchoCommandTimeout", 5),
+        BanchoCommandAttempts = configuration.GetValue("Bot:BanchoCommandAttempts", 5)
     };
 
     public string OsuApiClientId { get; init; } = configuration["Osu:ClientId"]!;

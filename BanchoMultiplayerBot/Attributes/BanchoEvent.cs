@@ -8,14 +8,16 @@ public class BanchoEvent(BanchoEventType type) : Attribute
 
 public enum BanchoEventType
 {
+    MessageReceived,
+    BanchoBotMessageReceived,
     MatchStarted,
     MatchFinished,
     MatchAborted,
-    OnPlayerJoined,
-    OnPlayerDisconnected,
-    OnHostChanged,
-    OnHostChangingMap,
-    OnMapChanged,
-    OnSettingsUpdated,
+    PlayerJoined,
+    PlayerDisconnected,
+    HostChanged,
+    HostChangingMap,
+    MapChanged,
+    SettingsUpdated,
     AllPlayersReady
 }

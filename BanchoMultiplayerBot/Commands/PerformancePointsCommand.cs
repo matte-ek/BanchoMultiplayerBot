@@ -9,7 +9,7 @@ public class PerformancePointsCommand : IPlayerCommand
 
     public List<string>? Aliases => ["pp"];
 
-    public bool AllowGlobal => true;
+    public bool AllowGlobal => false;
 
     public bool Administrator => false;
 
@@ -19,7 +19,6 @@ public class PerformancePointsCommand : IPlayerCommand
 
     public Task ExecuteAsync(CommandEventContext context)
     {
-        context.Reply("This command is not implemented yet.");
         return Task.CompletedTask;
     }
 }

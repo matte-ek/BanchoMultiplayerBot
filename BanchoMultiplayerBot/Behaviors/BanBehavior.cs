@@ -16,7 +16,7 @@ namespace BanchoMultiplayerBot.Behaviors
         private BanBehaviorData Data => _dataProvider.Data;
         public async Task SaveData() => await _dataProvider.SaveData();
 
-        [BanchoEvent(BanchoEventType.OnPlayerJoined)]
+        [BanchoEvent(BanchoEventType.PlayerJoined)]
         public async Task OnPlayerJoined(MultiplayerPlayer player)
         {
             var bans = await GetActivePlayerBans(player.Name);

@@ -20,4 +20,21 @@ public static class GradeExtensions
             _ => throw new ArgumentOutOfRangeException(nameof(grade), grade, null)
         };
     }
+    
+    public static string AsHumanString(this Grade grade)
+    {
+        return grade switch
+        {
+            Grade.XH => "SS",
+            Grade.X => "SS",
+            Grade.SH => "S",
+            Grade.S => "S",
+            Grade.A => "A",
+            Grade.B => "B",
+            Grade.C => "C",
+            Grade.D => "D",
+            Grade.F => "F",
+            _ => throw new ArgumentOutOfRangeException(nameof(grade), grade, null)
+        };
+    }
 }

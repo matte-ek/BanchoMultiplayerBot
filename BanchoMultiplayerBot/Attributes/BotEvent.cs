@@ -11,9 +11,6 @@ public class BotEvent(BotEventType type, string? optionalScope = null) : Attribu
 public enum BotEventType
 {
     Initialize,
-    MessageReceived,
-    MessageSent,
-    LobbyMessageReceived,
     CommandExecuted,
     TimerEarlyWarning,
     TimerElapsed,

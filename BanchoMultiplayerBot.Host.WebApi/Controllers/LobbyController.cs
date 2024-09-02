@@ -1,17 +1,14 @@
-﻿using BanchoMultiplayerBot.Database;
-using BanchoMultiplayerBot.Database.Models;
+﻿using BanchoMultiplayerBot.Database.Models;
 using BanchoMultiplayerBot.Host.WebApi.DataTransferObjects;
 using BanchoMultiplayerBot.Host.WebApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Serilog;
 
 namespace BanchoMultiplayerBot.Host.WebApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[AllowAnonymous]
+[Authorize]
 public class LobbyController(LobbyService lobbyService) : ControllerBase
 {
     [HttpGet("{id:int}")]
@@ -43,6 +40,12 @@ public class LobbyController(LobbyService lobbyService) : ControllerBase
     public async Task Refresh(int id, bool rejoinChannel = false)
     {
         await lobbyService.RefreshLobby(id, rejoinChannel);
+    }
+    
+    [HttpGet("{id:int}/reassign")]
+    public async Task ReassignChannel(int id, string channel)
+    {
+        await lobbyService.ReassignLobbyChannel(id, channel);
     }
     
     [HttpGet("{id:int}/config")]

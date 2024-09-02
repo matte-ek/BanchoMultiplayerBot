@@ -107,6 +107,12 @@ public class AutoStartBehavior : IBehavior
             Log.Warning("AutoStartBehavior: Ignoring start timer elapsed due to no players in lobby.");
             return;
         }
+
+        if (_context.MultiplayerLobby.HostIsChangingMap)
+        {
+            Log.Warning("AutoStartBehavior: Ignoring start timer elapsed due to map change.");
+            return;
+        }
         
         await _context.ExecuteCommandAsync<MatchStartCommand>();
     }
@@ -125,8 +131,8 @@ public class AutoStartBehavior : IBehavior
             return;
         }
         
-        // Start the timer with an early warning of 10 seconds
-        _autoStartTimer?.Start(length, Config.StartEarlyWarning);
+        // Start the timer with an early warning of 10 seconds, if the length is longer than 10 seconds.
+        _autoStartTimer?.Start(length, length.TotalSeconds > Config.StartEarlyWarning ? Config.StartEarlyWarning : 0);
 
         if (announceTimer)
         {
@@ -142,8 +148,8 @@ public class AutoStartBehavior : IBehavior
     
     [BanchoEvent(BanchoEventType.MatchStarted)]
     public void OnMatchStarted() => AbortTimer();
-    [BanchoEvent(BanchoEventType.OnHostChanged)]
+    [BanchoEvent(BanchoEventType.HostChanged)]
     public void OnHostChanged() => AbortTimer();
-    [BanchoEvent(BanchoEventType.OnHostChangingMap)]
+    [BanchoEvent(BanchoEventType.HostChangingMap)]
     public void OnHostChangingMap() => AbortTimer();
 }

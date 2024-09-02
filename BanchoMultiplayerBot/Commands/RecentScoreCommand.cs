@@ -1,8 +1,7 @@
 ﻿using System.Text;
 using BanchoMultiplayerBot.Data;
+using BanchoMultiplayerBot.Extensions;
 using BanchoMultiplayerBot.Interfaces;
-using BanchoMultiplayerBot.Osu.Extensions;
-using BanchoSharp.Multiplayer;
 using OsuSharp.Enums;
 
 namespace BanchoMultiplayerBot.Commands;
@@ -38,7 +37,7 @@ public class RecentScoreCommand : IPlayerCommand
             playerId = user.Id;
         }
 
-        var score = (await context.Bot.OsuApiClient.GetUserScoresAsync(playerId.Value, UserScoreType.Recent, false, true, null,
+        var score = (await context.Bot.OsuApiClient.GetUserScoresAsync(playerId.Value, UserScoreType.Recent, true, true, null,
             1))?.FirstOrDefault();
 
         if (score == null)
@@ -70,10 +69,10 @@ public class RecentScoreCommand : IPlayerCommand
 
         if (score.Mods.Length != 0)
         {
-            response.Append($" + {((Mods)score.GetModsBitset()).ToAbbreviatedForm()}");
+            response.Append($" + {string.Join("", score.Mods)}");
         }
 
-        response.Append($" | [{score.Grade}]");
+        response.Append($" | [{score.Grade.AsHumanString()}]");
                 
         response.Append($" | {ppInformation.PerformancePoints} pp ");
                 

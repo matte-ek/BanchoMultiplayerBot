@@ -1,4 +1,5 @@
 ﻿using BanchoMultiplayerBot.Bancho;
+using BanchoMultiplayerBot.Bancho.Data;
 using BanchoMultiplayerBot.Bancho.Interfaces;
 using BanchoSharp.Interfaces;
 using Moq;
@@ -33,7 +34,7 @@ public class MessageHandlerTest
     [TestMethod]
     public async Task TestSendMessage()
     {
-        var messageHandler = new MessageHandler(_banchoConnectionMock.Object);
+        var messageHandler = new MessageHandler(_banchoConnectionMock.Object, new BanchoClientConfiguration());
         
         Assert.IsFalse(messageHandler.IsRunning);
         
@@ -60,7 +61,7 @@ public class MessageHandlerTest
     [TestMethod]
     public async Task TestSendMessageRateLimit()
     {
-        var messageHandler = new MessageHandler(_banchoConnectionMock.Object, _timeProviderMock.Object);
+        var messageHandler = new MessageHandler(_banchoConnectionMock.Object, new BanchoClientConfiguration(), _timeProviderMock.Object);
         
         messageHandler.Start();
 
@@ -96,7 +97,7 @@ public class MessageHandlerTest
     [TestMethod]
     public async Task TestSendMessageCookie()
     {
-        var messageHandler = new MessageHandler(_banchoConnectionMock.Object, _timeProviderMock.Object);
+        var messageHandler = new MessageHandler(_banchoConnectionMock.Object, new BanchoClientConfiguration(), _timeProviderMock.Object);
         
         messageHandler.Start();
         

@@ -1,5 +1,4 @@
-﻿using BanchoSharp;
-using BanchoSharp.Interfaces;
+﻿using BanchoSharp.Interfaces;
 
 namespace BanchoMultiplayerBot.Bancho.Interfaces
 {

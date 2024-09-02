@@ -6,6 +6,7 @@ using BanchoMultiplayerBot.Host.WebApi.Providers;
 using BanchoMultiplayerBot.Host.WebApi.Services;
 using BanchoMultiplayerBot.Interfaces;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -71,6 +72,16 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseHttpsRedirection();
+}
+else
+{
+    app.UseForwardedHeaders(new ForwardedHeadersOptions
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+    });
+    
+    app.UseHttpsRedirection();
 }
 
 app.Services.GetRequiredService<LobbyTrackerService>().Start();
@@ -79,7 +90,6 @@ await app.Services.GetRequiredService<Bot>().StartAsync();
 
 app.UseCors("DefaultPolicy");
 
-app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 

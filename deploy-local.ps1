@@ -4,7 +4,7 @@ Push-Location
 
 $IpAddress = $Env:OsuBot
 
-Set-Location ".\BanchoMultiplayerBot.Host.Web"
+Set-Location ".\BanchoMultiplayerBot.Host.WebApi"
 
 if (!$IpAddress)
 {
@@ -51,7 +51,7 @@ Write-Host "OK"
 
 Write-Host -NoNewline "Uploading package ... "
 
-scp .\publish.zip root@$($IpAddress):/home/osu/release.zip | Out-Null
+scp .\publish.zip root@$($IpAddress):/home/osu/release-v2.zip | Out-Null
 
 if ($LastExitCode -ne 0)
 {
@@ -62,6 +62,6 @@ if ($LastExitCode -ne 0)
 
 Write-Host "OK"
 
-ssh root@$($IpAddress) "su - osu -c /home/osu/startup.sh"
+ssh root@$($IpAddress) "su - osu -c /home/osu/startup-v2.sh"
 
 Pop-Location

@@ -20,7 +20,7 @@ namespace BanchoMultiplayerBot.Behaviors
         [BotEvent(BotEventType.BehaviourEvent, "HostQueueSkipHost")]
         public async Task OnSkipRequested() => await SkipHost();
         
-        [BanchoEvent(BanchoEventType.OnSettingsUpdated)]
+        [BanchoEvent(BanchoEventType.SettingsUpdated)]
         public async Task OnSettingsUpdated()
         {
             // Since we might be picking up where we left off, we need to ensure the queue is valid
@@ -28,13 +28,14 @@ namespace BanchoMultiplayerBot.Behaviors
             await EnsureQueueValid();
         }
 
-        [BanchoEvent(BanchoEventType.OnPlayerJoined)]
+        [BanchoEvent(BanchoEventType.PlayerJoined)]
         public async Task OnPlayerJoined(MultiplayerPlayer player)
         {
             using var userRepository = new UserRepository();
+            
             var user = await userRepository.FindOrCreateUser(player.Name);
-
-            if (user.Bans.Count != 0)
+            
+            if (user.Bans.Any(x => x.Active && (x.Expire == null || x.Expire > DateTime.Now)))
             {
                 Log.Warning("HostQueueBehavior: Player {PlayerName} is banned, skipping queue", player.Name);
                 return;
@@ -51,16 +52,26 @@ namespace BanchoMultiplayerBot.Behaviors
             RestoreQueuePosition(player);
             
             if (context.Lobby.Health != LobbyHealth.Initializing)
+            {
                 ApplyRoomHost();
+            }
         }
         
-        [BanchoEvent(BanchoEventType.OnPlayerDisconnected)]
+        [BanchoEvent(BanchoEventType.PlayerDisconnected)]
         public void OnPlayerDisconnected(MultiplayerPlayer player)
         {
             if (!Data.Queue.Contains(player.Name))
             {
                 Log.Warning("HostQueueBehavior: Player {PlayerName} is not in the queue during disconnect event", player.Name);
                 return;
+            }
+            
+            // Since we'll be removing the host from the queue, the queue will be rotated automatically,
+            // however since we do that we don't want to skip the player whenever the match finishes,
+            // so we set this `PreventHostSkip` flag.
+            if (Data.IsMatchActive && Data.Queue.FirstOrDefault() == player.Name)
+            {
+                Data.PreventHostSkip = true;
             }
             
             StoreQueuePosition(player);
@@ -70,18 +81,31 @@ namespace BanchoMultiplayerBot.Behaviors
             ApplyRoomHost();
         }
 
+        [BanchoEvent(BanchoEventType.MatchStarted)]
+        public void OnMatchStarted()
+        {
+            Data.IsMatchActive = true;
+            Data.PreventHostSkip = false;
+        }
+
         [BotEvent(BotEventType.BehaviourEvent, "RoomManagerMatchFinished")]
         public async Task OnManagerMatchFinished()
         {
-            await SkipHost();
+            if (!Data.PreventHostSkip)
+            {
+                await SkipHost();
+            }
+
+            Data.IsMatchActive = false;
+            Data.PreventHostSkip = false;
             
-            context.SendMessage(GetCurrentQueueMessage(true));
+            context.SendMessage(await GetCurrentQueueMessage(true));
         }
         
         [BotEvent(BotEventType.CommandExecuted, "Queue")]
-        public void OnQueueCommandExecuted(CommandEventContext commandEventContext)
+        public async Task OnQueueCommandExecuted(CommandEventContext commandEventContext)
         {
-            commandEventContext.Reply(GetCurrentQueueMessage());
+            commandEventContext.Reply(await GetCurrentQueueMessage());
         }
         
         [BotEvent(BotEventType.CommandExecuted, "QueuePosition")]
@@ -107,9 +131,17 @@ namespace BanchoMultiplayerBot.Behaviors
                 return;
             }
 
+            // If a vote was passed less than 3 seconds ago, ignore the request
+            if ((DateTime.UtcNow - Data.HostSkipTime).TotalSeconds <= 3)
+            {
+                return;
+            }
+            
             // If the player requesting is a host, skip immediately
             if (commandEventContext.Player.Name.ToIrcNameFormat() == Data.Queue.FirstOrDefault()?.ToIrcNameFormat())
             {
+                Data.HostSkipTime = DateTime.UtcNow;
+                
                 await SkipHost();
 
                 return;
@@ -119,8 +151,10 @@ namespace BanchoMultiplayerBot.Behaviors
             var skipVote = context.Lobby.VoteProvider!.FindOrCreateVote("SkipVote", "Skip the host");
             if (skipVote.PlayerVote(commandEventContext.Player))
             {
+                Data.HostSkipTime = DateTime.UtcNow;
+                
                 await SkipHost();
-            }
+            }   
         }
 
         [BotEvent(BotEventType.CommandExecuted, "AutoSkip")]
@@ -207,13 +241,29 @@ namespace BanchoMultiplayerBot.Behaviors
         /// zero width space to avoid tagging people, however this can be ignored for the host
         /// via the tagHost argument.
         /// </summary>
-        private string GetCurrentQueueMessage(bool tagHost = false)
+        private async Task<string> GetCurrentQueueMessage(bool tagHost = false)
         {
+            using var userRepository = new UserRepository();
+            
             var queueStr = "";
             var cleanPlayerNamesQueue = new List<string>();
 
-            // Add a zero width space to the player names to avoid mentioning them
-            Data.Queue.ForEach(playerName => cleanPlayerNamesQueue.Add($"{playerName[0]}\u200B{playerName[1..]}"));
+            foreach (var player in Data.Queue)
+            {
+                var user = await userRepository.FindOrCreateUser(player);
+
+                // Add a zero width space to the player names to avoid mentioning them
+                var cleanName = $"{player[0]}\u200B{player[1..]}";
+
+                // Add a star if the user has auto skip enabled so they are aware,
+                // as this happens surprisingly often.
+                if (user.AutoSkipEnabled)
+                {
+                    cleanName += "*";
+                }
+                
+                cleanPlayerNamesQueue.Add(cleanName);
+            }
 
             // Replace the host with the original name, if requested.
             if (tagHost && cleanPlayerNamesQueue.Count != 0)
@@ -271,17 +321,21 @@ namespace BanchoMultiplayerBot.Behaviors
             }
         
             context.Lobby.VoteProvider?.FindOrCreateVote("SkipVote", "Skip the host").Abort();
-            
+
             RotateQueue();
             
-            foreach (var player in Data.Queue)
+            foreach (var player in Data.Queue.ToList())
             {
                 // Make sure the new host is a valid candidate,
                 // if not, skip to the next player in the queue
                 if (!await IsPlayerHostCandidate(player))
                 {
                     RotateQueue();
+
+                    continue;
                 }
+                
+                break;
             }
             
             ApplyRoomHost();
@@ -364,7 +418,7 @@ namespace BanchoMultiplayerBot.Behaviors
                 var user = await userRepo.FindOrCreateUser(multiplayerPlayer.Name);
                 
                 // Make sure we don't add any banned players to the queue
-                if (user.Bans.Count != 0)
+                if (user.Bans.Any(x => x.Active && (x.Expire == null || x.Expire > DateTime.Now)))
                 {
                     continue;
                 }
@@ -383,10 +437,27 @@ namespace BanchoMultiplayerBot.Behaviors
         /// </summary>
         private static async Task<bool> IsPlayerHostCandidate(string playerName)
         {
-            using var userRepository = new UserRepository();
-            var user = await userRepository.FindOrCreateUser(playerName);
+            try
+            {
+                using var userRepository = new UserRepository();
+                var user = await userRepository.FindOrCreateUser(playerName);
+                var hasActiveBan = user.Bans.Any(x => x.Active && (x.Expire == null || x.Expire > DateTime.Now));
 
-            return user.Bans.Count == 0 && !user.AutoSkipEnabled;
+                if (!hasActiveBan && !user.AutoSkipEnabled) 
+                    return true;
+                
+                // Temporary for now until I can figure out if something is wrong
+                Log.Warning("Ignoring player {PlayerName} for host, as they are banned or have auto-skip enabled. {BanCount}, {AutoSkipState}", playerName, user.Bans.Count, user.AutoSkipEnabled);
+                    
+                return false;
+
+            }
+            catch (Exception e)
+            {
+                Log.Error("Exception occured while checking if player {PlayerName} is a valid host candidate: {Exception}", playerName, e);
+            }
+
+            return true;
         }
     }
 }

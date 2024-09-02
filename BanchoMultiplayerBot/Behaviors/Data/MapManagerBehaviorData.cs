@@ -23,6 +23,11 @@ public class MapManagerBehaviorData
     /// The beatmap id of the last beatmap that the bot applied
     /// </summary>
     public int LastBotAppliedBeatmapId { get; set; }
+    
+    /// <summary>
+    /// The current beatmap id as last retrieved from `OnBeatmapChanged` 
+    /// </summary>
+    public int CurrentMapId { get; set; }
 
     /// <summary>
     /// The amount of times the current host has violated the regulations

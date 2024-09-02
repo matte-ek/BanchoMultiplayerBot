@@ -117,7 +117,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         var recentGames = await gameRepository.GetRecentGames(beatmapId, 50);
         var recentScores = await scoreRepository.GetScoresByMapId(beatmapId, 50);
 
-        var mapPosition = await scoreRepository.GetMapPlayCountByLobbyId(context.Lobby.LobbyConfigurationId, beatmapId);
+        var mapPosition = await scoreRepository.GetMapPlayCountByLobbyId(context.Lobby.LobbyConfigurationId - 1, beatmapId);
 
         var outputMessage = new StringBuilder();
 
@@ -171,7 +171,32 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         commandEventContext.Reply(outputMessage.ToString());
     }
 
-    [BanchoEvent(BanchoEventType.OnPlayerJoined)]
+    [BotEvent(BotEventType.CommandExecuted, "PerformancePoints")]
+    public async Task OnPerformancePointsCommandExecuted(CommandEventContext commandEventContext)
+    {
+        if (context.Lobby.Bot.PerformancePointCalculator == null)
+        {
+            commandEventContext.Reply("Performance point calculator is not available.");
+            return;
+        }
+        
+        var mapManagerDataProvider = new BehaviorDataProvider<MapManagerBehaviorData>(context.Lobby);
+        var beatmapId = mapManagerDataProvider.Data.BeatmapInfo.Id;
+        int mods = 0;
+        
+        if (commandEventContext.Arguments.Length > 0)
+        {
+            mods = ScoreExtensions.GetModsBitset(commandEventContext.Arguments[0].Chunk(2).Select(x => new string(x)).ToArray());
+        }
+        
+        var ppInfo = await context.Lobby.Bot.PerformancePointCalculator.CalculatePerformancePoints(beatmapId, mods);
+        
+        commandEventContext.Reply(ppInfo != null
+            ? $"{commandEventContext.Message.Sender}, 100%: {ppInfo.Performance100}pp | 98%: {ppInfo.Performance98}pp | 95%: {ppInfo.Performance95}pp"
+            : "Error calculating performance points");
+    }
+
+    [BanchoEvent(BanchoEventType.PlayerJoined)]
     public void OnPlayerJoined(MultiplayerPlayer player)
     {
         Data.PlayerTimeRecords.Add(new FunCommandsBehaviorData.PlayerTimeRecord
@@ -181,7 +206,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         });
     }
     
-    [BanchoEvent(BanchoEventType.OnPlayerDisconnected)]
+    [BanchoEvent(BanchoEventType.PlayerDisconnected)]
     public async Task OnPlayerDisconnected(MultiplayerPlayer player)
     {
         using var userRepository = new UserRepository();
@@ -201,7 +226,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         Data.PlayerTimeRecords.Remove(record);
     }
 
-    [BanchoEvent(BanchoEventType.OnSettingsUpdated)]
+    [BanchoEvent(BanchoEventType.SettingsUpdated)]
     public void OnSettingsUpdated()
     {
         // Remove records of players that are no longer in the lobby
@@ -321,7 +346,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         {
             foreach (var result in recentScores)
             {
-                if (result.Score == null)
+                if (result.Score?.Statistics.Count50 == null)
                 {
                     continue;
                 }
@@ -333,20 +358,22 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
                 {
                     UserId = user.Id,
                     PlayerId = result.Player.Id,
-                    LobbyId = context.Lobby.LobbyConfigurationId,
+                    LobbyId = context.Lobby.LobbyConfigurationId - 1,
                     GameId = game.Id,
                     OsuScoreId = score.Id,
                     BeatmapId = score.Beatmap!.Id,
                     TotalScore = score.TotalScore,
                     Rank = score.Grade.GetRankId(),
                     MaxCombo = score.MaxCombo,
-                    Count300 = score.Statistics.Count300,
-                    Count100 = score.Statistics.Count100,
-                    Count50 = score.Statistics.Count50,
+                    Count300 = score.Statistics.Count300 ?? 0,
+                    Count100 = score.Statistics.Count100 ?? 0,
+                    Count50 = score.Statistics.Count50 ?? 0,
                     CountMiss = score.Statistics.Misses,
                     Mods = score.GetModsBitset()
                 });
             }
+            
+            Log.Verbose($"FunCommands: Stored {recentScores.Count} scores for game {game.Id}");
         }
         catch (Exception e)
         {
@@ -364,13 +391,15 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         var players = context.MultiplayerLobby.Players.Where(x => x.Id != null && x.Score > 0).ToList();
         var grabScoreTasks = new List<Task<OsuSharp.Models.Scores.Score[]?>>();
 
+        await context.Lobby.Bot.OsuApiClient.EnsureAccessTokenAsync();
+        
         for (int i = 0; i < players.Count;i++)
         {
             int index = i;
             
             grabScoreTasks.Add(Task.Run(async () =>
             {
-                await Task.Delay(index * 500);
+                await Task.Delay(index * 250);
                 
                 Log.Information($"FunCommandsBehavior: Executing osu! API call for {players[index].Name}");
                 

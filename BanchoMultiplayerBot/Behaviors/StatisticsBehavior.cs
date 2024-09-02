@@ -11,10 +11,10 @@ public class StatisticsBehavior(BehaviorEventContext context) : IBehavior
     private static readonly Counter MatchCount = Metrics.CreateCounter("bot_lobby_match_count", "The number of total matches played", "lobby_index");
     private static readonly Counter MatchAbortedCount = Metrics.CreateCounter("bot_lobby_match_aborted_count", "The number of total matches aborted", "lobby_index");
     
-    [BanchoEvent(BanchoEventType.OnPlayerJoined)]
+    [BanchoEvent(BanchoEventType.PlayerJoined)]
     public void OnPlayerJoined() => PlayerCount.Set(context.MultiplayerLobby.Players.Count);
     
-    [BanchoEvent(BanchoEventType.OnPlayerDisconnected)]
+    [BanchoEvent(BanchoEventType.PlayerDisconnected)]
     public void OnPlayerDisconnected() => PlayerCount.Set(context.MultiplayerLobby.Players.Count);
     
     [BanchoEvent(BanchoEventType.MatchStarted)]

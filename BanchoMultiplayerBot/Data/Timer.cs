@@ -20,14 +20,23 @@ public class Timer(ITimerProvider timerProvider, string name) : ITimer
     
     public void Start(TimeSpan duration, int earlyWarning = 0)
     {
-        Log.Verbose("Timer: Starting timer {Name} with duration {Duration}", Name, duration);
+        if (!IsActive)
+        {
+            Log.Verbose("Timer: Starting timer {Name} with duration {Duration}", Name, duration);
+        }
         
         StartTime = DateTime.UtcNow;
         EndTime = StartTime + duration;
         EarlyWarning = earlyWarning;
+        
         IsActive = true;
     }
-
+    
+    public void PostPone(TimeSpan duration)
+    {
+        EndTime += duration;
+    }
+    
     public void Stop()
     {
         Log.Verbose("Timer: Stopping timer {Name}", Name);

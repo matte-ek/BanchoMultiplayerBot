@@ -8,18 +8,21 @@ namespace BanchoMultiplayerBot.Bancho
     public class CommandHandler : ICommandHandler
     {
         private readonly IMessageHandler _messageHandler;
-        private int _lastSpamFilterCount = 0;
+        private int _lastSpamFilterCount;
 
         private readonly Dictionary<string, List<QueuedCommand>> _queuedCommands = [];
 
         private readonly object _queuedCommandsLock = new();
 
+        private readonly BanchoClientConfiguration _banchoClientConfiguration;
+
         private static readonly Counter SentCommandsCounter = Metrics.CreateCounter("bot_commands_sent", "The amount of commands attempted to be executed");
         private static readonly Counter CommandsFailedToSendCounter = Metrics.CreateCounter("bot_commands_message_failed", "The amount of commands that failed to send their message");
         private static readonly Counter CommandsMessageRetriedCounter = Metrics.CreateCounter("bot_commands_message_retried", "The amount of commands that resent the message due to timeout");
 
-        public CommandHandler(IMessageHandler messageHandler)
+        public CommandHandler(IMessageHandler messageHandler, BanchoClientConfiguration banchoClientConfiguration)
         {
+            _banchoClientConfiguration = banchoClientConfiguration;
             _messageHandler = messageHandler;
             _messageHandler.OnMessageReceived += OnMessageReceived;
         }
@@ -88,14 +91,14 @@ namespace BanchoMultiplayerBot.Bancho
                     }
                     
                     // If the command has not been responded to in 5 seconds, resend the command
-                    if (timeout++ > 50)
+                    if (timeout++ > _banchoClientConfiguration.BanchoCommandTimeout * 10)
                     {
                         attempts++;
                         timeout = 0;
 
                         await SendMessage();
 
-                        if (attempts > 5)
+                        if (attempts > _banchoClientConfiguration.BanchoCommandAttempts)
                         {
                             lock (_queuedCommandsLock)
                             {

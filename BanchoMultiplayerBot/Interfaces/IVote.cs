@@ -14,6 +14,8 @@ public interface IVote
 
     public DateTime StartTime { get; set; }
     
+    public DateTime PassTime { get; set; }
+    
     public List<string> Votes { get; set; }
     
     public bool PlayerVote(MultiplayerPlayer player);

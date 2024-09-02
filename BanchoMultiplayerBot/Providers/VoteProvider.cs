@@ -49,7 +49,8 @@ public class VoteProvider(ILobby lobby) : IVoteProvider
             {
                 IsActive = vote.IsActive,
                 Votes = vote.Votes,
-                StartTime = vote.StartTime
+                StartTime = vote.StartTime,
+                PassTime = vote.PassTime
             };
             
             if ((DateTime.UtcNow - newVote.StartTime).TotalSeconds > 120 && newVote.IsActive)
@@ -81,7 +82,8 @@ public class VoteProvider(ILobby lobby) : IVoteProvider
                     Description = vote.Description,
                     IsActive = vote.IsActive,
                     Votes = vote.Votes,
-                    StartTime = vote.StartTime
+                    StartTime = vote.StartTime,
+                    PassTime = vote.PassTime
                 };
                 
                 context.LobbyVotes.Add(existingVote);
@@ -91,6 +93,7 @@ public class VoteProvider(ILobby lobby) : IVoteProvider
             existingVote.IsActive = vote.IsActive;
             existingVote.Votes = vote.Votes;
             existingVote.StartTime = vote.StartTime;
+            existingVote.PassTime = vote.PassTime;
         }
         
         await context.SaveChangesAsync();

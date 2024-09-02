@@ -5,7 +5,6 @@ using BanchoMultiplayerBot.Behaviors.Data;
 using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Interfaces;
 using BanchoMultiplayerBot.Osu;
-using BanchoMultiplayerBot.Osu.Exceptions;
 using BanchoMultiplayerBot.Providers;
 using BanchoMultiplayerBot.Utilities;
 using BanchoSharp.Multiplayer;
@@ -49,7 +48,7 @@ namespace BanchoMultiplayerBot.Behaviors
             Data.MatchFinishMessageSubscribers.Clear();
         }
 
-        [BanchoEvent(BanchoEventType.OnHostChanged)]
+        [BanchoEvent(BanchoEventType.HostChanged)]
         public void OnHostChanged()
         {
             // psst, this allows the violation count to be bypassed by passing
@@ -57,9 +56,11 @@ namespace BanchoMultiplayerBot.Behaviors
             Data.HostViolationCount = 0;
         }
 
-        [BanchoEvent(BanchoEventType.OnMapChanged)]
+        [BanchoEvent(BanchoEventType.MapChanged)]
         public async Task OnMapChanged(BeatmapShell beatmapShell)
         {
+            Data.CurrentMapId = beatmapShell.Id;
+            
             // If the beatmap is the same as the last one applied, we don't need to do anything.
             // This is to prevent the bot from applying the same beatmap multiple times.
             if (beatmapShell.Id == Data.LastBotAppliedBeatmapId)
@@ -73,8 +74,19 @@ namespace BanchoMultiplayerBot.Behaviors
             {
                 var beatmapInfo = await OsuApi.GetBeatmapAsync(beatmapShell.Id);
                 var beatmapAttributes = await OsuApi.GetDifficultyAttributesAsync(beatmapShell.Id);
+
+                if (beatmapInfo == null)
+                {
+                    Log.Information("MapManagerBehavior: Beatmap {BeatmapId} not found, applying fallback beatmap", beatmapShell.Id);
                 
-                if (beatmapInfo == null || beatmapAttributes == null)
+                    await ApplyBeatmap(Data.BeatmapFallbackId);
+                
+                    context.SendMessage("The selected beatmap is not submitted, please pick another one");
+
+                    return;
+                }
+                
+                if (beatmapAttributes == null)
                 {
                     Log.Error("MapManagerBehavior: Failed to get beatmap information for map {BeatmapId}", beatmapShell.Id);
                     
@@ -84,7 +96,7 @@ namespace BanchoMultiplayerBot.Behaviors
                 }
 
                 var lobbyConfig = await context.Lobby.GetLobbyConfiguration();
-                var mapValidator = new MapValidator(lobbyConfig, Config);
+                var mapValidator = new MapValidator(context.Lobby, lobbyConfig, Config);
                 var mapValidationResult = await mapValidator.ValidateBeatmap(beatmapAttributes, beatmapInfo);
 
                 // Special case for double-time, we want to check if
@@ -113,25 +125,11 @@ namespace BanchoMultiplayerBot.Behaviors
 
                 await EnforceBeatmapRegulations(beatmapInfo, beatmapAttributes, mapValidationResult);
             }
-            catch (BeatmapNotFoundException)
-            {
-                Log.Information("MapManagerBehavior: Beatmap {BeatmapId} not found, applying fallback beatmap", beatmapShell.Id);
-                
-                await ApplyBeatmap(Data.BeatmapFallbackId);
-                
-                context.SendMessage("The selected beatmap is not submitted, please pick another one");
-            }
             catch (HttpRequestException e)
             {
                 Log.Error("MapManagerBehavior: Timed out getting beatmap information for map {BeatmapId}, {e}", beatmapShell.Id, e);
                 
                 context.SendMessage("osu!api timed out while trying to get beatmap information");
-            }
-            catch (InvalidApiKeyException)
-            {
-                Log.Error("MapManagerBehavior: Invalid API key while trying to get beatmap information for map {BeatmapId}", beatmapShell.Id);
-
-                context.SendMessage("Internal error while trying to get beatmap information");
             }
             catch (Exception e)
             {
@@ -195,7 +193,7 @@ namespace BanchoMultiplayerBot.Behaviors
                         GameMode.osuTaiko => "osu!taiko",
                         _ => "Error"
                     };
-
+    
                     context.SendMessage($"Please only pick beatmaps from the game mode {modeName}.");
                     break;
                 case MapValidator.MapStatus.Banned:
@@ -253,6 +251,11 @@ namespace BanchoMultiplayerBot.Behaviors
             }
             
             var timeLeft = (finishTime - DateTime.UtcNow).ToString(@"mm\:ss");
+
+            if (DateTime.UtcNow >= finishTime)
+            {
+                timeLeft = "00:00";
+            }
             
             // Allow the players to get pinged when the map is finished
             var pingEnabled = commandEventContext.Arguments.Length > 0 && commandEventContext.Arguments[0].Equals("ping", StringComparison.OrdinalIgnoreCase) && commandEventContext.Player != null;
@@ -337,45 +340,52 @@ namespace BanchoMultiplayerBot.Behaviors
         /// </summary>
         private async Task ValidatePlayingMap()
         {
+            if (Data.CurrentMapId == 0)
+            {
+                return;
+            }
+            
             await context.ExecuteCommandAsync<RoomSettingsUpdateCommand>();
 
-            try
-            {
-                var mapIsValid = true;
+            bool mapIsValid = !(!Config.AllowDoubleTime && (context.MultiplayerLobby.Mods & Mods.DoubleTime) != 0);
+
+            List<string> mods = [];
+
+            // We do this to only add the difficulty increasing mods, we don't really 
+            // care about the rest, and therefore don't need to send it to the API.
                 
-                if (!Config.AllowDoubleTime && (context.MultiplayerLobby.Mods & Mods.DoubleTime) != 0)
+            if ((context.MultiplayerLobby.Mods & Mods.DoubleTime) != 0 || 
+                (context.MultiplayerLobby.Mods & Mods.Nightcore) != 0)
+                mods.Add("DT");
+            if ((context.MultiplayerLobby.Mods & Mods.HardRock) != 0)
+                mods.Add("HR");
+            if ((context.MultiplayerLobby.Mods & Mods.Hidden) != 0)
+                mods.Add("HD");
+                
+            var difficultyAttributes = await OsuApi.GetDifficultyAttributesAsync(Data.CurrentMapId, mods.ToArray());
+            if (difficultyAttributes != null)
+            {
+                var lobbyConfig = await context.Lobby.GetLobbyConfiguration();
+                var mapValidator = new MapValidator(context.Lobby, lobbyConfig, Config);
+                var mapValidationResult = await mapValidator.ValidateBeatmap(difficultyAttributes, null);
+
+                if (mapValidationResult != MapValidator.MapStatus.Ok)
                 {
                     mapIsValid = false;
                 }
-
-                var difficultyAttributes = await OsuApi.GetDifficultyAttributesAsync(Data.LastPlayerAppliedBeatmapId, context.MultiplayerLobby.Mods.ToAbbreviatedForm());
-                if (difficultyAttributes != null)
-                {
-                    var lobbyConfig = await context.Lobby.GetLobbyConfiguration();
-                    var mapValidator = new MapValidator(lobbyConfig, Config);
-                    var mapValidationResult = await mapValidator.ValidateBeatmap(difficultyAttributes, null);
-
-                    if (mapValidationResult != MapValidator.MapStatus.Ok)
-                    {
-                        mapIsValid = false;
-                    }
-                }
-
-                if (mapIsValid)
-                {
-                    // Everything checks out, we're done
-                    return;
-                }
-                
-                Log.Error("MapManagerBehavior: Detected an attempt to play a map out of the lobby's star rating! Aborting...");
-                context.SendMessage("Detected an attempt to play a map out of the lobby's star rating! Aborting...");
-
-                await context.ExecuteCommandAsync<MatchAbortCommand>();
             }
-            catch (Exception e)
+
+            if (mapIsValid)
             {
-                Log.Error(e, "MapManagerBehavior: Exception while trying to validate the map, {e}", e);
+                // Everything checks out, we're done
+                return;
             }
+                
+            Log.Error("MapManagerBehavior: Detected an attempt to play a map out of the lobby's star rating! Aborting...");
+            
+            context.SendMessage("Detected an attempt to play a map out of the lobby's star rating! Aborting...");
+
+            await context.ExecuteCommandAsync<MatchAbortCommand>();
         }
     }
 }

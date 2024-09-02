@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
 using Serilog;
 
 namespace BanchoMultiplayerBot.Host.WebApi.Hubs;
 
+[Authorize]
 public class LobbyEventHub : Hub
 {
     // Messages are sent out from LobbyTrackerService

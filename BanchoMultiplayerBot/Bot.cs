@@ -6,7 +6,6 @@ using BanchoMultiplayerBot.Osu;
 using BanchoMultiplayerBot.Utilities;
 using Microsoft.EntityFrameworkCore;
 using OsuSharp;
-using OsuSharp.Enums;
 using Serilog;
 
 namespace BanchoMultiplayerBot

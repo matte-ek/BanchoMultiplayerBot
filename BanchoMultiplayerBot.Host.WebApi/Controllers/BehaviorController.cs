@@ -7,7 +7,7 @@ namespace BanchoMultiplayerBot.Host.WebApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]/{lobbyId:int}/{behaviorName}")]
-[AllowAnonymous]
+[Authorize]
 public class BehaviorController(BehaviorService behaviorService) : ControllerBase
 {
     [HttpGet("config")]

@@ -1,6 +1,7 @@
 ﻿using BanchoMultiplayerBot.Behaviors.Config;
 using BanchoMultiplayerBot.Database.Models;
 using BanchoMultiplayerBot.Database.Repositories;
+using BanchoMultiplayerBot.Interfaces;
 using BanchoSharp.Multiplayer;
 using OsuSharp.Enums;
 using OsuSharp.Models.Beatmaps;
@@ -10,26 +11,21 @@ namespace BanchoMultiplayerBot.Utilities;
 /// <summary>
 /// Utility class to check if a map is within a lobby's regulations
 /// </summary>
-public class MapValidator(LobbyConfiguration lobbyConfiguration, MapManagerBehaviorConfig mapManagerBehaviorConfig)
+public class MapValidator(ILobby lobby, LobbyConfiguration lobbyConfiguration, MapManagerBehaviorConfig mapManagerBehaviorConfig)
 {
     public async Task<MapStatus> ValidateBeatmap(DifficultyAttributes difficultyAttributes, BeatmapExtended? beatmapInfo)
     {
-        // Allow validation with only difficulty attributes
-        if (beatmapInfo != null)
-        {
-            if (await IsBannedBeatmap(beatmapInfo))
-                return MapStatus.Banned;
-            if (!IsAllowedBeatmapGameMode(beatmapInfo))
-                return MapStatus.GameMode;
-            if (!IsAllowedBeatmapLength(beatmapInfo))
-                return MapStatus.Length;   
-            //if (!IsDownloadable(beatmapInfo))
-            //    return MapStatus.Removed;
-        }
-        
+        if (await IsHostAdministrator())
+            return MapStatus.Ok;
         if (!IsAllowedBeatmapStarRating(difficultyAttributes))
             return MapStatus.StarRating;
-        
+        if (await IsBannedBeatmap(beatmapInfo))
+            return MapStatus.Banned;
+        if (!IsAllowedBeatmapGameMode(beatmapInfo))
+            return MapStatus.GameMode;
+        if (!IsAllowedBeatmapLength(beatmapInfo))
+            return MapStatus.Length;   
+
         return MapStatus.Ok;
     }
 
@@ -50,19 +46,35 @@ public class MapValidator(LobbyConfiguration lobbyConfiguration, MapManagerBehav
         return maxRating >= beatmap.DifficultyRating && beatmap.DifficultyRating >= minRating;
     }
 
-    private bool IsAllowedBeatmapLength(BeatmapExtended beatmap)
+    private bool IsAllowedBeatmapLength(BeatmapExtended? beatmap)
     {
-        if (!mapManagerBehaviorConfig.LimitMapLength)
+        if (beatmap == null)
+        {
+            // We don't know any better, fallback to "it's okay".
             return true;
+        }
+        
+        if (!mapManagerBehaviorConfig.LimitMapLength)
+        {
+            return true;
+        }
 
         return mapManagerBehaviorConfig.MaximumMapLength >= beatmap.TotalLength.TotalSeconds &&
                beatmap.TotalLength.TotalSeconds >= mapManagerBehaviorConfig.MinimumMapLength;
     }
 
-    private bool IsAllowedBeatmapGameMode(BeatmapExtended beatmap)
+    private bool IsAllowedBeatmapGameMode(BeatmapExtended? beatmap)
     {
-        if (lobbyConfiguration.Mode == null)
+        if (beatmap == null)
+        {
+            // We don't know any better, fallback to "it's okay".
             return true;
+        }
+
+        if (lobbyConfiguration.Mode == null)
+        {
+            return true;
+        }
         
         return lobbyConfiguration.Mode switch
         {
@@ -74,8 +86,14 @@ public class MapValidator(LobbyConfiguration lobbyConfiguration, MapManagerBehav
         };
     }
 
-    private static async Task<bool> IsBannedBeatmap(BeatmapExtended beatmap)
+    private static async Task<bool> IsBannedBeatmap(BeatmapExtended? beatmap)
     {
+        if (beatmap == null)
+        {
+            // We don't know any better, fallback to "it's okay".
+            return false;
+        }
+        
         using var mapBanRepository = new MapBanRepository();
 
         return await mapBanRepository.IsMapBanned(beatmap.SetId, beatmap.Id);
@@ -86,6 +104,20 @@ public class MapValidator(LobbyConfiguration lobbyConfiguration, MapManagerBehav
         return (beatmap as Beatmap).Set?.Availability?.IsDownloadDisabled == true;
     }
 
+    private async Task<bool> IsHostAdministrator()
+    {
+        if (lobby.MultiplayerLobby?.Host == null)
+        {
+            return false;
+        }
+
+        using var userRepository = new UserRepository();
+            
+        var user = await userRepository.FindOrCreateUser(lobby.MultiplayerLobby!.Host.Name);
+
+        return user.Administrator;
+    }
+    
     public enum MapStatus
     {
         Ok,

@@ -1,14 +1,23 @@
 ﻿using BanchoMultiplayerBot.Attributes;
 using BanchoMultiplayerBot.Bancho.Commands;
+using BanchoMultiplayerBot.Behaviors.Data;
 using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Database.Models;
 using BanchoMultiplayerBot.Interfaces;
+using BanchoMultiplayerBot.Providers;
+using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
+using Serilog;
 
 namespace BanchoMultiplayerBot.Behaviors
 {
-    public class RoomManagerBehavior(BehaviorEventContext context) : IBehavior
+    public class RoomManagerBehavior(BehaviorEventContext context) : IBehavior, IBehaviorDataConsumer
     {
+        private readonly BehaviorDataProvider<RoomManagerBehaviorData> _dataProvider = new(context.Lobby);
+        private RoomManagerBehaviorData Data => _dataProvider.Data;
+        
+        public async Task SaveData() => await _dataProvider.SaveData();
+        
         [BotEvent(BotEventType.Initialize)]
         public async Task OnInitialize()
         {
@@ -18,9 +27,19 @@ namespace BanchoMultiplayerBot.Behaviors
         [BanchoEvent(BanchoEventType.MatchStarted)]
         public async Task OnMatchStarted()
         {
+            Data.PlayerFinishCount = 0;
+            
             // If there are no players in the lobby, we should abort the match.
             if (context.MultiplayerLobby.Players.Count == 0)
             {
+                if (context.Lobby.Health == LobbyHealth.Initializing)
+                {
+                    // To account for whenever the bot is starting, context.MultiplayerLobby.Players.Count could still be zero,
+                    // and therefore it shouldn't automatically abort the match.
+                
+                    return;
+                }
+                
                 await context.ExecuteCommandAsync<MatchAbortCommand>();
             }
         }
@@ -49,6 +68,39 @@ namespace BanchoMultiplayerBot.Behaviors
             await Task.WhenAll(tasks);
         }
 
+        [BanchoEvent(BanchoEventType.MessageReceived)]
+        public void OnMessageReceived(IPrivateIrcMessage message)
+        {
+            if (message.IsBanchoBotMessage == false || 
+                context.MultiplayerLobby.MatchInProgress == false ||
+                !message.Content.Contains("finished playing (Score: "))
+            {
+                return;
+            }
+
+            Data.PlayerFinishCount++;
+
+            if (Data.PlayerFinishCount > context.MultiplayerLobby.Players.Count / 2)
+            {
+                context.TimerProvider.FindOrCreateTimer("PlayerFinishTimer").Start(TimeSpan.FromSeconds(30));
+            }
+        }
+
+        [BotEvent(BotEventType.TimerElapsed, "PlayerFinishTimer")]
+        public async Task OnPlayerFinishTimerElapsed()
+        {
+            if (!context.MultiplayerLobby.MatchInProgress)
+            {
+                return;
+            }
+            
+            Log.Warning("RoomManagerBehavior: Detected possibly stuck match, aborting...");
+            
+            context.SendMessage("Detected possibly stuck match, aborting...");
+            
+            await context.ExecuteCommandAsync<MatchAbortCommand>();
+        }
+        
         private async Task EnsureRoomName(LobbyConfiguration configuration)
         {
             if (configuration.Name == context.MultiplayerLobby.Name)

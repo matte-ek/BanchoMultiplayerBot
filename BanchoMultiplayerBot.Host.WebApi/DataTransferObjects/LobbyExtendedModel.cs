@@ -1,5 +1,4 @@
 ﻿using BanchoMultiplayerBot.Data;
-using BanchoSharp.Multiplayer;
 
 namespace BanchoMultiplayerBot.Host.WebApi.DataTransferObjects;
 

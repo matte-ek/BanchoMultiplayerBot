@@ -39,7 +39,7 @@ public class HealthMonitorBehavior(BehaviorEventContext context) : IBehavior, IB
         context.TimerProvider.FindOrCreateTimer("HealthMonitorTimer").Start(TimeSpan.FromMinutes(5));
     }
 
-    [BanchoEvent(BanchoEventType.OnPlayerJoined)]
+    [BanchoEvent(BanchoEventType.PlayerJoined)]
     public void OnPlayerJoined()
     {
         Data.LastEventTime = DateTime.UtcNow;
@@ -50,7 +50,7 @@ public class HealthMonitorBehavior(BehaviorEventContext context) : IBehavior, IB
         }
     }
     
-    [BanchoEvent(BanchoEventType.OnPlayerDisconnected)]
+    [BanchoEvent(BanchoEventType.PlayerDisconnected)]
     public void OnPlayerDisconnected()
     {
         Data.LastEventTime = DateTime.UtcNow;

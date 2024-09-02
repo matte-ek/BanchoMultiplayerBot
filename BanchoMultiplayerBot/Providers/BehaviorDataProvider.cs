@@ -2,7 +2,6 @@
 using BanchoMultiplayerBot.Database.Models;
 using BanchoMultiplayerBot.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Newtonsoft.Json;
 using Serilog;
 

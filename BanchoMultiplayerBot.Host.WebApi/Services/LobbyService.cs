@@ -1,5 +1,4 @@
 ﻿using BanchoMultiplayerBot.Behaviors.Data;
-using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Database;
 using BanchoMultiplayerBot.Database.Models;
 using BanchoMultiplayerBot.Host.WebApi.DataTransferObjects;
@@ -131,7 +130,30 @@ public class LobbyService(Bot bot)
             await lobby.ConnectAsync();
         }
     }
-    
+
+    public async Task ReassignLobbyChannel(int lobbyId, string newChannel)
+    {
+        var lobby = bot.Lobbies.FirstOrDefault(x => x.LobbyConfigurationId == lobbyId);
+
+        if (lobby == null)
+        {
+            return;
+        }
+        
+        await using var context = new BotDbContext();
+        
+        var instance = new LobbyRoomInstance()
+        {
+            Channel = $"#mp_{newChannel}",
+            LobbyConfigurationId = lobbyId
+        };
+
+        context.Add(instance);
+            
+        await context.SaveChangesAsync();
+        await lobby.ConnectAsync();
+    }
+
     public async Task<LobbyConfiguration?> GetConfiguration(int id)
     {
         var lobby = bot.Lobbies.FirstOrDefault(x => x.LobbyConfigurationId == id);

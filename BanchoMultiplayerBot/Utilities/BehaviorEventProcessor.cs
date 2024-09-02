@@ -26,7 +26,7 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
     /// </summary>
     /// <param name="behavior">Behavior class name</param>
     /// <exception cref="InvalidOperationException">No behavior found with specified name</exception>
-    public void RegisterBehavior(string behavior)
+    public async Task RegisterBehavior(string behavior)
     {
         // Find the behavior type by name, which is a class that implements IBehavior
         var behaviorType = AppDomain.CurrentDomain
@@ -61,6 +61,10 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
                 _events.Add(new BotBehaviorEvent(behavior, method, behaviorType, ignoreArgs, botEventAttribute.Type, botEventAttribute.OptionalScope));
             }
         }
+        
+        // Create at least one instance of each behavior class to ensure that
+        // configurations and such as created.
+        Activator.CreateInstance(behaviorType, new BehaviorEventContext(lobby, CancellationToken.None));
 
         Log.Verbose("BehaviorEventDispatcher: Registered behaviour {BehaviorName} successfully", behavior);
     }
@@ -143,22 +147,22 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
 
     private async void OnPlayerJoined(MultiplayerPlayer player)
     {
-        await ExecuteBanchoCallback(BanchoEventType.OnPlayerJoined, player);
+        await ExecuteBanchoCallback(BanchoEventType.PlayerJoined, player);
     }
     
     private async void OnPlayerDisconnected(PlayerDisconnectedEventArgs eventArgs)
     {
-        await ExecuteBanchoCallback(BanchoEventType.OnPlayerDisconnected, eventArgs.Player);
+        await ExecuteBanchoCallback(BanchoEventType.PlayerDisconnected, eventArgs.Player);
     }
 
     private async void OnHostChanged(MultiplayerPlayer player)
     {
-        await ExecuteBanchoCallback(BanchoEventType.OnHostChanged, player);
+        await ExecuteBanchoCallback(BanchoEventType.HostChanged, player);
     }
     
     private async void OnHostChangingMap()
     {
-        await ExecuteBanchoCallback(BanchoEventType.OnHostChangingMap);
+        await ExecuteBanchoCallback(BanchoEventType.HostChangingMap);
     }
 
     private async void OnAllPlayersReady()
@@ -168,12 +172,27 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
 
     private async void OnSettingsUpdated()
     {
-        await ExecuteBanchoCallback(BanchoEventType.OnSettingsUpdated);
+        await ExecuteBanchoCallback(BanchoEventType.SettingsUpdated);
     }
     
     private async void OnBeatmapChanged(BeatmapShell beatmapShell)
     {
-        await ExecuteBanchoCallback(BanchoEventType.OnMapChanged, beatmapShell);
+        await ExecuteBanchoCallback(BanchoEventType.MapChanged, beatmapShell);
+    }
+    
+    private async void OnMessageReceived(IPrivateIrcMessage msg)
+    {
+        if (msg.Recipient != lobby.MultiplayerLobby?.ChannelName)
+        {
+            if (msg.IsBanchoBotMessage)
+            {
+                await ExecuteBanchoCallback(BanchoEventType.BanchoBotMessageReceived, msg);
+            }
+            
+            return;
+        }
+        
+        await ExecuteBanchoCallback(BanchoEventType.MessageReceived, msg);
     }
     
     private async Task ExecuteBanchoCallback(BanchoEventType banchoEventType, object? param = null)
@@ -188,11 +207,6 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
     #endregion
 
     #region Bot Events
-
-    private async void OnMessageReceived(IPrivateIrcMessage msg)
-    {
-        await ExecuteBotCallback(BotEventType.MessageReceived, msg);
-    }
 
     public async Task OnInitializeEvent()
     {
@@ -255,7 +269,7 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
 
             try
             {
-                Log.Verbose("BehaviorEventDispatcher: Executing {CallbackName}.{MethodName}() ...", behaviorEvent.Name, behaviorEvent.Method.Name);
+                //Log.Verbose("BehaviorEventDispatcher: Executing {CallbackName}.{MethodName}() ...", behaviorEvent.Name, behaviorEvent.Method.Name);
 
                 // Invoke the method on the behavior class instance
                 var methodTask = behaviorEvent.Method.Invoke(instance, behaviorEvent.IgnoreArguments ? [] : [param]);

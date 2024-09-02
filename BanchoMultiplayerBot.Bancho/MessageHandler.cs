@@ -1,7 +1,6 @@
 ﻿using BanchoMultiplayerBot.Bancho.Data;
 using BanchoMultiplayerBot.Bancho.Interfaces;
 using BanchoSharp.Interfaces;
-using Microsoft.VisualBasic;
 using Serilog;
 using System.Collections.Concurrent;
 using Prometheus;
@@ -13,7 +12,7 @@ namespace BanchoMultiplayerBot.Bancho
     /// Utility class to handle sending and receiving messages from Bancho,
     /// also handles rate limiting automatically.
     /// </summary>
-    public class MessageHandler(IBanchoConnection banchoConnection, ITimeProvider? timeProvider = null) : IMessageHandler
+    public class MessageHandler(IBanchoConnection banchoConnection, BanchoClientConfiguration configuration, ITimeProvider? timeProvider = null) : IMessageHandler
     {
         public bool IsRunning { get; private set; } = false;
 
@@ -106,8 +105,9 @@ namespace BanchoMultiplayerBot.Bancho
         private async Task MessagePumpTask()
         {
             const int maxMessageLength = 400;
-            const int messageBurstCount = 5;
-            const int messageAge = 6;
+            
+            int messageBurstCount = configuration.MessageRateLimitCount;
+            int messageAge = configuration.MessageRateLimitWindow;
 
             IsRunning = true;
 

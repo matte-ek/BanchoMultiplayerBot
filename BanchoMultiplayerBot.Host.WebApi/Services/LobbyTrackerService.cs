@@ -5,7 +5,6 @@ using BanchoSharp.EventArgs;
 using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Serilog;
 
 namespace BanchoMultiplayerBot.Host.WebApi.Services;

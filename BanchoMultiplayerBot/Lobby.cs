@@ -169,18 +169,18 @@ namespace BanchoMultiplayerBot
             VoteProvider = new VoteProvider(this);
             
             // Load the default behaviors
-            BehaviorEventProcessor.RegisterBehavior("RoomManagerBehavior");
-            BehaviorEventProcessor.RegisterBehavior("BanBehavior");
-            BehaviorEventProcessor.RegisterBehavior("AnnouncementBehavior");
-            BehaviorEventProcessor.RegisterBehavior("HealthMonitorBehavior");
-            BehaviorEventProcessor.RegisterBehavior("StatisticsBehavior");
+            await BehaviorEventProcessor.RegisterBehavior("RoomManagerBehavior");
+            await BehaviorEventProcessor.RegisterBehavior("BanBehavior");
+            await BehaviorEventProcessor.RegisterBehavior("AnnouncementBehavior");
+            await BehaviorEventProcessor.RegisterBehavior("HealthMonitorBehavior");
+            await BehaviorEventProcessor.RegisterBehavior("StatisticsBehavior");
     
             // Load custom specified behaviors
             if (lobbyConfiguration.Behaviours != null)
             {
                 foreach (var behavior in lobbyConfiguration.Behaviours)
                 {
-                    BehaviorEventProcessor.RegisterBehavior(behavior);
+                    await BehaviorEventProcessor.RegisterBehavior(behavior);
                 }
             }
             

@@ -15,6 +15,8 @@ public class Vote(string name, string description, ILobby lobby) : IVote
     public bool IsActive { get; set; }
 
     public DateTime StartTime { get; set; }
+    
+    public DateTime PassTime { get; set; }
 
     public List<string> Votes { get; set; } = [];
     
@@ -53,6 +55,8 @@ public class Vote(string name, string description, ILobby lobby) : IVote
             Lobby.BanchoConnection.MessageHandler.SendMessage(Lobby.MultiplayerLobby!.ChannelName, $"{Description} vote passed! ({Votes.Count}/{requiredVotes})");
 
             IsActive = false;
+            PassTime = DateTime.UtcNow;
+            Votes.Clear();
 
             return true;
         }
@@ -67,6 +71,7 @@ public class Vote(string name, string description, ILobby lobby) : IVote
         Log.Verbose("Vote: Aborted vote {Vote} with {Votes} vote(s)", Name, Votes.Count);
 
         IsActive = false;
+        Votes.Clear();
     }
 
     /// <summary>

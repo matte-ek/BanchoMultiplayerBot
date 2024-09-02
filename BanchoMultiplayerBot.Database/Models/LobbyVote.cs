@@ -13,6 +13,8 @@ public class LobbyVote
     public bool IsActive { get; set; }
     
     public DateTime StartTime { get; set; }
+    
+    public DateTime PassTime { get; set; }
 
     public List<string> Votes { get; set; } = [];
 }

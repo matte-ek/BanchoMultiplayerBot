@@ -2,7 +2,6 @@
 using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Interfaces;
 using BanchoSharp.Interfaces;
-using BanchoSharp.Multiplayer;
 
 namespace BanchoMultiplayerBot.Behaviors;
 
@@ -18,14 +17,19 @@ public class AntiAfkBehavior(BehaviorEventContext context) : IBehavior
             return;
         }
 
+        if (context.MultiplayerLobby.Players.Count == 0)
+        {
+            return;
+        }
+
         context.Lobby.BanchoConnection.MessageHandler.SendMessage("BanchoBot", $"!stat {context.MultiplayerLobby.Host.Name}");
         context.Lobby.TimerProvider?.FindOrCreateTimer("AfkTimer").Start(TimeSpan.FromSeconds(AfkTimerSeconds));
     }
 
-    [BotEvent(BotEventType.MessageReceived)]
+    [BanchoEvent(BanchoEventType.BanchoBotMessageReceived)]
     public void OnMessageReceived(IPrivateIrcMessage message)
     {
-        if (!message.IsBanchoBotMessage || !message.Content.StartsWith("Stats for (") || context.MultiplayerLobby.Host == null)
+        if (!message.Content.StartsWith("Stats for (") || context.MultiplayerLobby.Host == null)
         {
             return;
         }
@@ -44,14 +48,16 @@ public class AntiAfkBehavior(BehaviorEventContext context) : IBehavior
         {
             return;
         }
+        
+        context.VoteProvider.FindOrCreateVote("SkipVote", "Skip the host").Abort();
 
         context.SendMessage($"!mp kick {context.GetPlayerIdentifier(context.MultiplayerLobby.Host.Name)}");
     }
 
-    [BanchoEvent(BanchoEventType.OnHostChanged)]
+    [BanchoEvent(BanchoEventType.HostChanged)]
     public void OnHostChanged() => context.Lobby.TimerProvider?.FindOrCreateTimer("AfkTimer").Start(TimeSpan.FromSeconds(AfkTimerSeconds));
 
-    [BanchoEvent(BanchoEventType.OnHostChangingMap)]
+    [BanchoEvent(BanchoEventType.HostChangingMap)]
     public void OnHostChangingMap() => context.Lobby.TimerProvider?.FindOrCreateTimer("AfkTimer").Stop();
 
     [BanchoEvent(BanchoEventType.MatchStarted)]

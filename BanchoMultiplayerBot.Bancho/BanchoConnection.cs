@@ -3,16 +3,15 @@ using BanchoMultiplayerBot.Bancho.Interfaces;
 using BanchoSharp;
 using Prometheus;
 using Serilog;
-using System.Threading;
 using BanchoSharp.Interfaces;
 
 namespace BanchoMultiplayerBot.Bancho
 {
     public class BanchoConnection : IBanchoConnection
     {
-        public bool IsConnected { get; set; } = false;
+        public bool IsConnected { get; private set; }
 
-        public IBanchoClient? BanchoClient { get; private set; } = null!;
+        public IBanchoClient? BanchoClient { get; private set; }
 
         public IMessageHandler MessageHandler { get; }
         public ICommandHandler CommandHandler { get; }
@@ -32,9 +31,9 @@ namespace BanchoMultiplayerBot.Bancho
         {
             _banchoConfiguration = banchoClientConfiguration;
 
-            MessageHandler = new MessageHandler(this);
+            MessageHandler = new MessageHandler(this, banchoClientConfiguration);
             ChannelHandler = new ChannelHandler(this);
-            CommandHandler = new CommandHandler(MessageHandler);
+            CommandHandler = new CommandHandler(MessageHandler, banchoClientConfiguration);
         }
 
         public Task StartAsync()
@@ -63,7 +62,7 @@ namespace BanchoMultiplayerBot.Bancho
                                     LogLevel.None,
                                     false));
 
-            SubscribeEvents();
+            BanchoClient.OnAuthenticated += BanchoOnAuthenticated;
             
             Log.Information("BanchoConnection: Connecting to Bancho...");
 
@@ -104,13 +103,16 @@ namespace BanchoMultiplayerBot.Bancho
                 
                 await BanchoClient.DisconnectAsync();
 
-                UnsubscribeEvents();
+                BanchoClient.OnAuthenticated -= BanchoOnAuthenticated;
 
+                BanchoClient.TcpClient?.Dispose();
                 BanchoClient?.Dispose();
             }
 
             BanchoClient = null;
             IsConnected = false;
+            
+            Log.Information("BanchoConnection: Disconnected from Bancho successfully");
         }
 
         private void BanchoOnAuthenticated()
@@ -139,24 +141,26 @@ namespace BanchoMultiplayerBot.Bancho
             OnReady?.Invoke();
         }
 
-        private void OnConnectionLost()
+        private async void OnConnectionLost()
         {
             IsConnected = false;
+            
             _cancellationTokenSource?.Cancel();
+            
             ConnectionHealth.Set(0);
 
-            Log.Error("BanchoConnection: Connection lost, attempting to reconnect in 20 seconds...");
+            Log.Error($"BanchoConnection: Connection lost, attempting to reconnect in {_banchoConfiguration.BanchoReconnectDelay} seconds...");
 
-            Thread.Sleep(20000);
+            await Task.Delay(_banchoConfiguration.BanchoReconnectDelay * 1000);
 
             int connectionAttempts = 0;
-            while (connectionAttempts < 10)
+            while (connectionAttempts < _banchoConfiguration.BanchoReconnectAttempts)
             {
                 Log.Information("BanchoConnection: Attempting to reconnect...");
 
                 _ = Task.Run(ConnectAsync);
 
-                Thread.Sleep(10000);
+                await Task.Delay(10000);
 
                 // If we're back in action, IsConnected will be true
                 // we can safely exit due to a new watchdog being started
@@ -168,37 +172,17 @@ namespace BanchoMultiplayerBot.Bancho
 
                     return;
                 }
+                
+                Log.Error($"BanchoConnection: Reconnection failed, retrying in {_banchoConfiguration.BanchoReconnectAttemptDelay} seconds...");
 
-                Log.Error("BanchoConnection: Reconnection failed, retrying in 10 seconds...");
-
-                Thread.Sleep(10000);
+                await Task.Delay(_banchoConfiguration.BanchoReconnectAttemptDelay * 1000);
 
                 connectionAttempts++;
             }
 
-            Log.Fatal("BanchoConnection: Failed to reconnect after 10 attempts, shutting down...");
+            Log.Fatal($"BanchoConnection: Failed to reconnect after {_banchoConfiguration.BanchoReconnectAttempts} attempts, shutting down...");
 
             DisconnectAsync().Wait(TimeSpan.FromSeconds(30));
-        }
-
-        private void SubscribeEvents()
-        {
-            if (BanchoClient == null)
-            {
-                return;
-            }
-
-            BanchoClient.OnAuthenticated += BanchoOnAuthenticated;
-        }
-
-        private void UnsubscribeEvents()
-        {
-            if (BanchoClient == null)
-            {
-                return;
-            }
-
-            BanchoClient.OnAuthenticated -= BanchoOnAuthenticated;
         }
     }
 }

@@ -1,6 +1,4 @@
-﻿using BanchoMultiplayerBot.Bancho.Interfaces;
-
-namespace BanchoMultiplayerBot.Bancho.Data
+﻿namespace BanchoMultiplayerBot.Bancho.Data
 {
     public class QueuedCommand
     {

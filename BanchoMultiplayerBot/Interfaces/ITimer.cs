@@ -16,5 +16,7 @@ public interface ITimer
     
     public void Start(TimeSpan duration, int earlyWarning = 0);
     
+    public void PostPone(TimeSpan duration);
+    
     public void Stop();
 }
