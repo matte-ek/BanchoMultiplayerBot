@@ -17,25 +17,23 @@ namespace BanchoMultiplayerBot.Bancho
         public bool IsRunning { get; private set; } = false;
 
         public event Action<IPrivateIrcMessage>? OnMessageReceived;
-
         public event Action<IPrivateIrcMessage>? OnMessageSent;
 
-        private readonly IBanchoConnection _banchoConnection = banchoConnection;
         private readonly ITimeProvider _timeProvider = timeProvider ?? new TimeProvider();
 
         private BlockingCollection<QueuedMessage> _messageQueue = new(50);
-
-        private Task? _messagePumpTask = null;
         
         private CancellationTokenSource? _cancellationTokenSource;
-        private CancellationToken _cancellationToken => _cancellationTokenSource!.Token;
+        private CancellationToken CancellationToken => _cancellationTokenSource!.Token;
 
+        private Task? _messagePumpTask;
+        
         private static readonly Counter MessagesSentCounter = Metrics.CreateCounter("bot_messages_sent", "Number of messages sent");
         private static readonly Counter MessagesReceivedCounter = Metrics.CreateCounter("bot_messages_received", "Number of messages received");
 
         public void SendMessage(string channel, string message)
         {
-            _messageQueue.Add(new QueuedMessage()
+            _messageQueue.Add(new QueuedMessage
             {
                 Channel = channel,
                 Content = message
@@ -46,7 +44,7 @@ namespace BanchoMultiplayerBot.Bancho
         {
             var trackedMessage = new TrackedMessageCookie();
 
-            _messageQueue.Add(new QueuedMessage()
+            _messageQueue.Add(new QueuedMessage
             {
                 Channel = channel,
                 Content = message,
@@ -64,10 +62,10 @@ namespace BanchoMultiplayerBot.Bancho
             _messageQueue.Dispose();
             _messageQueue = new BlockingCollection<QueuedMessage>(20);
 
-            if (_banchoConnection.BanchoClient != null)
+            if (banchoConnection.BanchoClient != null)
             {
-                _banchoConnection.BanchoClient.OnPrivateMessageReceived += BanchoOnPrivateMessageReceived;
-                _banchoConnection.BanchoClient.OnPrivateMessageSent += BanchoOnPrivateMessageSent;
+                banchoConnection.BanchoClient.OnPrivateMessageReceived += BanchoOnPrivateMessageReceived;
+                banchoConnection.BanchoClient.OnPrivateMessageSent += BanchoOnPrivateMessageSent;
             }
 
             // Start the message pump
@@ -81,10 +79,10 @@ namespace BanchoMultiplayerBot.Bancho
 
             _cancellationTokenSource?.Cancel();
 
-            if (_banchoConnection.BanchoClient != null)
+            if (banchoConnection.BanchoClient != null)
             {
-                _banchoConnection.BanchoClient.OnPrivateMessageReceived -= BanchoOnPrivateMessageReceived;
-                _banchoConnection.BanchoClient.OnPrivateMessageSent -= BanchoOnPrivateMessageSent;
+                banchoConnection.BanchoClient.OnPrivateMessageReceived -= BanchoOnPrivateMessageReceived;
+                banchoConnection.BanchoClient.OnPrivateMessageSent -= BanchoOnPrivateMessageSent;
             }
 
             if (_messagePumpTask == null || _messagePumpTask.Status == TaskStatus.RanToCompletion || _messagePumpTask.Status == TaskStatus.Faulted || _messagePumpTask.Status == TaskStatus.Canceled)
@@ -119,7 +117,7 @@ namespace BanchoMultiplayerBot.Bancho
             {
                 var message = _messageQueue.Take();
 
-                if (_cancellationToken.IsCancellationRequested || _banchoConnection.BanchoClient == null)
+                if (CancellationToken.IsCancellationRequested || banchoConnection.BanchoClient == null)
                 {
                     break;
                 }
@@ -137,7 +135,7 @@ namespace BanchoMultiplayerBot.Bancho
 
                     try
                     {
-                        await Task.Delay(50, _cancellationToken);
+                        await Task.Delay(50, CancellationToken);
                     }
                     catch (TaskCanceledException)
                     {
@@ -146,7 +144,7 @@ namespace BanchoMultiplayerBot.Bancho
                     
                 } while (shouldThrottle);
 
-                if (_cancellationToken.IsCancellationRequested) break;
+                if (CancellationToken.IsCancellationRequested) break;
                 
                 message.Sent = _timeProvider.UtcNow;
 
@@ -159,7 +157,7 @@ namespace BanchoMultiplayerBot.Bancho
 
                 try
                 {
-                    await _banchoConnection.BanchoClient.SendPrivateMessageAsync(message.Channel, message.Content);
+                    await banchoConnection.BanchoClient.SendPrivateMessageAsync(message.Channel, message.Content);
 
                     if (message.TrackCookie != null)
                     {

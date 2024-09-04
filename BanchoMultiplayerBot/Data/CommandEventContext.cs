@@ -17,7 +17,7 @@ public class CommandEventContext(IPrivateIrcMessage message, string[] arguments,
 
     public ILobby? Lobby { get; set; }
 
-    public Bot Bot { get; set; } = bot;
+    public Bot Bot { get; } = bot;
     
     public MultiplayerPlayer? Player { get; set; }
 
