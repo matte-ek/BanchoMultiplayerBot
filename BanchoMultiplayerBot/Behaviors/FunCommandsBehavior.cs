@@ -313,26 +313,38 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         await userRepository.Save();
     }
 
-    private void AnnounceLeaderboardResults(IReadOnlyList<PlayerScoreResult> recentScores)
+    private async Task AnnounceLeaderboardResults(IReadOnlyList<PlayerScoreResult> recentScores)
     {
         if (Data.LastPlayedBeatmapInfo == null)
         {
             return;
         }
 
+        var leaderboardScores = await context.Lobby.Bot.OsuApiClient.GetBeatmapScoresAsync(Data.LastPlayedBeatmapInfo.Id, Ruleset.Osu);
+        if (leaderboardScores == null || leaderboardScores.Length == 0)
+        {
+            return;
+        }
+        
         foreach (var score in recentScores)
         {
-            var leaderboardScore = recentScores.FirstOrDefault(x => x.Score?.RankGlobal <= 50 && x.Score?.RankGlobal != 0);
+            var leaderboardScore = leaderboardScores.FirstOrDefault(x => x.Id == score.Score?.Id);
             if (leaderboardScore == null)
             {
                 continue;
             }
+            
+            var scorePosition = leaderboardScores.ToList().FindIndex(x => x.Id == score.Score?.Id);
+            if (scorePosition == -1)
+            {
+                continue;
+            }
 
-            Log.Verbose("FunCommandsBehavior: Found leaderboard score with id {ScoreId} and placement {Placement}", leaderboardScore.Score?.Id, leaderboardScore.Score?.RankGlobal);
+            Log.Verbose("FunCommandsBehavior: Found leaderboard score with id {ScoreId} and placement {Placement}", score.Score?.Id, scorePosition + 1);
 
             if (Config.AnnounceLeaderboardScores)
             {
-                context.SendMessage($"Congratulations {score.Player.Name} for getting #{leaderboardScore.Score?.RankGlobal} on the map's leaderboard!");
+                context.SendMessage($"Congratulations {score.Player.Name} for getting #{scorePosition + 1} on the map's leaderboard!");
             }
         }
     }
