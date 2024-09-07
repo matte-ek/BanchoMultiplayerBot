@@ -29,7 +29,7 @@ jobs:
       run: |
         cd ${{github.workspace}}
         cd ..
-        mkdir forks
+        mkdir -p forks
         cd forks
         git clone --single-branch --branch bancho-multiplayer-bot https://github.com/matte-ek/BanchoSharp.git
         cd BanchoSharp/BanchoSharp
@@ -47,7 +47,7 @@ jobs:
       run: |
         cd ${{github.workspace}}
         cd ..
-        mkdir forks
+        mkdir -p forks
         cd forks
         git clone --single-branch --branch bancho-multiplayer-bot https://github.com/matte-ek/osu-sharp.git
         cd osu-sharp/OsuSharp
