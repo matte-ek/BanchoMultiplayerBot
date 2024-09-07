@@ -65,13 +65,16 @@ jobs:
     
     - name: Upload build
       uses: actions/upload-artifact@v4
+      id: build-artifact
       with:
         name: build
         path: BanchoMultiplayerBot.Host.WebApi/bin/Release/net8.0/publish
 
     - name: Deploy build
       run: |
-        curl --request POST \
+        curl \
+        --silent \
+        --request POST \
         --url ${{ secrets.DEPLOY_TARGET }} \
         --header 'Content-Type: application/json' \
-        --data '{ \"DeployKey\": \"${{ secrets.DEPLOY_KEY }}\", \"ArtifactId\": ${{ steps.artifact-upload-step.outputs.artifact-id }} }'
+        --data '{ "DeployKey": "${{ secrets.DEPLOY_KEY }}", "ArtifactId": ${{ steps.build-artifact.outputs.artifact-id }} }'

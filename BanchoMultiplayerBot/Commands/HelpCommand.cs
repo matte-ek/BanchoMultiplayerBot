@@ -19,7 +19,7 @@ namespace BanchoMultiplayerBot.Commands
 
         public Task ExecuteAsync(CommandEventContext message)
         {
-            message.Reply("osu! auto host rotation bot (v2.0) [https://github.com/matte-ek/BanchoMultiplayerBot/blob/master/COMMANDS.md Help & Commands]");
+            message.Reply("osu! auto host rotation bot (v2.0.0) [https://github.com/matte-ek/BanchoMultiplayerBot/blob/master/COMMANDS.md Help & Commands]");
             
             return Task.CompletedTask;
         }
