@@ -19,6 +19,13 @@ Log.Logger = new LoggerConfiguration()
         rollOnFileSizeLimit: true)
     .CreateLogger();
 
+AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
+{
+    var e = (Exception)args.ExceptionObject;
+
+    Log.Fatal($"Unhandled exception: {e}");
+};
+
 var builder = WebApplication.CreateBuilder(args);
 
 Log.Information("Starting BanchoMultiplayerBot with environment {Environment}", builder.Environment.EnvironmentName);
