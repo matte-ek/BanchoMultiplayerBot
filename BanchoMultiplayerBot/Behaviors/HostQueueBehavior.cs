@@ -374,7 +374,7 @@ namespace BanchoMultiplayerBot.Behaviors
                 return;
             }
             
-            Data.PreviousQueueRecords.Add(new HostQueueBehaviorData.PlayerPreviousQueueRecord()
+            Data.PreviousQueueRecords.Add(new HostQueueBehaviorData.PlayerPreviousQueueRecord
             {
                 Name = player.Name,
                 Position = currentQueuePosition,

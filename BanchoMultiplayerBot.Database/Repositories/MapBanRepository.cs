@@ -20,7 +20,7 @@ public class MapBanRepository : IDisposable
             return;
         }
         
-        var mapBan = new MapBan()
+        var mapBan = new MapBan
         {
             BeatmapSetId = beatmapSetId,
             BeatmapId = beatmapId

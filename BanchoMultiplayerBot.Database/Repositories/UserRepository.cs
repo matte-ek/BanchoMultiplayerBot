@@ -21,7 +21,7 @@ namespace BanchoMultiplayerBot.Database.Repositories
 
         public async Task<User> CreateUser(string username)
         {
-            var user = new User()
+            var user = new User
             {
                 Name = username
             };

@@ -44,7 +44,7 @@ public sealed class BehaviorDataProvider<T> where T : class
         
         if (data == null)
         {
-            data = new LobbyBehaviorData()
+            data = new LobbyBehaviorData
             {
                 LobbyConfigurationId = _lobby.LobbyConfigurationId,
                 BehaviorName = typeName,

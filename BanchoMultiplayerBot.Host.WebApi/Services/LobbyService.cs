@@ -22,7 +22,7 @@ public class LobbyService(Bot bot)
         var config = await lobby.GetLobbyConfiguration();
         var mapManagerDataProvider = new BehaviorDataProvider<MapManagerBehaviorData>(lobby);
 
-        return new LobbyExtendedModel()
+        return new LobbyExtendedModel
         {
             Id = lobby.LobbyConfigurationId,
             Beatmap = mapManagerDataProvider.Data.BeatmapInfo,
@@ -30,12 +30,12 @@ public class LobbyService(Bot bot)
             Name = config.Name,
             PlayerCount = lobby.MultiplayerLobby?.Players.Count ?? 0,
             PlayerCapacity = config.Size ?? 16,
-            Players = lobby.MultiplayerLobby?.Players.Select(x => new PlayerModel()
+            Players = lobby.MultiplayerLobby?.Players.Select(x => new PlayerModel
             {
                 Name = x.Name,
                 OsuId = x.Id
             }),
-            Host = lobby.MultiplayerLobby?.Host == null ? null : new PlayerModel()
+            Host = lobby.MultiplayerLobby?.Host == null ? null : new PlayerModel
             {
                 Name = lobby.MultiplayerLobby!.Host.Name,
                 OsuId = lobby.MultiplayerLobby?.Host.Id
@@ -70,7 +70,7 @@ public class LobbyService(Bot bot)
         // Add a "fake" previous room instance if provided by the user.
         if (lobby.PreviousChannel != null)
         {
-            var instance = new LobbyRoomInstance()
+            var instance = new LobbyRoomInstance
             {
                 Channel = lobby.PreviousChannel,
                 LobbyConfigurationId = newConfig.Id
@@ -97,7 +97,7 @@ public class LobbyService(Bot bot)
         {
             var config = await lobby.GetLobbyConfiguration();
 
-            var readLobbyList = new LobbyModel()
+            var readLobbyList = new LobbyModel
             {
                 Id = lobby.LobbyConfigurationId,
                 Health = lobby.Health,
@@ -142,7 +142,7 @@ public class LobbyService(Bot bot)
         
         await using var context = new BotDbContext();
         
-        var instance = new LobbyRoomInstance()
+        var instance = new LobbyRoomInstance
         {
             Channel = $"#mp_{newChannel}",
             LobbyConfigurationId = lobbyId
@@ -166,7 +166,7 @@ public class LobbyService(Bot bot)
         return await lobby.GetLobbyConfiguration();
     }
     
-    public async Task UpdateConfiguration(int id, LobbyConfiguration newConfiguration)
+    public static async Task UpdateConfiguration(int id, LobbyConfiguration newConfiguration)
     {
         await using var context = new BotDbContext();
 
@@ -188,11 +188,11 @@ public class LobbyService(Bot bot)
         await context.SaveChangesAsync();
     }
     
-    public async Task<IEnumerable<ConfigurationListModel>> GetAllConfigurations()
+    public static async Task<IEnumerable<ConfigurationListModel>> GetAllConfigurations()
     {
         await using var context = new BotDbContext();
         
-        return await context.LobbyConfigurations.Select(x => new ConfigurationListModel()
+        return await context.LobbyConfigurations.Select(x => new ConfigurationListModel
         {
             Id = x.Id,
             Name = x.Name

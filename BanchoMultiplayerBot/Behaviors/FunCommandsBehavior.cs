@@ -258,8 +258,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
 
         await StoreGameData(recentScores);
         await StorePlayerFinishData(recentScores);
-        
-        AnnounceLeaderboardResults(recentScores);
+        await AnnounceLeaderboardResults(recentScores);
     }
 
     private async Task StoreGameData(IReadOnlyList<PlayerScoreResult> recentScores)
@@ -366,7 +365,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
                 var score = result.Score;
                 var user = await userRepository.FindOrCreateUser(result.Player.Name);
                 
-                await scoreRepository.Add(new Score()
+                await scoreRepository.Add(new Score
                 {
                     UserId = user.Id,
                     PlayerId = result.Player.Id,

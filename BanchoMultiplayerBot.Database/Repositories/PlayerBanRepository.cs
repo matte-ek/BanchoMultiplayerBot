@@ -15,7 +15,7 @@ public class PlayerBanRepository : IDisposable
 
     public async Task CreateBan(User user, bool hostBan, string? reason, DateTime? expire)
     {
-        var ban = new PlayerBan()
+        var ban = new PlayerBan
         {
             UserId = user.Id,
             HostBan = hostBan,

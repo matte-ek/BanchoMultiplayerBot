@@ -122,7 +122,7 @@ public class TimerProvider(ILobby lobby) : ITimerProvider
             
             if (existingTimerModel == null)
             {
-                var newTimerModel = new LobbyTimer()
+                var newTimerModel = new LobbyTimer
                 {
                     Name = timer.Name,
                     LobbyId = lobby.LobbyConfigurationId,

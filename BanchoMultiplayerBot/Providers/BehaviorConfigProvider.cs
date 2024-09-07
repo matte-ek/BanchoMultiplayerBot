@@ -28,7 +28,7 @@ public sealed class BehaviorConfigProvider<T> where T : class
 
             Data = (T)Activator.CreateInstance(typeof(T))!;
             
-            dbContext.LobbyBehaviorConfig.Add(new LobbyBehaviorConfig()
+            dbContext.LobbyBehaviorConfig.Add(new LobbyBehaviorConfig
             {
                 LobbyConfigurationId = lobby.LobbyConfigurationId,
                 BehaviorName = typeName,

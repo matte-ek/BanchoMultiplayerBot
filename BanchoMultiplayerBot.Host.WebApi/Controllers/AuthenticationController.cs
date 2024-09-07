@@ -27,7 +27,7 @@ public class AuthenticationController(IConfiguration configuration) : Controller
         var username = HttpContext.User.Claims.First(x => x.Type == ClaimTypes.Name)!.Value;
         var id = HttpContext.User.Claims.First(x => x.Type == ClaimTypes.NameIdentifier)!.Value;
 
-        return Ok(new UserIdentity()
+        return Ok(new UserIdentity
         {
             Id = id,
             Username = username
@@ -36,7 +36,7 @@ public class AuthenticationController(IConfiguration configuration) : Controller
 
     private class UserIdentity
     {
-        public string Id { get; set; }
-        public string Username { get; set; }
+        public string Id { get; set; } = string.Empty;
+        public string Username { get; set; } = string.Empty;
     }
 }

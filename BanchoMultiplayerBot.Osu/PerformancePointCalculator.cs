@@ -150,7 +150,7 @@ public class PerformancePointCalculator
 
             if (individualPlayMode)
             {
-                return new PlayPerformanceInfo()
+                return new PlayPerformanceInfo
                 {
                     PerformancePoints = (int)Math.Round(Convert.ToDouble(values[0], CultureInfo.InvariantCulture)),
                     MaximumPerformancePoints =
@@ -158,7 +158,7 @@ public class PerformancePointCalculator
                 };
             }
 
-            return new BeatmapPerformanceInfo()
+            return new BeatmapPerformanceInfo
             {
                 Performance100 = (int)Math.Round(Convert.ToDouble(values[0], CultureInfo.InvariantCulture)),
                 Performance98 = (int)Math.Round(Convert.ToDouble(values[1], CultureInfo.InvariantCulture)),

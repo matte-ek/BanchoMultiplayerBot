@@ -42,8 +42,7 @@ namespace BanchoMultiplayerBot.Bancho
 
             return Task.CompletedTask;
         }
-
-
+        
         public async Task StopAsync()
         {
             await DisconnectAsync();

@@ -148,7 +148,7 @@ namespace BanchoMultiplayerBot.Behaviors
 
             if (status == MapValidator.MapStatus.Ok)
             {
-                Data.BeatmapInfo = new BeatmapInfo()
+                Data.BeatmapInfo = new BeatmapInfo
                 {
                     Id = beatmapModel.Id,
                     SetId = beatmapModel.SetId,

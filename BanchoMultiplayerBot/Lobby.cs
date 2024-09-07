@@ -195,7 +195,7 @@ namespace BanchoMultiplayerBot
             {
                 await using var context = new BotDbContext();
 
-                var newInstance = new LobbyRoomInstance()
+                var newInstance = new LobbyRoomInstance
                 {
                     Channel = _channelId,
                     LobbyConfigurationId = LobbyConfigurationId

@@ -19,7 +19,7 @@ Log.Logger = new LoggerConfiguration()
         rollOnFileSizeLimit: true)
     .CreateLogger();
 
-AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
+AppDomain.CurrentDomain.UnhandledException += (_, args) =>
 {
     var e = (Exception)args.ExceptionObject;
 

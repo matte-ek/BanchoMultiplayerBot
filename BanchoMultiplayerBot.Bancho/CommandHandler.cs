@@ -2,17 +2,21 @@
 using BanchoMultiplayerBot.Bancho.Interfaces;
 using Prometheus;
 using Serilog;
+using TimeProvider = BanchoMultiplayerBot.Bancho.Data.TimeProvider;
 
 namespace BanchoMultiplayerBot.Bancho
 {
     public class CommandHandler : ICommandHandler
     {
         private readonly IMessageHandler _messageHandler;
+        private readonly ITimeProvider _timeProvider;
+        
         private int _lastSpamFilterCount;
 
         private readonly Dictionary<string, List<QueuedCommand>> _queuedCommands = [];
 
         private readonly object _queuedCommandsLock = new();
+        private readonly object _spamFilterLock = new();
 
         private readonly BanchoClientConfiguration _banchoClientConfiguration;
 
@@ -20,9 +24,10 @@ namespace BanchoMultiplayerBot.Bancho
         private static readonly Counter CommandsFailedToSendCounter = Metrics.CreateCounter("bot_commands_message_failed", "The amount of commands that failed to send their message");
         private static readonly Counter CommandsMessageRetriedCounter = Metrics.CreateCounter("bot_commands_message_retried", "The amount of commands that resent the message due to timeout");
 
-        public CommandHandler(IMessageHandler messageHandler, BanchoClientConfiguration banchoClientConfiguration)
+        public CommandHandler(IMessageHandler messageHandler, BanchoClientConfiguration banchoClientConfiguration, ITimeProvider? timeProvider = null)
         {
             _banchoClientConfiguration = banchoClientConfiguration;
+            _timeProvider = timeProvider ?? new TimeProvider();
             _messageHandler = messageHandler;
             _messageHandler.OnMessageReceived += OnMessageReceived;
         }
@@ -45,23 +50,23 @@ namespace BanchoMultiplayerBot.Bancho
                 {
                     lock (_queuedCommandsLock)
                     {
-                        _queuedCommands[channel].Add(new QueuedCommand()
+                        _queuedCommands[channel].Add(new QueuedCommand
                         {
                             Command = T.Command,
                             SuccessfulResponses = T.SuccessfulResponses,
-                            DateTime = DateTime.UtcNow
+                            DateTime = _timeProvider.UtcNow
                         });
                     }
 
                     var cookie = _messageHandler.SendMessageTracked(channel, GetCommandString(T.Command, args, T.AppendSpamFilter));
+                    var messageSendTimeout = _timeProvider.UtcNow.AddSeconds(5);
 
                     SentCommandsCounter.Inc();
-
+                    
                     // Wait for the message to be sent
-                    int timeout = 0;
                     while (!cookie.IsSent)
                     {
-                        if (timeout++ > 10)
+                        if (_timeProvider.UtcNow > messageSendTimeout)
                         {
                             Log.Error("CommandHandler: Failed to send command {Command} to {Channel}, send timeout reached", T.Command, channel);
 
@@ -70,16 +75,17 @@ namespace BanchoMultiplayerBot.Bancho
                             break;
                         }
 
-                        await Task.Delay(1000);
+                        await Task.Delay(50);
                     }
                 }
 
                 // Send the command
                 await SendMessage();
 
-                int timeout = 0;
-                int attempts = 0;
-
+                var executeTimeout = _timeProvider.UtcNow.AddSeconds(_banchoClientConfiguration.BanchoCommandTimeout);
+                
+                int executionAttempts = 0;
+                
                 while (true)
                 {
                     lock (_queuedCommandsLock)
@@ -91,14 +97,14 @@ namespace BanchoMultiplayerBot.Bancho
                     }
                     
                     // If the command has not been responded to in 5 seconds, resend the command
-                    if (timeout++ > _banchoClientConfiguration.BanchoCommandTimeout * 10)
+                    if (_timeProvider.UtcNow > executeTimeout)
                     {
-                        attempts++;
-                        timeout = 0;
+                        executionAttempts++;
+                        executeTimeout = _timeProvider.UtcNow.AddSeconds(_banchoClientConfiguration.BanchoCommandTimeout);
 
                         await SendMessage();
 
-                        if (attempts > _banchoClientConfiguration.BanchoCommandAttempts)
+                        if (executionAttempts > _banchoClientConfiguration.BanchoCommandAttempts)
                         {
                             lock (_queuedCommandsLock)
                             {
@@ -113,12 +119,12 @@ namespace BanchoMultiplayerBot.Bancho
                         }
                     }
 
-                    await Task.Delay(1000);
+                    await Task.Delay(50);
                 }
 
                 lock (_queuedCommandsLock)
                 {
-                    _queuedCommands[channel].RemoveAll(x => x.Command == T.Command);
+                    _queuedCommands[channel].Remove(_queuedCommands[channel].First(x => x.Command == T.Command));
                 }
 
                 // We aren't responsible for parsing the response, just that it was received
@@ -193,14 +199,19 @@ namespace BanchoMultiplayerBot.Bancho
                 commandString += " " + string.Join(" ", args);
             }
 
-            if (includeSpamFilter)
+            if (!includeSpamFilter)
+            {
+                return commandString;
+            }
+
+            lock (_spamFilterLock)
             {
                 commandString += " " + new string('\u200B', _lastSpamFilterCount);
 
                 if (_lastSpamFilterCount++ > 4)
                 {
                     _lastSpamFilterCount = 0;
-                }
+                }   
             }
 
             return commandString;

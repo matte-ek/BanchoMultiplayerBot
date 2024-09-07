@@ -227,7 +227,7 @@ public class LobbyTrackerService(Bot bot, IServiceScopeFactory serviceScopeFacto
                 
                 var hub = scope.ServiceProvider.GetRequiredService<IHubContext<LobbyEventHub>>();
                 
-                hub.Clients.All.SendAsync(name, lobby.LobbyConfigurationId, data);
+                hub.Clients.All.SendAsync(name, Lobby.LobbyConfigurationId, data);
             });
         }
     }

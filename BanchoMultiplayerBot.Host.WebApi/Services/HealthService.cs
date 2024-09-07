@@ -7,7 +7,7 @@ public class HealthService(Bot bot)
 {
     public HealthModel GetHealth()
     {
-        return new HealthModel()
+        return new HealthModel
         {
             HasConfigurationError = false, // TODO: Decide if I actually want this.
             IsBanchoConnected = bot.BanchoConnection.IsConnected,
