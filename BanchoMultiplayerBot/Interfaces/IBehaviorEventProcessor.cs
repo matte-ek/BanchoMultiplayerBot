@@ -13,7 +13,7 @@ public interface IBehaviorEventProcessor
     /// Register a new behavior to the processor
     /// </summary>
     /// <param name="behavior">Behavior class name</param>
-    public Task RegisterBehavior(string behavior);
+    public void RegisterBehavior(string behavior);
     
     /// <summary>
     /// Starts the event listener

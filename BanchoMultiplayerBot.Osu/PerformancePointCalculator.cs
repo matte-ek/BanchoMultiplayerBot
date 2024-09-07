@@ -208,7 +208,7 @@ public class PerformancePointCalculator
 
                     process.Dispose();
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     Log.Error("PerformancePointCalculator: Failed to read STDOUT");
                 }

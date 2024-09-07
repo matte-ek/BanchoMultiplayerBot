@@ -15,7 +15,7 @@
         /// <summary>
         /// The maximum amount of messages within the rate limit window
         /// </summary>
-        public int MessageRateLimitCount { get; init; } = 8;
+        public int MessageRateLimitCount { get; init; } = 10;
         
         /// <summary>
         /// The rate limit window in seconds

@@ -26,7 +26,7 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
     /// </summary>
     /// <param name="behavior">Behavior class name</param>
     /// <exception cref="InvalidOperationException">No behavior found with specified name</exception>
-    public async Task RegisterBehavior(string behavior)
+    public void RegisterBehavior(string behavior)
     {
         // Find the behavior type by name, which is a class that implements IBehavior
         var behaviorType = AppDomain.CurrentDomain
