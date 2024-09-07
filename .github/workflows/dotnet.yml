@@ -1,0 +1,61 @@
+name: .NET
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore BanchoSharp from cache
+      id: cache-banchosharp
+      uses: actions/cache@v4
+      with:
+        path: ../forks/BanchoSharp/BanchoSharp/bin
+        key: ${{ runner.os }}-forks-banchosharp
+
+    - name: Build BanchoSharp
+      if: steps.cache-banchosharp.outputs.cache-hit != 'true'
+      run: |
+        cd ${{github.workspace}}
+        cd ..
+        mkdir forks
+        cd forks
+        git clone --single-branch --branch bancho-multiplayer-bot https://github.com/matte-ek/BanchoSharp.git
+        cd BanchoSharp/BanchoSharp
+        dotnet build -c Release
+
+    - name: Restore osu-sharp from cache
+      id: cache-osusharp
+      uses: actions/cache@v4
+      with:
+        path: ../forks/osu-sharp/OsuSharp/bin
+        key: ${{ runner.os }}-forks-osusharp
+
+    - name: Build osu-sharp
+      if: steps.cache-osusharp.outputs.cache-hit != 'true'
+      run: |
+        cd ${{github.workspace}}
+        cd ..
+        mkdir forks
+        cd forks
+        git clone --single-branch --branch bancho-multiplayer-bot https://github.com/matte-ek/osu-sharp.git
+        cd osu-sharp/OsuSharp
+        dotnet build -c Release
+
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --no-restore
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
