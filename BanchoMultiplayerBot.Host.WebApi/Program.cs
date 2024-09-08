@@ -40,10 +40,6 @@ builder.Services.AddSignalR();
 await using (var context = new BotDbContext())
 {
     await context.Database.MigrateAsync();
-    
-    await context.Database.ExecuteSqlRawAsync("CREATE INDEX idx_users_name ON Users(Name);");
-    await context.Database.ExecuteSqlRawAsync("ANALYZE;");
-    await context.Database.ExecuteSqlRawAsync("VACUUM;");
 }
 
 // Setup services
