@@ -8,6 +8,7 @@ using BanchoMultiplayerBot.Interfaces;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using Prometheus;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -106,6 +107,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<LobbyEventHub>("/hubs/lobby");
+
+app.UseMetricServer("/api/statistics/metrics");
 
 await app.RunAsync();
 
