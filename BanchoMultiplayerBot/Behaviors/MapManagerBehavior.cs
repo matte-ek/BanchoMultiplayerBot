@@ -3,6 +3,7 @@ using BanchoMultiplayerBot.Bancho.Commands;
 using BanchoMultiplayerBot.Behaviors.Config;
 using BanchoMultiplayerBot.Behaviors.Data;
 using BanchoMultiplayerBot.Data;
+using BanchoMultiplayerBot.Extensions;
 using BanchoMultiplayerBot.Interfaces;
 using BanchoMultiplayerBot.Osu;
 using BanchoMultiplayerBot.Providers;
@@ -262,7 +263,7 @@ namespace BanchoMultiplayerBot.Behaviors
             var pingEnabled = commandEventContext.Arguments.Length > 0 && commandEventContext.Arguments[0].Equals("ping", StringComparison.OrdinalIgnoreCase) && commandEventContext.Player != null;
             if (pingEnabled)
             {
-                Data.MatchFinishMessageSubscribers.Add(commandEventContext.Player!.Name);
+                Data.MatchFinishMessageSubscribers.Add(commandEventContext.Player!.Name.ToIrcNameFormat());
             }
             
             commandEventContext.Reply(pingEnabled
