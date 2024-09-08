@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text;
 using BanchoMultiplayerBot.Attributes;
 using BanchoMultiplayerBot.Behaviors.Config;
 using BanchoMultiplayerBot.Behaviors.Data;
@@ -10,6 +11,7 @@ using BanchoMultiplayerBot.Interfaces;
 using BanchoMultiplayerBot.Osu.Extensions;
 using BanchoMultiplayerBot.Providers;
 using BanchoSharp.Multiplayer;
+using Humanizer;
 using OsuSharp.Enums;
 using Serilog;
 
@@ -169,6 +171,24 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         }
 
         commandEventContext.Reply(outputMessage.ToString());
+    }
+
+    [BotEvent(BotEventType.CommandExecuted, "LastPlayed")]
+    public async Task OnLastPlayedCommandExecuted(CommandEventContext commandEventContext)
+    {
+        using var gameRepository = new GameRepository();
+
+        var mapManagerDataProvider = new BehaviorDataProvider<MapManagerBehaviorData>(context.Lobby);
+        var beatmapInfo = mapManagerDataProvider.Data.BeatmapInfo;
+        var recentGames = await gameRepository.GetRecentGames(beatmapInfo.Id, 1);
+
+        if (recentGames.Count == 0)
+        {
+            commandEventContext.Reply("This map has not been played yet!");
+            return;
+        }
+        
+        commandEventContext.Reply($"The map was last played {recentGames[0].Time.Humanize(utcDate: false, culture: CultureInfo.InvariantCulture)}!");
     }
 
     [BotEvent(BotEventType.CommandExecuted, "PerformancePoints")]
