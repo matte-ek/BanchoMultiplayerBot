@@ -1,10 +1,12 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics;
+using System.Reflection;
 using BanchoMultiplayerBot.Attributes;
 using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Interfaces;
 using BanchoSharp.EventArgs;
 using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
+using Prometheus;
 using Serilog;
 using ITimer = BanchoMultiplayerBot.Interfaces.ITimer;
 
@@ -21,6 +23,9 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
 
     private CancellationTokenSource? _cancellationTokenSource;
 
+    private static readonly Counter EventsExecuted = Metrics.CreateCounter("bot_event_processor_execute_count", "The number events executed", "lobby_index");
+    private static readonly Histogram EventExecuteTime = Metrics.CreateHistogram("bot_event_processor_execute_time_ms", "The time it took to execute a event", ["lobby_index", "event_type"]);
+    
     /// <summary>
     /// Register a new component behavior to the dispatcher, using the behavior class name.
     /// </summary>
@@ -270,6 +275,7 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
             try
             {
                 //Log.Verbose("BehaviorEventDispatcher: Executing {CallbackName}.{MethodName}() ...", behaviorEvent.Name, behaviorEvent.Method.Name);
+                var stopWatch = new Stopwatch();
 
                 // Invoke the method on the behavior class instance
                 var methodTask = behaviorEvent.Method.Invoke(instance, behaviorEvent.IgnoreArguments ? [] : [param]);
@@ -285,6 +291,11 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
                 {
                     await dataBehavior.SaveData();
                 }
+                
+                stopWatch.Stop();
+                
+                EventsExecuted.WithLabels(lobby.LobbyConfigurationId.ToString()).Inc();
+                EventExecuteTime.WithLabels(lobby.LobbyConfigurationId.ToString(), behaviorEvent.Name).Observe(stopWatch.Elapsed.TotalMilliseconds);
             }
             catch (Exception e)
             {

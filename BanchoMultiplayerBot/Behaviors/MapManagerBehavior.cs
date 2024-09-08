@@ -207,6 +207,7 @@ namespace BanchoMultiplayerBot.Behaviors
             }
 
             await HandleViolationAutoSkip();
+            await context.Lobby.BehaviorEventProcessor!.OnBehaviorEvent("MapManagerInvalidMap");
         }
 
         [BotEvent(BotEventType.CommandExecuted, "Regulations")]

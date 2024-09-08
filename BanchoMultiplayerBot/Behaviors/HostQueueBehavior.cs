@@ -154,6 +154,8 @@ namespace BanchoMultiplayerBot.Behaviors
                 Data.HostSkipTime = DateTime.UtcNow;
                 
                 await SkipHost();
+                
+                await context.Lobby.BehaviorEventProcessor!.OnBehaviorEvent("HostQueueHostSkipped");
             }   
         }
 

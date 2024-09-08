@@ -32,6 +32,8 @@ public class ScoreRepository : IDisposable
 
     public async Task<int?> GetMapPlayCountByLobbyId(int lobbyId, int mapId)
     {
+        // This sucks lol, fix fix fix
+
         var mostPlayedMaps = await _botDbContext.Scores
             .Where(x => x.LobbyId == lobbyId)
             .GroupBy(x => x.BeatmapId)
