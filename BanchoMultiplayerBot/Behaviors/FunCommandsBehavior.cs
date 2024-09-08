@@ -414,7 +414,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
                 
                 Log.Information($"FunCommandsBehavior: Executing osu! API call for {players[index].Name}");
                 
-                return await context.Lobby.Bot.OsuApiClient.GetUserScoresAsync(players[index].Id!.Value, UserScoreType.Recent, true, true, null, 1);
+                return await context.Lobby.Bot.OsuApiClient.GetUserScoresAsync(players[index].Id!.Value, UserScoreType.Recent, true, true, Ruleset.Osu, 1);
             }));
         }
         

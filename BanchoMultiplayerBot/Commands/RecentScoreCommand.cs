@@ -37,7 +37,7 @@ public class RecentScoreCommand : IPlayerCommand
             playerId = user.Id;
         }
 
-        var score = (await context.Bot.OsuApiClient.GetUserScoresAsync(playerId.Value, UserScoreType.Recent, true, true, null,
+        var score = (await context.Bot.OsuApiClient.GetUserScoresAsync(playerId.Value, UserScoreType.Recent, true, true, Ruleset.Osu,
             1))?.FirstOrDefault();
 
         if (score == null)
