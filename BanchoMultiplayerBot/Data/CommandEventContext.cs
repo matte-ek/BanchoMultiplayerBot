@@ -13,7 +13,7 @@ public class CommandEventContext(IPrivateIrcMessage message, string[] arguments,
     
     public IPlayerCommand PlayerCommand { get; } = playerCommand;
 
-    public User User { get; } = user;
+    public User User { get; set; } = user;
 
     public ILobby? Lobby { get; set; }
 

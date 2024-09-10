@@ -116,7 +116,15 @@ public class CommandProcessor(Bot bot)
 
                 commandContext.Lobby = lobby;
                 commandContext.Player = lobby.MultiplayerLobby.Players.FirstOrDefault(x => x.Name.ToIrcNameFormat() == message.Sender.ToIrcNameFormat());
-            
+
+                // If the player is in the lobby, retrieve the user from the database with that name instead
+                // because the IRC username may change spaces to underscores and crap, and I don't think
+                // there's a good way to handle that, since what if the name actually contains an "_"?
+                if (commandContext.Player?.Name != null)
+                {
+                    commandContext.User = await userRepo.FindOrCreateUser(commandContext.Player!.Name);
+                }
+
                 await lobby.BehaviorEventProcessor.OnCommandExecuted(command.Command, commandContext);
             }
         }
