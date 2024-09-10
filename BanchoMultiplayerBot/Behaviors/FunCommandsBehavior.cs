@@ -339,7 +339,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             return;
         }
 
-        var leaderboardScores = await context.Lobby.Bot.OsuApiClient.GetBeatmapScoresAsync(Data.LastPlayedBeatmapInfo.Id, Ruleset.Osu);
+        var leaderboardScores = await context.Lobby.Bot.OsuApiClient.GetBeatmapScoresAsync(Data.LastPlayedBeatmapInfo.Id, Ruleset.Osu, legacyOnly: true);
         if (leaderboardScores == null || leaderboardScores.Length == 0)
         {
             return;
