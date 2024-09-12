@@ -36,10 +36,12 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
 
+BotDbContext.ConnectionString = builder.Configuration.GetConnectionString("Bot") ?? throw new InvalidOperationException("Database connection string not found.");
+
 // Setup and migrate database
 await using (var context = new BotDbContext())
 {
-    await context.Database.MigrateAsync();
+//    await context.Database.MigrateAsync();
 }
 
 // Setup services
