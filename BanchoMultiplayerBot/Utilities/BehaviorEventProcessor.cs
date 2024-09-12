@@ -23,8 +23,8 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
 
     private CancellationTokenSource? _cancellationTokenSource;
 
-    private static readonly Counter EventsExecutedCount = Metrics.CreateCounter("bot_event_processor_execute_count", "The number events executed", "lobby_index");
-    private static readonly Counter EventsExceptionCount = Metrics.CreateCounter("bot_event_processor_exception_count", "The number exceptions caused by a event", "lobby_index");
+    private static readonly Counter EventsExecutedCount = Metrics.CreateCounter("bot_event_processor_execution_count", "The number events executed", ["lobby_index", "event_type"]);
+    private static readonly Counter EventsExceptionCount = Metrics.CreateCounter("bot_event_processor_exception_count", "The number exceptions caused by a event", ["lobby_index", "event_type"]);
     private static readonly Histogram EventExecuteTime = Metrics.CreateHistogram("bot_event_processor_execute_time_ms", "The time it took to execute a event", ["lobby_index", "event_type"]);
     
     /// <summary>
@@ -276,7 +276,7 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
             try
             {
                 //Log.Verbose("BehaviorEventDispatcher: Executing {CallbackName}.{MethodName}() ...", behaviorEvent.Name, behaviorEvent.Method.Name);
-                var stopWatch = new Stopwatch();
+                using var timer = EventExecuteTime.WithLabels(lobby.LobbyConfigurationId.ToString(), behaviorEvent.Name).NewTimer();
 
                 // Invoke the method on the behavior class instance
                 var methodTask = behaviorEvent.Method.Invoke(instance, behaviorEvent.IgnoreArguments ? [] : [param]);
@@ -292,16 +292,12 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
                 {
                     await dataBehavior.SaveData();
                 }
-
-                stopWatch.Stop();
-
-                EventsExecutedCount.WithLabels(lobby.LobbyConfigurationId.ToString()).Inc();
-                EventExecuteTime.WithLabels(lobby.LobbyConfigurationId.ToString(), behaviorEvent.Name)
-                    .Observe(stopWatch.Elapsed.TotalMilliseconds);
+                
+                EventsExecutedCount.WithLabels(lobby.LobbyConfigurationId.ToString(), behaviorEvent.Name).Inc();
             }
             catch (Exception e)
             {
-                EventsExceptionCount.Inc();
+                EventsExceptionCount.WithLabels(lobby.LobbyConfigurationId.ToString(), behaviorEvent.Name).Inc();
                 Log.Error("BehaviorEventDispatcher: Exception while executing callback {CallbackName}.{MethodName}(), {Exception}", behaviorEvent.Name, behaviorEvent.Method.Name, e);
             }
         }
