@@ -2,6 +2,8 @@
 using BanchoMultiplayerBot.Interfaces;
 using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
+using OsuSharp;
+using Prometheus;
 
 namespace BanchoMultiplayerBot.Data;
 
@@ -26,5 +28,22 @@ public class CommandEventContext(IPrivateIrcMessage message, string[] arguments,
         var channel = Message.IsDirect ? Message.Sender : Message.Recipient;
         
         Bot.BanchoConnection.MessageHandler.SendMessage(channel, message);
+    }
+    
+    public async Task<T> UsingApiClient<T>(Func<OsuApiClient, Task<T>> apiCall)
+    {
+        BotMetrics.ApiRequestsCount.Inc();
+        
+        using var timer = BotMetrics.ApiRequestsTime.NewTimer();
+
+        try
+        {
+            return await apiCall(Bot.OsuApiClient);
+        }
+        catch (OsuApiException)
+        {
+            BotMetrics.ApiRequestsFailedCount.Inc();
+            throw;
+        }
     }
 }

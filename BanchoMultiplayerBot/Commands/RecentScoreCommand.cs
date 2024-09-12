@@ -26,7 +26,7 @@ public class RecentScoreCommand : IPlayerCommand
 
         if (playerId == null)
         {
-            var user = await context.Bot.OsuApiClient.GetUserAsync(context.Message.Sender);
+            var user = await context.UsingApiClient(async (apiClient) => await apiClient.GetUserAsync(context.Message.Sender));
 
             if (user == null)
             {
@@ -37,8 +37,8 @@ public class RecentScoreCommand : IPlayerCommand
             playerId = user.Id;
         }
 
-        var score = (await context.Bot.OsuApiClient.GetUserScoresAsync(playerId.Value, UserScoreType.Recent, true, true, Ruleset.Osu,
-            1))?.FirstOrDefault();
+        var score = (await context.UsingApiClient(async (apiClient) => await apiClient.GetUserScoresAsync(playerId.Value, UserScoreType.Recent, true, true, Ruleset.Osu,
+            1)))?.FirstOrDefault();
 
         if (score == null)
         {
@@ -46,7 +46,7 @@ public class RecentScoreCommand : IPlayerCommand
             return;
         }
 
-        var beatmapInformation = await context.Bot.OsuApiClient.GetBeatmapAsync(score.Beatmap!.Id);
+        var beatmapInformation = await context.UsingApiClient(async (apiClient) => await apiClient.GetBeatmapAsync(score.Beatmap!.Id));
         if (beatmapInformation == null)
         {
             context.Reply("Unable to find beatmap.");

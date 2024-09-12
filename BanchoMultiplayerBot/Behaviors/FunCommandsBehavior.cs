@@ -338,8 +338,8 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         {
             return;
         }
-
-        var leaderboardScores = await context.Lobby.Bot.OsuApiClient.GetBeatmapScoresAsync(Data.LastPlayedBeatmapInfo.Id, Ruleset.Osu, legacyOnly: true);
+        
+        var leaderboardScores = await context.UsingApiClient(async (apiClient) => await apiClient.GetBeatmapScoresAsync(Data.LastPlayedBeatmapInfo.Id, Ruleset.Osu, legacyOnly: true));
         if (leaderboardScores == null || leaderboardScores.Length == 0)
         {
             return;
@@ -434,7 +434,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
                 
                 Log.Information($"FunCommandsBehavior: Executing osu! API call for {players[index].Name}");
                 
-                return await context.Lobby.Bot.OsuApiClient.GetUserScoresAsync(players[index].Id!.Value, UserScoreType.Recent, true, true, Ruleset.Osu, 1);
+                return await context.UsingApiClient(async (apiClient) => await apiClient.GetUserScoresAsync(players[index].Id!.Value, UserScoreType.Recent, true, true, Ruleset.Osu, 1));
             }));
         }
         

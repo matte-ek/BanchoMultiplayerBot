@@ -23,7 +23,8 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
 
     private CancellationTokenSource? _cancellationTokenSource;
 
-    private static readonly Counter EventsExecuted = Metrics.CreateCounter("bot_event_processor_execute_count", "The number events executed", "lobby_index");
+    private static readonly Counter EventsExecutedCount = Metrics.CreateCounter("bot_event_processor_execute_count", "The number events executed", "lobby_index");
+    private static readonly Counter EventsExceptionCount = Metrics.CreateCounter("bot_event_processor_exception_count", "The number exceptions caused by a event", "lobby_index");
     private static readonly Histogram EventExecuteTime = Metrics.CreateHistogram("bot_event_processor_execute_time_ms", "The time it took to execute a event", ["lobby_index", "event_type"]);
     
     /// <summary>
@@ -291,14 +292,16 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
                 {
                     await dataBehavior.SaveData();
                 }
-                
+
                 stopWatch.Stop();
-                
-                EventsExecuted.WithLabels(lobby.LobbyConfigurationId.ToString()).Inc();
-                EventExecuteTime.WithLabels(lobby.LobbyConfigurationId.ToString(), behaviorEvent.Name).Observe(stopWatch.Elapsed.TotalMilliseconds);
+
+                EventsExecutedCount.WithLabels(lobby.LobbyConfigurationId.ToString()).Inc();
+                EventExecuteTime.WithLabels(lobby.LobbyConfigurationId.ToString(), behaviorEvent.Name)
+                    .Observe(stopWatch.Elapsed.TotalMilliseconds);
             }
             catch (Exception e)
             {
+                EventsExceptionCount.Inc();
                 Log.Error("BehaviorEventDispatcher: Exception while executing callback {CallbackName}.{MethodName}(), {Exception}", behaviorEvent.Name, behaviorEvent.Method.Name, e);
             }
         }

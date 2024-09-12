@@ -1,6 +1,8 @@
 ﻿using BanchoMultiplayerBot.Bancho.Interfaces;
 using BanchoMultiplayerBot.Interfaces;
 using BanchoSharp.Multiplayer;
+using OsuSharp;
+using Prometheus;
 using Serilog;
 
 namespace BanchoMultiplayerBot.Data;
@@ -52,5 +54,22 @@ public sealed class BehaviorEventContext(ILobby lobby, CancellationToken cancell
         int? playerId = MultiplayerLobby.Players.FirstOrDefault(x => x.Name == playerName)?.Id;
 
         return playerId == null ? playerName.Replace(' ', '_') : $"#{playerId}";
+    }
+
+    public async Task<T> UsingApiClient<T>(Func<OsuApiClient, Task<T>> apiCall)
+    {
+        BotMetrics.ApiRequestsCount.Inc();
+        
+        using var timer = BotMetrics.ApiRequestsTime.NewTimer();
+
+        try
+        {
+            return await apiCall(Lobby.Bot.OsuApiClient);
+        }
+        catch (OsuApiException)
+        {
+            BotMetrics.ApiRequestsFailedCount.Inc();
+            throw;
+        }
     }
 }

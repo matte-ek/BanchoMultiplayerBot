@@ -9,7 +9,6 @@ using BanchoMultiplayerBot.Osu;
 using BanchoMultiplayerBot.Providers;
 using BanchoMultiplayerBot.Utilities;
 using BanchoSharp.Multiplayer;
-using OsuSharp;
 using OsuSharp.Models.Beatmaps;
 using Serilog;
 
@@ -22,9 +21,7 @@ namespace BanchoMultiplayerBot.Behaviors
 
         private MapManagerBehaviorData Data => _dataProvider.Data;
         private MapManagerBehaviorConfig Config => _configProvider.Data;
-
-        private OsuApiClient OsuApi => context.Lobby.Bot.OsuApiClient;
-
+        
         public async Task SaveData() => await _dataProvider.SaveData();
 
         [BanchoEvent(BanchoEventType.MatchStarted)]
@@ -73,8 +70,8 @@ namespace BanchoMultiplayerBot.Behaviors
             
             try
             {
-                var beatmapInfo = await OsuApi.GetBeatmapAsync(beatmapShell.Id);
-                var beatmapAttributes = await OsuApi.GetDifficultyAttributesAsync(beatmapShell.Id);
+                var beatmapInfo = await context.UsingApiClient(async (apiClient) => await apiClient.GetBeatmapAsync(beatmapShell.Id));
+                var beatmapAttributes = await context.UsingApiClient(async (apiClient) => await apiClient.GetDifficultyAttributesAsync(beatmapShell.Id));
 
                 if (beatmapInfo == null)
                 {
@@ -106,7 +103,7 @@ namespace BanchoMultiplayerBot.Behaviors
                     Config.MinimumStarRating >= Math.Round(beatmapAttributes.DifficultyRating, 2) &&
                     Config.AllowDoubleTime)
                 {
-                    var doubleTimeMapAttributes = await OsuApi.GetDifficultyAttributesAsync(beatmapShell.Id, "DT");
+                    var doubleTimeMapAttributes = await context.UsingApiClient(async (apiClient) => await apiClient.GetDifficultyAttributesAsync(beatmapShell.Id, "DT"));
                  
                     // Check if map is OK with double time
                     if (doubleTimeMapAttributes != null &&
@@ -199,7 +196,7 @@ namespace BanchoMultiplayerBot.Behaviors
                     break;
                 case MapValidator.MapStatus.Banned:
                     context.SendMessage(beatmapSet?.Title != null
-                        ? $"The selected beatmap ({beatmapSet?.Title}) is not allowed."
+                        ? $"The selected beatmap ({beatmapSet.Title}) is not allowed."
                         : "The selected beatmap is not allowed.");
                     break;
                 case MapValidator.MapStatus.Removed:
@@ -281,7 +278,7 @@ namespace BanchoMultiplayerBot.Behaviors
             var starRatingRounded = Math.Round(difficultyAttributes.DifficultyRating, 2);
             var beatmapSet = (beatmapModel as Beatmap).Set;
             
-            context.SendMessage($"[https://osu.ppy.sh/b/{beatmapInfo.Id} {beatmapSet?.Artist} - {beatmapSet?.Title} [{beatmapModel.Version ?? string.Empty}]] - ([https://beatconnect.io/b/{beatmapInfo.SetId} BeatConnect Mirror] - [https://osu.direct/d/{beatmapInfo.SetId} osu.direct Mirror])");
+            context.SendMessage($"[https://osu.ppy.sh/b/{beatmapInfo.Id} {beatmapSet?.Artist} - {beatmapSet?.Title} [{beatmapModel.Version}]] - ([https://beatconnect.io/b/{beatmapInfo.SetId} BeatConnect Mirror] - [https://osu.direct/d/{beatmapInfo.SetId} osu.direct Mirror])");
             context.SendMessage($"(Star Rating: {starRatingRounded:.0#} | {beatmapModel.Status.ToString()} | Length: {beatmapInfo.Length:mm\\:ss} | BPM: {beatmapModel.BPM})");
 
             // If the bot has a performance point calculator, we can calculate the performance points for the beatmap.
@@ -364,7 +361,7 @@ namespace BanchoMultiplayerBot.Behaviors
             if ((context.MultiplayerLobby.Mods & Mods.Hidden) != 0)
                 mods.Add("HD");
                 
-            var difficultyAttributes = await OsuApi.GetDifficultyAttributesAsync(Data.CurrentMapId, mods.ToArray());
+            var difficultyAttributes = await context.UsingApiClient(async (apiClient) => await apiClient.GetDifficultyAttributesAsync(Data.CurrentMapId, mods.ToArray()));
             if (difficultyAttributes != null)
             {
                 var lobbyConfig = await context.Lobby.GetLobbyConfiguration();
