@@ -1,5 +1,6 @@
 using BanchoMultiplayerBot;
 using BanchoMultiplayerBot.Database;
+using BanchoMultiplayerBot.Database.Repositories;
 using BanchoMultiplayerBot.Host.WebApi.Extensions;
 using BanchoMultiplayerBot.Host.WebApi.Hubs;
 using BanchoMultiplayerBot.Host.WebApi.Providers;

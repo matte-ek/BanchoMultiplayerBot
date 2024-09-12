@@ -1,5 +1,6 @@
 using BanchoMultiplayerBot.Database.Models;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace BanchoMultiplayerBot.Database.Repositories;
 
@@ -32,19 +33,23 @@ public class ScoreRepository : IDisposable
 
     public async Task<int?> GetMapPlayCountByLobbyId(int lobbyId, int mapId)
     {
-        // This sucks lol, fix fix fix
+        const string query = """
+                             SELECT "BeatmapId", RowNumber
+                             FROM (
+                             SELECT "BeatmapId",
+                                    ROW_NUMBER() OVER (ORDER BY COUNT(DISTINCT "GameId") DESC) AS RowNumber
+                             FROM "Scores"
+                             WHERE "LobbyId" = @lobbyId
+                             GROUP BY "BeatmapId"
+                             ) AS Ranked
+                             WHERE "BeatmapId" = @mapId
+                             """;
 
-        var mostPlayedMaps = await _botDbContext.Scores
-            .Where(x => x.LobbyId == lobbyId)
-            .GroupBy(x => x.BeatmapId)
-            .Select(g => new { BeatmapId = g.Key, Count = g.Select(x => x.GameId).Distinct().Count() })
-            .OrderByDescending(x => x.Count)
-            .Select(x => x.BeatmapId)
-            .ToListAsync();
+        var mapPosition = await _botDbContext.MapPositions
+            .FromSqlRaw(query, [new NpgsqlParameter("lobbyId", lobbyId), new NpgsqlParameter("mapId", mapId)])
+            .FirstOrDefaultAsync();
         
-        var position = mostPlayedMaps.IndexOf(mapId);
-
-        return position != -1 ? position + 1 : null;
+        return mapPosition?.RowNumber;
     }
     
     public async Task<IReadOnlyList<Score>> GetScoresByMapId(int mapId, int count = 10)
@@ -90,5 +95,4 @@ public class ScoreRepository : IDisposable
 
         _disposed = true;
     }
-    
 }

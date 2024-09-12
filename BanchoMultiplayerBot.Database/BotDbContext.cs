@@ -27,6 +27,8 @@ namespace BanchoMultiplayerBot.Database
         public DbSet<LobbyBehaviorConfig> LobbyBehaviorConfig { get; set; }
         public DbSet<LobbyTimer> LobbyTimers { get; set; }
         public DbSet<LobbyVote> LobbyVotes { get; set; }
+        
+        public DbSet<MapPosition> MapPositions { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options) => options.UseNpgsql(ConnectionString);
     }
