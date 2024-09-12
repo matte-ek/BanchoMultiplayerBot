@@ -58,8 +58,9 @@ namespace BanchoMultiplayerBot.Behaviors
 
             Log.Information("BanBehavior: Banned user '{User}' joined the room, current join frequency {Frequency}", player.Name, record.Frequency);
 
-            var method = record.Frequency > 5 ? "ban" : "kick";
-
+            //var method = record.Frequency > 5 ? "ban" : "kick";
+            var method = "kick";
+            
             context.SendMessage($"!mp {method} {player.Name.ToIrcNameFormat()}");
         }
 
