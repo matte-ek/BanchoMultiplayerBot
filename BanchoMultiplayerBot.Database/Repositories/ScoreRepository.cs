@@ -15,7 +15,7 @@ public class ScoreRepository : IDisposable
 
     public async Task Add(Score score)
     {
-        score.Time = DateTime.Now;
+        score.Time = DateTime.UtcNow;
         
         await _botDbContext.Scores.AddAsync(score);
     }

@@ -114,7 +114,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         var beatmapId = mapManagerDataProvider.Data.BeatmapInfo.Id;
         
         var totalPlayCount = await gameRepository.GetGameCountByMapId(beatmapId, null);
-        var pastWeekPlayCount = await gameRepository.GetGameCountByMapId(beatmapId, DateTime.Now.AddDays(-7));
+        var pastWeekPlayCount = await gameRepository.GetGameCountByMapId(beatmapId, DateTime.UtcNow.AddDays(-7));
 
         var recentGames = await gameRepository.GetRecentGames(beatmapId, 50);
         var recentScores = await scoreRepository.GetScoresByMapId(beatmapId, 50);
@@ -296,7 +296,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         var game = new Game
         {
             BeatmapId = Data.LastPlayedBeatmapInfo.Id,
-            Time = DateTime.Now,
+            Time = DateTime.UtcNow,
             PlayerCount = Data.MapStartPlayerCount,
             PlayerFinishCount = playerFinishCount,
             PlayerPassedCount = playerPassedCount
