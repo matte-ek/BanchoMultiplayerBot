@@ -18,7 +18,7 @@ public class AnnouncementBehavior(BehaviorEventContext context) : IBehavior, IBe
     [BotEvent(BotEventType.Initialize)]
     public void OnInitialize()
     {
-        context.TimerProvider.FindOrCreateTimer("NoticeTimer").Start(TimeSpan.FromMinutes(60));
+        context.TimerProvider.FindOrCreateTimer("NoticeTimer").Start(TimeSpan.FromMinutes(90));
     }
     
     [BotEvent(BotEventType.TimerElapsed, "NoticeTimer")]
@@ -35,9 +35,12 @@ public class AnnouncementBehavior(BehaviorEventContext context) : IBehavior, IBe
         }
         
         var noticeMessage = notices.FirstOrDefault(x => x.Id == Data.NextNoticeMessageId) ?? notices.First();
+        var spamFilter = new string('\u200B', context.Lobby.LobbyConfigurationId);
         
-        context.SendMessage($"Notice: {noticeMessage.Message}");
+        context.SendMessage($"Notice: {noticeMessage.Message} {spamFilter}");
         
         Data.NextNoticeMessageId = notices.IndexOf(noticeMessage) + 1;
+        
+        context.TimerProvider.FindOrCreateTimer("NoticeTimer").Start(TimeSpan.FromMinutes(90));
     }
 }
