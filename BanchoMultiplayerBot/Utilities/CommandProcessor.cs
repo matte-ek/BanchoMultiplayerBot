@@ -125,11 +125,26 @@ public class CommandProcessor(Bot bot)
                     commandContext.User = await userRepo.FindOrCreateUser(commandContext.Player!.Name);
                 }
 
-                await lobby.BehaviorEventProcessor.OnCommandExecuted(command.Command, commandContext);
+                try
+                {
+                    await lobby.BehaviorEventProcessor.OnCommandExecuted(command.Command, commandContext);
+
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "CommandProcessor: Error executing command {Command} in lobby {Lobby}", command.Command, lobby.MultiplayerLobby.ChannelName);
+                }
             }
         }
-     
-        // Execute the command in a global context
-        await command.ExecuteAsync(commandContext);
+
+        try
+        {
+            // Execute the command in a global context
+            await command.ExecuteAsync(commandContext);
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "CommandProcessor: Error executing command {Command} in a global context", command.Command);
+        }
     }
 }
