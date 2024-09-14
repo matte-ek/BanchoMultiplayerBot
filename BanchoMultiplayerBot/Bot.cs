@@ -10,7 +10,7 @@ using Serilog;
 
 namespace BanchoMultiplayerBot
 {
-    public class Bot(IBotConfiguration botConfiguration)
+    public class Bot(IBotConfiguration botConfiguration) : IAsyncDisposable
     {
         public List<ILobby> Lobbies { get; } = [];
         
@@ -137,6 +137,13 @@ namespace BanchoMultiplayerBot
                     await Task.Delay(500);
                 }
             }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            GC.SuppressFinalize(this);
+
+            await Task.WhenAny(StopAsync(), Task.Delay(5000));
         }
     }
 }

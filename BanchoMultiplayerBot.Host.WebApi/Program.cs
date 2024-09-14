@@ -110,7 +110,3 @@ app.MapHub<LobbyEventHub>("/hubs/lobby");
 app.UseMetricServer("/api/statistics/metrics");
 
 await app.RunAsync();
-
-await app.Services.GetRequiredService<Bot>().StopAsync();
-
-app.Services.GetRequiredService<LobbyTrackerService>().Stop();
