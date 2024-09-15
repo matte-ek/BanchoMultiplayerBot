@@ -103,7 +103,7 @@ namespace BanchoMultiplayerBot.Behaviors
                     Config.MinimumStarRating >= Math.Round(beatmapAttributes.DifficultyRating, 2) &&
                     Config.AllowDoubleTime)
                 {
-                    var doubleTimeMapAttributes = await context.UsingApiClient(async (apiClient) => await apiClient.GetDifficultyAttributesAsync(beatmapShell.Id, "DT"));
+                    var doubleTimeMapAttributes = await context.UsingApiClient(async (apiClient) => await apiClient.GetDifficultyAttributesAsync(beatmapShell.Id, ["DT"]));
                  
                     // Check if map is OK with double time
                     if (doubleTimeMapAttributes != null &&
