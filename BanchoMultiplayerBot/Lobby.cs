@@ -8,6 +8,7 @@ using BanchoMultiplayerBot.Providers;
 using BanchoMultiplayerBot.Utilities;
 using BanchoSharp.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Prometheus;
 using Serilog;
 
 namespace BanchoMultiplayerBot
@@ -37,7 +38,16 @@ namespace BanchoMultiplayerBot
         /// <summary>
         /// The current state of the lobby
         /// </summary>
-        public LobbyHealth Health { get; set; }
+        public LobbyHealth Health
+        {
+            get => _health;
+            set
+            {
+                _health = value;
+
+                LobbyHealthGauge.WithLabels(LobbyConfigurationId.ToString()).Set((int)value);
+            }
+        }
 
         /// <summary>
         /// Event dispatcher for behavior events
@@ -58,10 +68,14 @@ namespace BanchoMultiplayerBot
         
         public IVoteProvider? VoteProvider { get; private set; }
         
+        private LobbyHealth _health;
+        
         private string _channelId = string.Empty;
         
         private bool _isCreatingInstance;
 
+        private static readonly Gauge LobbyHealthGauge = Metrics.CreateGauge("bot_lobby_health", "The current status of the lobby", "lobby_index");
+        
         public Lobby(Bot bot, int lobbyConfigurationId)
         {
             Bot = bot;
