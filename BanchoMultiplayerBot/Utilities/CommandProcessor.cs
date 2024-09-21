@@ -74,8 +74,9 @@ public class CommandProcessor(Bot bot)
             return;
         }
 
-        using var userRepo = new UserRepository();
-        var user = await userRepo.FindOrCreateUser(message.Sender);
+        await using var userRepo = new UserRepository();
+        
+        var user = await userRepo.FindOrCreateUserAsync(message.Sender);
 
         // Make sure the user is allowed to execute the command
         if (command.Administrator && !user.Administrator)
@@ -122,7 +123,7 @@ public class CommandProcessor(Bot bot)
                 // there's a good way to handle that, since what if the name actually contains an "_"?
                 if (commandContext.Player?.Name != null)
                 {
-                    commandContext.User = await userRepo.FindOrCreateUser(commandContext.Player!.Name);
+                    commandContext.User = await userRepo.FindOrCreateUserAsync(commandContext.Player!.Name);
                 }
 
                 try

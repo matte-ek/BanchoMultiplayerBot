@@ -3,16 +3,6 @@
 public class Game
 {
     public int Id { get; set; }
- 
-/*
-    /// <summary>
-    /// The lobby of which the game was played
-    /// </summary>
-    public int? LobbyId { get; set; }
-    
-    public int? MapId { get; set; }
-    public Map? Map { get; set; } = null!;
-  */
     
     /// <summary>
     /// The osu! beatmap id

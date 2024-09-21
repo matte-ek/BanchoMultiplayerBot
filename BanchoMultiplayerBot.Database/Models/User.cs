@@ -1,4 +1,6 @@
-﻿namespace BanchoMultiplayerBot.Database.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace BanchoMultiplayerBot.Database.Models
 {
     public class User
     {
@@ -12,6 +14,7 @@
         /// <summary>
         /// osu! username
         /// </summary>
+        [MaxLength(512)]
         public string Name { get; set; } = string.Empty;
 
         /// <summary>
@@ -26,9 +29,9 @@
         /// </summary>
         public int NumberOneResults { get; set; }
 
-        public bool AutoSkipEnabled { get; set; } = false;
+        public bool AutoSkipEnabled { get; set; }
         
-        public bool Administrator { get; set; } = false;
+        public bool Administrator { get; set; }
         
         public virtual ICollection<PlayerBan> Bans { get; } = [];
     }

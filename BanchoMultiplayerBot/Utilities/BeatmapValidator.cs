@@ -94,7 +94,7 @@ public class MapValidator(ILobby lobby, LobbyConfiguration lobbyConfiguration, M
             return false;
         }
         
-        using var mapBanRepository = new MapBanRepository();
+        await using var mapBanRepository = new MapBanRepository();
 
         return await mapBanRepository.IsMapBanned(beatmap.SetId, beatmap.Id);
     }
@@ -111,9 +111,9 @@ public class MapValidator(ILobby lobby, LobbyConfiguration lobbyConfiguration, M
             return false;
         }
 
-        using var userRepository = new UserRepository();
+        await using var userRepository = new UserRepository();
             
-        var user = await userRepository.FindOrCreateUser(lobby.MultiplayerLobby!.Host.Name);
+        var user = await userRepository.FindOrCreateUserAsync(lobby.MultiplayerLobby!.Host.Name);
 
         return user.Administrator;
     }

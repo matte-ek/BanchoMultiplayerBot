@@ -8,8 +8,10 @@ using BanchoMultiplayerBot.Database.Models;
 using BanchoMultiplayerBot.Database.Repositories;
 using BanchoMultiplayerBot.Extensions;
 using BanchoMultiplayerBot.Interfaces;
+using BanchoMultiplayerBot.Osu.Data;
 using BanchoMultiplayerBot.Osu.Extensions;
 using BanchoMultiplayerBot.Providers;
+using BanchoMultiplayerBot.Utilities;
 using BanchoSharp.Multiplayer;
 using Humanizer;
 using OsuSharp.Enums;
@@ -58,25 +60,25 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             return;
         }
         
-        using var scoreRepository = new ScoreRepository();
+        await using var scoreRepository = new ScoreRepository();
         
         var mapManagerDataProvider = new BehaviorDataProvider<MapManagerBehaviorData>(context.Lobby);
-        var scores = await scoreRepository.GetScoresByMapAndPlayerId(commandEventContext.Player.Id.Value, mapManagerDataProvider.Data.BeatmapInfo.Id);
+        var scores = await scoreRepository.GetScoresByMapAndPlayerIdAsync(commandEventContext.Player.Id.Value, mapManagerDataProvider.Data.BeatmapInfo.Id);
         
-        var failCount = scores.Count(x => x.Rank == 1);
+        var failCount = scores.Count(x => x.OsuRank == OsuRank.F);
         var passCount = scores.Count - failCount;
         var passFail =  failCount >= passCount ? "fail" : "pass";
-        var mostCommonRank = scores.Select(x => x.Rank)
+        var mostCommonRank = scores.Select(x => x.OsuRank)
             .GroupBy(i=>i)
             .OrderByDescending(grp=>grp.Count())
             .Select(grp=>grp.Key).FirstOrDefault();
-        var avgAccuracy = scores.Count > 0 ? scores.Average(x => x.GetAccuracy()) : 0;
+        var avgAccuracy = scores.Count > 0 ? scores.Average(ScoreUtilities.CalculateAccuracy) : 0;
 
         if (scores.Count > 0)
         {
             commandEventContext.Reply(passFail == "fail"
                 ? $"{commandEventContext.Player?.Name}, you've played this map {scores.Count} times in this lobby! You usually {passFail} the map! :("
-                : $"{commandEventContext.Player?.Name}, you've played this map {scores.Count} times in this lobby! You usually {passFail} the map with an {Score.GetRankString(mostCommonRank!)} rank, average accuracy: {avgAccuracy:0.00}%!");
+                : $"{commandEventContext.Player?.Name}, you've played this map {scores.Count} times in this lobby! You usually {passFail} the map with an {mostCommonRank.ToString()} rank, average accuracy: {avgAccuracy:0.00}%!");
         }
         else
         {
@@ -92,34 +94,34 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             return;
         }
         
-        using var scoreRepository = new ScoreRepository();
+        await using var scoreRepository = new ScoreRepository();
         
         var mapManagerDataProvider = new BehaviorDataProvider<MapManagerBehaviorData>(context.Lobby);
-        var scores = await scoreRepository.GetScoresByMapAndPlayerId(commandEventContext.Player.Id.Value, mapManagerDataProvider.Data.BeatmapInfo.Id);
+        var scores = await scoreRepository.GetScoresByMapAndPlayerIdAsync(commandEventContext.Player.Id.Value, mapManagerDataProvider.Data.BeatmapInfo.Id);
         var bestScore = scores.MaxBy(x => x.TotalScore);
-        var bestScoreAcc = bestScore?.GetAccuracy();
+        var bestScoreAcc = bestScore != null ? ScoreUtilities.CalculateAccuracy(bestScore) : 0f;
                     
         commandEventContext.Reply(bestScore != null
-            ? $"{commandEventContext.Player?.Name}, your best score on this map in this lobby is an {bestScore.GetRankString()} rank with {bestScoreAcc:0.00}% accuracy and x{bestScore.MaxCombo} combo, {bestScore.Count300}/{bestScore.Count100}/{bestScore.Count50}/{bestScore.CountMiss}!"
+            ? $"{commandEventContext.Player?.Name}, your best score on this map in this lobby is an {bestScore.OsuRank.ToString()} rank with {bestScoreAcc:0.00}% accuracy and x{bestScore.MaxCombo} combo, {bestScore.Count300}/{bestScore.Count100}/{bestScore.Count50}/{bestScore.CountMiss}!"
             : $"{commandEventContext.Player?.Name}, you haven't played this map in this lobby yet!");
     }
     
     [BotEvent(BotEventType.CommandExecuted, "MapStatistics")]
     public async Task OnMapStatisticsCommandExecuted(CommandEventContext commandEventContext)
     {
-        using var gameRepository = new GameRepository();
-        using var scoreRepository = new ScoreRepository();
+        await using var gameRepository = new GameRepository();
+        await using var scoreRepository = new ScoreRepository();
 
         var mapManagerDataProvider = new BehaviorDataProvider<MapManagerBehaviorData>(context.Lobby);
         var beatmapId = mapManagerDataProvider.Data.BeatmapInfo.Id;
         
-        var totalPlayCount = await gameRepository.GetGameCountByMapId(beatmapId, null);
-        var pastWeekPlayCount = await gameRepository.GetGameCountByMapId(beatmapId, DateTime.UtcNow.AddDays(-7));
+        var totalPlayCount = await gameRepository.GetGameCountByMapIdAsync(beatmapId, null);
+        var pastWeekPlayCount = await gameRepository.GetGameCountByMapIdAsync(beatmapId, DateTime.UtcNow.AddDays(-7));
 
         var recentGames = await gameRepository.GetRecentGames(beatmapId, 50);
-        var recentScores = await scoreRepository.GetScoresByMapId(beatmapId, 50);
+        var recentScores = await scoreRepository.GetScoresByMapIdAsync(beatmapId, 50);
 
-        var mapPosition = await scoreRepository.GetMapPlayCountByLobbyId(context.Lobby.LobbyConfigurationId - 1, beatmapId);
+        var mapPosition = await scoreRepository.GetMapPlayCountByLobbyIdAsync(context.Lobby.LobbyConfigurationId - 1, beatmapId);
 
         var outputMessage = new StringBuilder();
 
@@ -137,7 +139,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
 
         if (recentScores.Any())
         {
-            var avgAccuracy = recentScores.Average(x => x.GetAccuracy());
+            var avgAccuracy = recentScores.Average(ScoreUtilities.CalculateAccuracy);
       
             outputMessage.Append($" | Average accuracy: {avgAccuracy:0.00}%");
         }
@@ -176,7 +178,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
     [BotEvent(BotEventType.CommandExecuted, "LastPlayed")]
     public async Task OnLastPlayedCommandExecuted(CommandEventContext commandEventContext)
     {
-        using var gameRepository = new GameRepository();
+        await using var gameRepository = new GameRepository();
 
         var mapManagerDataProvider = new BehaviorDataProvider<MapManagerBehaviorData>(context.Lobby);
         var beatmapInfo = mapManagerDataProvider.Data.BeatmapInfo;
@@ -229,7 +231,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
     [BanchoEvent(BanchoEventType.PlayerDisconnected)]
     public async Task OnPlayerDisconnected(MultiplayerPlayer player)
     {
-        using var userRepository = new UserRepository();
+        await using var userRepository = new UserRepository();
 
         var record = Data.PlayerTimeRecords.FirstOrDefault(x => x.PlayerName == player.Name);
         if (record == null)
@@ -237,11 +239,11 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             return;
         }
 
-        var user = await userRepository.FindOrCreateUser(player.Name);
+        var user = await userRepository.FindOrCreateUserAsync(player.Name);
         
         user.Playtime += (int)(DateTime.UtcNow - record.JoinTime).TotalSeconds;
 
-        await userRepository.Save();
+        await userRepository.SaveAsync();
         
         Data.PlayerTimeRecords.Remove(record);
     }
@@ -272,13 +274,18 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
     }
 
     [BotEvent(BotEventType.TimerElapsed, "MatchLateFinishTimer")]
-    public async Task OnMatchLateFinishTimer()
+    public Task OnMatchLateFinishTimer()
     {
-        var recentScores = await GetRecentScores();
+        Task.Run(async () =>
+        {
+            var recentScores = await GetRecentScores();
 
-        await StoreGameData(recentScores);
-        await StorePlayerFinishData(recentScores);
-        await AnnounceLeaderboardResults(recentScores);
+            await StoreGameData(recentScores);
+            await StorePlayerFinishData(recentScores);
+            await AnnounceLeaderboardResults(recentScores);
+        });
+
+        return Task.CompletedTask;
     }
 
     private async Task StoreGameData(IReadOnlyList<PlayerScoreResult> recentScores)
@@ -288,7 +295,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             return;
         }
 
-        using var gameRepository = new GameRepository();
+        await using var gameRepository = new GameRepository();
 
         var playerFinishCount = recentScores.Count;
         var playerPassedCount = recentScores.Count(x => x.Score?.Grade != Grade.F);
@@ -302,34 +309,35 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             PlayerPassedCount = playerPassedCount
         };
 
-        await gameRepository.AddGame(game);
+        await gameRepository.AddAsync(game);
+        await gameRepository.SaveAsync();
 
         await StoreScoreData(recentScores, game);
     }
 
     private async Task StorePlayerFinishData(IReadOnlyList<PlayerScoreResult> recentScores)
     {
-        using var userRepository = new UserRepository();
+        await using var userRepository = new UserRepository();
 
         var highestScorePlayer = recentScores.MaxBy(x => x.Player.Score);
         if (context.MultiplayerLobby.Players.Count >= 3 && highestScorePlayer is not null)
         {
-            var user = await userRepository.FindUser(highestScorePlayer.Player.Name) ??
-                       await userRepository.CreateUser(highestScorePlayer.Player.Name);
+            var user = await userRepository.FindUserAsync(highestScorePlayer.Player.Name) ??
+                       await userRepository.CreateUserAsync(highestScorePlayer.Player.Name);
 
             user.NumberOneResults++;
         }
 
         foreach (var result in recentScores)
         {
-            var user = await userRepository.FindUser(result.Player.Name) ??
-                       await userRepository.CreateUser(result.Player.Name);
+            var user = await userRepository.FindUserAsync(result.Player.Name) ??
+                       await userRepository.CreateUserAsync(result.Player.Name);
 
             if (result.Score?.Grade != Grade.F)
                 user.MatchesPlayed++;
         }
 
-        await userRepository.Save();
+        await userRepository.SaveAsync();
     }
 
     private async Task AnnounceLeaderboardResults(IReadOnlyList<PlayerScoreResult> recentScores)
@@ -370,8 +378,8 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
 
     private async Task StoreScoreData(IReadOnlyList<PlayerScoreResult> recentScores, Game game)
     {
-        using var userRepository = new UserRepository();
-        using var scoreRepository = new ScoreRepository();
+        await using var userRepository = new UserRepository();
+        await using var scoreRepository = new ScoreRepository();
 
         try
         {
@@ -383,9 +391,9 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
                 }
 
                 var score = result.Score;
-                var user = await userRepository.FindOrCreateUser(result.Player.Name);
+                var user = await userRepository.FindOrCreateUserAsync(result.Player.Name);
                 
-                await scoreRepository.Add(new Score
+                await scoreRepository.AddAsync(new Score
                 {
                     UserId = user.Id,
                     PlayerId = result.Player.Id,
@@ -394,13 +402,14 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
                     OsuScoreId = score.Id,
                     BeatmapId = score.Beatmap!.Id,
                     TotalScore = score.TotalScore,
-                    Rank = score.Grade.GetRankId(),
+                    OsuRank = score.Grade.GetOsuRank(),
                     MaxCombo = score.MaxCombo,
                     Count300 = score.Statistics.Count300 ?? 0,
                     Count100 = score.Statistics.Count100 ?? 0,
                     Count50 = score.Statistics.Count50 ?? 0,
                     CountMiss = score.Statistics.Misses,
-                    Mods = score.GetModsBitset()
+                    Mods = score.GetModsBitset(),
+                    Time = DateTime.UtcNow
                 });
             }
             
@@ -411,7 +420,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             Log.Error($"Exception at StoreScoreData(): {e}");
         }
 
-        await scoreRepository.Save();
+        await scoreRepository.SaveAsync();
     }
 
     /// <summary>

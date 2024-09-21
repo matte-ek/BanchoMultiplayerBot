@@ -3,49 +3,30 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BanchoMultiplayerBot.Database.Repositories
 {
-    public class UserRepository : IDisposable
+    public class UserRepository : BaseRepository<User>
     {
-        private readonly BotDbContext _botDbContext = new();
-
-        public async Task<User> FindOrCreateUser(string username)
+        public async Task<User> FindOrCreateUserAsync(string username)
         {
-            return await FindUser(username) ?? await CreateUser(username);
+            return await FindUserAsync(username) ?? await CreateUserAsync(username);
         }
         
-        public async Task<User?> FindUser(string username)
+        public async Task<User?> FindUserAsync(string username)
         {
-            return await _botDbContext.Users.Where(x => x.Name == username)
+            return await BotDbContext.Users.Where(x => x.Name == username)
                 .Include(x => x.Bans)
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<User> CreateUser(string username)
+        public async Task<User> CreateUserAsync(string username)
         {
             var user = new User
             {
                 Name = username
             };
 
-            await _botDbContext.AddAsync(user);
-            await _botDbContext.SaveChangesAsync();
+            await AddAsync(user);
 
             return user;
-        }
-
-        public async Task<int> GetUsersCount()
-        {
-            return await _botDbContext.Users.CountAsync();
-        }
-        
-        public async Task Save()
-        {
-            await _botDbContext.SaveChangesAsync();
-        }
-
-        public void Dispose()
-        {
-            _botDbContext.Dispose();
-            GC.SuppressFinalize(this);
         }
     }
 }

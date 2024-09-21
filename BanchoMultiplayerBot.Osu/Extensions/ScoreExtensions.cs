@@ -1,25 +1,26 @@
-﻿using OsuSharp.Models.Scores;
+﻿using BanchoMultiplayerBot.Osu.Data;
+using OsuSharp.Models.Scores;
 using Serilog;
 
 namespace BanchoMultiplayerBot.Osu.Extensions;
 
 public static class ScoreExtensions
 {
-    private static readonly Dictionary<string, ApiMods> ModsAbbreviationMap = new()
+    private static readonly Dictionary<string, OsuMods> ModsAbbreviationMap = new()
     {
-        { "NF", ApiMods.NoFail },
-        { "EZ", ApiMods.Easy },
-        { "HT", ApiMods.HalfTime },
-        { "HD", ApiMods.Hidden },
-        { "FI", ApiMods.FadeIn },
-        { "HR", ApiMods.HardRock },
-        { "FL", ApiMods.Flashlight },
-        { "DT", ApiMods.DoubleTime },
-        { "NC", ApiMods.Nightcore },
-        { "SD", ApiMods.SuddenDeath },
-        { "SO", ApiMods.SpunOut },
-        { "RX", ApiMods.Relax },
-        { "AP", ApiMods.Relax2 }
+        { "NF", OsuMods.NoFail },
+        { "EZ", OsuMods.Easy },
+        { "HT", OsuMods.HalfTime },
+        { "HD", OsuMods.Hidden },
+        { "FI", OsuMods.FadeIn },
+        { "HR", OsuMods.HardRock },
+        { "FL", OsuMods.Flashlight },
+        { "DT", OsuMods.DoubleTime },
+        { "NC", OsuMods.Nightcore },
+        { "SD", OsuMods.SuddenDeath },
+        { "SO", OsuMods.SpunOut },
+        { "RX", OsuMods.Relax },
+        { "AP", OsuMods.Relax2 }
     };
 
     public static int GetModsBitset(string[] input)

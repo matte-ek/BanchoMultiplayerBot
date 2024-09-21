@@ -1,6 +1,6 @@
-﻿namespace BanchoMultiplayerBot.Osu;
+﻿namespace BanchoMultiplayerBot.Osu.Data;
 
-public enum ApiMods
+public enum OsuMods
 {
     None           = 0,
     NoFail         = 1,

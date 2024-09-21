@@ -94,7 +94,7 @@ public static class AuthenticationBuilderExtensions
         }
         
         var userRepo = new UserRepository();
-        var user = await userRepo.FindOrCreateUser(username);
+        var user = await userRepo.FindOrCreateUserAsync(username);
 
         return user.Administrator;
     }

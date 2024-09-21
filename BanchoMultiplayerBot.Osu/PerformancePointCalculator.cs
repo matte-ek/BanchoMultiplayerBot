@@ -50,11 +50,11 @@ public class PerformancePointCalculator
         {
             return (PlayPerformanceInfo?)await CalculateBeatmapPerformancePoints(beatmapId,
                 scoreModel.GetModsBitset(),
-                (scoreModel.Statistics.Count300),
-                (scoreModel.Statistics.Count100),
-                (scoreModel.Statistics.Count50),
-                (scoreModel.Statistics.Misses),
-                (scoreModel.MaxCombo));
+                scoreModel.Statistics.Count300,
+                scoreModel.Statistics.Count100,
+                scoreModel.Statistics.Count50,
+                scoreModel.Statistics.Misses,
+                scoreModel.MaxCombo);
         }
         catch (Exception e)
         {
@@ -179,7 +179,7 @@ public class PerformancePointCalculator
 
     /// <summary>
     /// Returns a task to run a process asynchronously, end result is STDOUT.
-    /// This should be use with caution, make sure no weird user input is sent.
+    /// This should be used with caution, make sure no weird user input is sent.
     /// </summary>
     private Task<string>? RunProcessAsync(string cmd, string arguments)
     {

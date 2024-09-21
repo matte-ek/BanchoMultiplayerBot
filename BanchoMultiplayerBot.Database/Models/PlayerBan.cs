@@ -7,7 +7,7 @@ public class PlayerBan
     public bool Active { get; set; } = true;
     
     public int UserId { get; set; }
-    public User User { get; set; } = null!;
+    public virtual User User { get; } = null!;
     
     /// <summary>
     /// Optional ban reason for the player
@@ -28,5 +28,4 @@ public class PlayerBan
     /// If true, the player may still join lobbies but aren't able to become host.
     /// </summary>
     public bool HostBan { get; set; }
-    
 }

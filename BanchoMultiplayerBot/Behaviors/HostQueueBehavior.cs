@@ -31,9 +31,9 @@ namespace BanchoMultiplayerBot.Behaviors
         [BanchoEvent(BanchoEventType.PlayerJoined)]
         public async Task OnPlayerJoined(MultiplayerPlayer player)
         {
-            using var userRepository = new UserRepository();
+            await using var userRepository = new UserRepository();
             
-            var user = await userRepository.FindOrCreateUser(player.Name);
+            var user = await userRepository.FindOrCreateUserAsync(player.Name);
             
             if (user.Bans.Any(x => x.Active && (x.Expire == null || x.Expire > DateTime.Now)))
             {
@@ -162,14 +162,14 @@ namespace BanchoMultiplayerBot.Behaviors
         [BotEvent(BotEventType.CommandExecuted, "AutoSkip")]
         public async Task OnAutoSkipCommandExecuted(CommandEventContext commandEventContext)
         {
-            using var userRepository = new UserRepository();
+            await using var userRepository = new UserRepository();
 
             if (commandEventContext.Player == null)
             {
                 return;
             }
             
-            var user = await userRepository.FindOrCreateUser(commandEventContext.Player.Name);
+            var user = await userRepository.FindOrCreateUserAsync(commandEventContext.Player.Name);
             
             if (commandEventContext.Arguments.Length == 0)
             {
@@ -185,7 +185,7 @@ namespace BanchoMultiplayerBot.Behaviors
             
             commandEventContext.Reply($"{commandEventContext.Player.Name}, your auto-skip is now {(user.AutoSkipEnabled ? "enabled" : "disabled")}");
             
-            await userRepository.Save();
+            await userRepository.SaveAsync();
         }
 
         [BotEvent(BotEventType.CommandExecuted, "ForceSkip")]
@@ -245,14 +245,14 @@ namespace BanchoMultiplayerBot.Behaviors
         /// </summary>
         private async Task<string> GetCurrentQueueMessage(bool tagHost = false)
         {
-            using var userRepository = new UserRepository();
+            await using var userRepository = new UserRepository();
             
             var queueStr = "";
             var cleanPlayerNamesQueue = new List<string>();
 
             foreach (var player in Data.Queue)
             {
-                var user = await userRepository.FindOrCreateUser(player);
+                var user = await userRepository.FindOrCreateUserAsync(player);
 
                 // Add a zero width space to the player names to avoid mentioning them
                 var cleanName = $"{player[0]}\u200B{player[1..]}";
@@ -417,7 +417,7 @@ namespace BanchoMultiplayerBot.Behaviors
             foreach (var multiplayerPlayer in context.MultiplayerLobby.Players.Where(multiplayerPlayer => !Data.Queue.Any(x => x.ToIrcNameFormat() == multiplayerPlayer.Name.ToIrcNameFormat())))
             {
                 var userRepo = new UserRepository();
-                var user = await userRepo.FindOrCreateUser(multiplayerPlayer.Name);
+                var user = await userRepo.FindOrCreateUserAsync(multiplayerPlayer.Name);
                 
                 // Make sure we don't add any banned players to the queue
                 if (user.Bans.Any(x => x.Active && (x.Expire == null || x.Expire > DateTime.Now)))
@@ -441,18 +441,12 @@ namespace BanchoMultiplayerBot.Behaviors
         {
             try
             {
-                using var userRepository = new UserRepository();
-                var user = await userRepository.FindOrCreateUser(playerName);
+                await using var userRepository = new UserRepository();
+                
+                var user = await userRepository.FindOrCreateUserAsync(playerName);
                 var hasActiveBan = user.Bans.Any(x => x.Active && (x.Expire == null || x.Expire > DateTime.Now));
 
-                if (!hasActiveBan && !user.AutoSkipEnabled) 
-                    return true;
-                
-                // Temporary for now until I can figure out if something is wrong
-                Log.Warning("Ignoring player {PlayerName} for host, as they are banned or have auto-skip enabled. {BanCount}, {AutoSkipState}", playerName, user.Bans.Count, user.AutoSkipEnabled);
-                    
-                return false;
-
+                return !hasActiveBan && !user.AutoSkipEnabled;
             }
             catch (Exception e)
             {

@@ -1,6 +1,5 @@
 using BanchoMultiplayerBot;
 using BanchoMultiplayerBot.Database;
-using BanchoMultiplayerBot.Database.Repositories;
 using BanchoMultiplayerBot.Host.WebApi.Extensions;
 using BanchoMultiplayerBot.Host.WebApi.Hubs;
 using BanchoMultiplayerBot.Host.WebApi.Providers;
@@ -42,7 +41,7 @@ BotDbContext.ConnectionString = builder.Configuration.GetConnectionString("Bot")
 // Setup and migrate database
 await using (var context = new BotDbContext())
 {
-//    await context.Database.MigrateAsync();
+    await context.Database.MigrateAsync();
 }
 
 // Setup services

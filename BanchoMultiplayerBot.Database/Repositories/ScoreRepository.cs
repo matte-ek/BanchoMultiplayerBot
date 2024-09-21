@@ -4,34 +4,9 @@ using Npgsql;
 
 namespace BanchoMultiplayerBot.Database.Repositories;
 
-public class ScoreRepository : IDisposable
+public class ScoreRepository : BaseRepository<Score>
 {
-    private readonly BotDbContext _botDbContext;
-    private bool _disposed;
-
-    public ScoreRepository()
-    {
-        _botDbContext = new BotDbContext();
-    }
-
-    public async Task Add(Score score)
-    {
-        score.Time = DateTime.UtcNow;
-        
-        await _botDbContext.Scores.AddAsync(score);
-    }
-    
-    public async Task Save()
-    {
-        await _botDbContext.SaveChangesAsync();
-    }
-
-    public async Task<long> GetScoreCount()
-    {
-        return await _botDbContext.Scores.LongCountAsync();
-    }
-
-    public async Task<int?> GetMapPlayCountByLobbyId(int lobbyId, int mapId)
+    public async Task<int?> GetMapPlayCountByLobbyIdAsync(int lobbyId, int mapId)
     {
         const string query = """
                              SELECT "BeatmapId", RowNumber
@@ -45,54 +20,35 @@ public class ScoreRepository : IDisposable
                              WHERE "BeatmapId" = @mapId
                              """;
 
-        var mapPosition = await _botDbContext.MapPositions
+        var mapPosition = await BotDbContext.MapPositions
             .FromSqlRaw(query, [new NpgsqlParameter("lobbyId", lobbyId), new NpgsqlParameter("mapId", mapId)])
             .FirstOrDefaultAsync();
         
         return mapPosition?.RowNumber;
     }
     
-    public async Task<IReadOnlyList<Score>> GetScoresByMapId(int mapId, int count = 10)
+    public async Task<IReadOnlyList<Score>> GetScoresByMapIdAsync(int mapId, int count = 10)
     {
-        return await _botDbContext.Scores
+        return await BotDbContext.Scores
             .Where(x => x.BeatmapId == mapId)
             .OrderByDescending(x => x.Time)
             .Take(count)
             .ToListAsync();
     }
 
-    public async Task<IReadOnlyList<Score>> GetScoresByMapAndPlayerId(int playerId, int mapId)
+    public async Task<IReadOnlyList<Score>> GetScoresByMapAndPlayerIdAsync(int playerId, int mapId)
     {
-        return await _botDbContext.Scores
+        return await BotDbContext.Scores
             .Where(x => x.PlayerId == playerId && x.BeatmapId == mapId)
             .OrderByDescending(x => x.Time)
             .ToListAsync();
     }
 
-    public async Task<Score?> GetPlayerBestScore(int playerId)
+    public async Task<Score?> GetPlayerBestScoreAsync(int playerId)
     {
-        return await _botDbContext.Scores
+        return await BotDbContext.Scores
             .Where(x => x.PlayerId == playerId)
             .OrderByDescending(x => x.TotalScore)
             .FirstOrDefaultAsync();
-    } 
-
-    public void Dispose()
-    {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-        if (!_disposed)
-        {
-            if (disposing)
-            {
-                _botDbContext.Dispose();
-            }
-        }
-
-        _disposed = true;
     }
 }

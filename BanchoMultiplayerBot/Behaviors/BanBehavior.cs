@@ -66,9 +66,9 @@ namespace BanchoMultiplayerBot.Behaviors
 
         private static async Task<IEnumerable<PlayerBan>> GetActivePlayerBans(string playerName)
         {
-            using var userRepository = new UserRepository();
+            await using var userRepository = new UserRepository();
 
-            var user = await userRepository.FindUser(playerName);
+            var user = await userRepository.FindUserAsync(playerName);
 
             return user?.Bans.Where(x => x.Active && (x.Expire == null || x.Expire > DateTime.UtcNow)).ToList() ?? Enumerable.Empty<PlayerBan>();
         }
