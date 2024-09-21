@@ -14,6 +14,7 @@ using BanchoMultiplayerBot.Providers;
 using BanchoMultiplayerBot.Utilities;
 using BanchoSharp.Multiplayer;
 using Humanizer;
+using Humanizer.Localisation;
 using OsuSharp.Enums;
 using Serilog;
 
@@ -43,13 +44,13 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             totalPlaytime += currentPlaytime;
         }
         
-        commandEventContext.Reply($"{commandEventContext.Player?.Name} has been here for {currentPlaytime:h' hours 'm' minutes 's' seconds'} ({totalPlaytime:d' days 'h' hours 'm' minutes 's' seconds'} ({totalPlaytime.TotalHours:F0}h) in total).");
+        commandEventContext.Reply($"{commandEventContext.Player?.Name} has been here for {currentPlaytime.Humanize(3, maxUnit: TimeUnit.Day, minUnit: TimeUnit.Second)} ({totalPlaytime.Humanize(4, maxUnit: TimeUnit.Day, minUnit: TimeUnit.Second)} ({totalPlaytime.TotalHours:F0}h) in total).");
     }
 
     [BotEvent(BotEventType.CommandExecuted, "PlayStatistics")]
     public void OnPlayStatisticsCommandExecuted(CommandEventContext commandEventContext)
     {
-        commandEventContext.Reply($"{commandEventContext.Player?.Name} has played {commandEventContext.User.MatchesPlayed} matches with a total of {commandEventContext.User.NumberOneResults} #1's.");
+        commandEventContext.Reply($"{commandEventContext.Player?.Name} has played {"match".ToQuantity(commandEventContext.User.MatchesPlayed)} with a total of {commandEventContext.User.NumberOneResults} #1's.");
     }
 
     [BotEvent(BotEventType.CommandExecuted, "PersonalMapStatistics")]
@@ -77,8 +78,8 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         if (scores.Count > 0)
         {
             commandEventContext.Reply(passFail == "fail"
-                ? $"{commandEventContext.Player?.Name}, you've played this map {scores.Count} times in this lobby! You usually {passFail} the map! :("
-                : $"{commandEventContext.Player?.Name}, you've played this map {scores.Count} times in this lobby! You usually {passFail} the map with an {mostCommonRank.ToString()} rank, average accuracy: {avgAccuracy:0.00}%!");
+                ? $"{commandEventContext.Player?.Name}, you've played this map {"time".ToQuantity(scores.Count)} in this lobby! You usually {passFail} the map! :("
+                : $"{commandEventContext.Player?.Name}, you've played this map {"time".ToQuantity(scores.Count)} times in this lobby! You usually {passFail} the map with an {mostCommonRank.ToString()} rank, average accuracy: {avgAccuracy:0.00}%!");
         }
         else
         {
@@ -125,11 +126,11 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
 
         var outputMessage = new StringBuilder();
 
-        outputMessage.Append($"This map has been played {totalPlayCount} times!");
+        outputMessage.Append($"This map has been played {"time".ToQuantity(totalPlayCount)}!");
 
         if (totalPlayCount != 0)
         {
-            outputMessage.Append($" ({pastWeekPlayCount} times past week)");
+            outputMessage.Append($" ({"time".ToQuantity(pastWeekPlayCount)} past week)");
         }
 
         if (mapPosition != null)
@@ -190,7 +191,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             return;
         }
         
-        commandEventContext.Reply($"The map was last played {recentGames[0].Time.Humanize(utcDate: false, culture: CultureInfo.InvariantCulture)}!");
+        commandEventContext.Reply($"The map was last played {recentGames[0].Time.Humanize(utcDate: true, culture: CultureInfo.InvariantCulture)}!");
     }
 
     [BotEvent(BotEventType.CommandExecuted, "PerformancePoints")]

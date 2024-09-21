@@ -31,7 +31,7 @@ public class VersionCommand : IPlayerCommand
         var commitHashBegin = version.IndexOf('+') + 1;
         var commitHash = version[commitHashBegin..];
         var commitHashSubset = version[commitHashBegin..(commitHashBegin + 7)];
-        var upTime = Process.GetCurrentProcess().StartTime - DateTime.UtcNow;
+        var upTime = DateTime.Now - Process.GetCurrentProcess().StartTime;
         
         message.Reply($"BanchoMultiplayerBot@[https://github.com/matte-ek/BanchoMultiplayerBot/commit/{commitHash} {commitHashSubset}], current uptime: {upTime:HH:mm:ss}");
             
