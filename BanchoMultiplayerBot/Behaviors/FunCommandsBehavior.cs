@@ -65,10 +65,10 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         var mapManagerDataProvider = new BehaviorDataProvider<MapManagerBehaviorData>(context.Lobby);
         var scores = await scoreRepository.GetScoresByMapAndPlayerIdAsync(commandEventContext.Player.Id.Value, mapManagerDataProvider.Data.BeatmapInfo.Id);
         
-        var failCount = scores.Count(x => x.OsuRank == OsuRank.F);
+        var failCount = scores.Count(x => x.Rank == OsuRank.F);
         var passCount = scores.Count - failCount;
         var passFail =  failCount >= passCount ? "fail" : "pass";
-        var mostCommonRank = scores.Select(x => x.OsuRank)
+        var mostCommonRank = scores.Select(x => x.Rank)
             .GroupBy(i=>i)
             .OrderByDescending(grp=>grp.Count())
             .Select(grp=>grp.Key).FirstOrDefault();
@@ -102,7 +102,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         var bestScoreAcc = bestScore != null ? ScoreUtilities.CalculateAccuracy(bestScore) : 0f;
                     
         commandEventContext.Reply(bestScore != null
-            ? $"{commandEventContext.Player?.Name}, your best score on this map in this lobby is an {bestScore.OsuRank.ToString()} rank with {bestScoreAcc:0.00}% accuracy and x{bestScore.MaxCombo} combo, {bestScore.Count300}/{bestScore.Count100}/{bestScore.Count50}/{bestScore.CountMiss}!"
+            ? $"{commandEventContext.Player?.Name}, your best score on this map in this lobby is an {bestScore.Rank.ToString()} rank with {bestScoreAcc:0.00}% accuracy and x{bestScore.MaxCombo} combo, {bestScore.Count300}/{bestScore.Count100}/{bestScore.Count50}/{bestScore.CountMiss}!"
             : $"{commandEventContext.Player?.Name}, you haven't played this map in this lobby yet!");
     }
     
@@ -403,7 +403,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
                     OsuScoreId = score.Id,
                     BeatmapId = score.Beatmap!.Id,
                     TotalScore = score.TotalScore,
-                    OsuRank = score.Grade.GetOsuRank(),
+                    Rank = score.Grade.GetOsuRank(),
                     MaxCombo = score.MaxCombo,
                     Count300 = score.Statistics.Count300 ?? 0,
                     Count100 = score.Statistics.Count100 ?? 0,

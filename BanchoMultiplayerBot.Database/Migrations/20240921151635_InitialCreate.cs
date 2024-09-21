@@ -223,7 +223,7 @@ namespace BanchoMultiplayerBot.Database.Migrations
                     PlayerId = table.Column<int>(type: "integer", nullable: true),
                     UserId = table.Column<int>(type: "integer", nullable: false),
                     GameId = table.Column<int>(type: "integer", nullable: false),
-                    OsuRank = table.Column<int>(type: "integer", nullable: false),
+                    Rank = table.Column<int>(type: "integer", nullable: false),
                     TotalScore = table.Column<long>(type: "bigint", nullable: false),
                     MaxCombo = table.Column<int>(type: "integer", nullable: false),
                     Count300 = table.Column<int>(type: "integer", nullable: false),

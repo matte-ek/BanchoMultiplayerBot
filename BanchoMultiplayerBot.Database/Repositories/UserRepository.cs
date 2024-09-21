@@ -25,6 +25,7 @@ namespace BanchoMultiplayerBot.Database.Repositories
             };
 
             await AddAsync(user);
+            await SaveAsync();
 
             return user;
         }

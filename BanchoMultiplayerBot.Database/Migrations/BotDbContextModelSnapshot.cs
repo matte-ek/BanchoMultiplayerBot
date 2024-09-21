@@ -340,7 +340,7 @@ namespace BanchoMultiplayerBot.Database.Migrations
                     b.Property<int>("Mods")
                         .HasColumnType("integer");
 
-                    b.Property<int>("OsuRank")
+                    b.Property<int>("Rank")
                         .HasColumnType("integer");
 
                     b.Property<long?>("OsuScoreId")

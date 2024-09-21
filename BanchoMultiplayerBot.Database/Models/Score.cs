@@ -27,7 +27,7 @@ public class Score
     public int GameId { get; set; }
     public virtual Game Game { get; set; } = null!;
     
-    public OsuRank OsuRank { get; set; }
+    public OsuRank Rank { get; set; }
     
     public long TotalScore { get; set; }
     
