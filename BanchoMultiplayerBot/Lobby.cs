@@ -231,6 +231,8 @@ namespace BanchoMultiplayerBot
 
         private async Task ShutdownInstance()
         {
+            OnStopped?.Invoke();
+            
             if (TimerProvider != null)
             {
                 await TimerProvider.Stop();
@@ -242,11 +244,9 @@ namespace BanchoMultiplayerBot
                 await VoteProvider.Stop();
                 VoteProvider = null;
             }
-
+            
             BehaviorEventProcessor?.Stop();
             BehaviorEventProcessor = null;
-
-            OnStopped?.Invoke();
             
             if (Health != LobbyHealth.Initializing)
                 Health = LobbyHealth.Stopped; 

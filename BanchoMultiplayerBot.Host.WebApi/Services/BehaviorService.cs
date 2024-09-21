@@ -16,7 +16,7 @@ public class BehaviorService
     {
         await using var context = new BotDbContext();
         
-        var config = await context.LobbyBehaviorConfig.FirstOrDefaultAsync(x => x.LobbyConfigurationId == lobbyId && x.BehaviorName.ToLower().StartsWith(behaviorName));
+        var config = await context.LobbyBehaviorConfig.FirstOrDefaultAsync(x => x.LobbyConfigurationId == lobbyId && x.BehaviorName.ToLower().StartsWith(behaviorName.ToLower()));
 
         if (config == null)
         {

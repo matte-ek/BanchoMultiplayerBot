@@ -120,13 +120,13 @@ public class LobbyTrackerService(Bot bot, IServiceScopeFactory serviceScopeFacto
         {
             if (Lobby.MultiplayerLobby == null)
             {
-                Log.Error("LobbyInstance: MultiplayerLobby is null");
+                Log.Error("LobbyTrackerService: MultiplayerLobby is null");
                 return;
             }
             
             if (Lobby.BehaviorEventProcessor == null)
             {
-                Log.Error("LobbyInstance: BehaviorEventProcessor is null");
+                Log.Error("LobbyTrackerService: BehaviorEventProcessor is null");
                 return;
             }
             
@@ -146,13 +146,13 @@ public class LobbyTrackerService(Bot bot, IServiceScopeFactory serviceScopeFacto
         {
             if (Lobby.MultiplayerLobby == null)
             {
-                Log.Error("LobbyInstance: MultiplayerLobby is null");
+                Log.Error("LobbyTrackerService: MultiplayerLobby is null");
                 return;
             }
             
             if (Lobby.BehaviorEventProcessor == null)
             {
-                Log.Error("LobbyInstance: BehaviorEventProcessor is null");
+                Log.Error("LobbyTrackerService: BehaviorEventProcessor is null");
                 return;
             }
             

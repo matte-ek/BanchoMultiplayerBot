@@ -1,5 +1,5 @@
-﻿using System.Diagnostics;
-using System.Reflection;
+﻿using System.Reflection;
+using System.Threading.Channels;
 using BanchoMultiplayerBot.Attributes;
 using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Interfaces;
@@ -20,7 +20,13 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
     public event Action<string>? OnExternalBehaviorEvent;
     
     private readonly List<BehaviorEvent> _events = [];
-
+    
+    private readonly List<string> _registeredBehaviors = [];
+    
+    private readonly Dictionary<string, Channel<EventExecution>> _eventChannels = new();
+    
+    private readonly List<Task> _workers = [];
+    
     private CancellationTokenSource? _cancellationTokenSource;
 
     private static readonly Counter EventsExecutedCount = Metrics.CreateCounter("bot_event_processor_execution_count", "The number events executed", ["lobby_index", "event_type"]);
@@ -72,6 +78,8 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
         // configurations and such as created.
         Activator.CreateInstance(behaviorType, new BehaviorEventContext(lobby, CancellationToken.None));
 
+        _registeredBehaviors.Add(behavior);
+        
         Log.Verbose("BehaviorEventDispatcher: Registered behaviour {BehaviorName} successfully", behavior);
     }
 
@@ -102,6 +110,15 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
 
         // Register other stuff
         lobby.BanchoConnection.MessageHandler.OnMessageReceived += OnMessageReceived;
+        
+        // Create a worker for each behavior
+        foreach (var behavior in _registeredBehaviors)
+        {
+            var channel = Channel.CreateUnbounded<EventExecution>();
+            
+            _eventChannels.Add(behavior, channel);
+            _workers.Add(Task.Run(() => BehaviorEventWorker(channel.Reader, behavior)));
+        }
     }
 
     /// <summary>
@@ -132,6 +149,15 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
 
         // Cancel any running tasks
         _cancellationTokenSource?.Cancel();
+        
+        // Signal the workers to stop
+        foreach (var channel in _eventChannels.Values)
+        {
+            channel.Writer.Complete();
+        }
+        
+        // Wait for all workers to finish
+        Task.WhenAll(_workers).Wait();
     }
 
     #region Bancho Events Wrappers
@@ -270,38 +296,60 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
     {
         foreach (var behaviorEvent in behaviorEvents)
         {
-            // Create a new instance of the behavior class
-            var instance = Activator.CreateInstance(behaviorEvent.BehaviorType, new BehaviorEventContext(lobby, _cancellationTokenSource!.Token)) as IBehavior;
-
-            try
-            {
-                //Log.Verbose("BehaviorEventDispatcher: Executing {CallbackName}.{MethodName}() ...", behaviorEvent.Name, behaviorEvent.Method.Name);
-                using var timer = EventExecuteTime.WithLabels(lobby.LobbyConfigurationId.ToString(), behaviorEvent.Name).NewTimer();
-
-                // Invoke the method on the behavior class instance
-                var methodTask = behaviorEvent.Method.Invoke(instance, behaviorEvent.IgnoreArguments ? [] : [param]);
-
-                // If we have a return value, it's a task, so await it
-                if (methodTask != null)
-                {
-                    await (Task)methodTask;
-                }
-
-                // If the behavior class implements IBehaviorDataConsumer, save the data
-                if (instance is IBehaviorDataConsumer dataBehavior)
-                {
-                    await dataBehavior.SaveData();
-                }
-                
-                EventsExecutedCount.WithLabels(lobby.LobbyConfigurationId.ToString(), behaviorEvent.Name).Inc();
-            }
-            catch (Exception e)
-            {
-                EventsExceptionCount.WithLabels(lobby.LobbyConfigurationId.ToString(), behaviorEvent.Name).Inc();
-                Log.Error("BehaviorEventDispatcher: Exception while executing callback {CallbackName}.{MethodName}(), {Exception}", behaviorEvent.Name, behaviorEvent.Method.Name, e);
-            }
+            var channel = _eventChannels[behaviorEvent.Name];
+            
+            await channel.Writer.WriteAsync(new EventExecution(behaviorEvent, param));
         }
     }
+
+    private async Task BehaviorEventWorker(ChannelReader<EventExecution> reader, string behaviorName)
+    {
+        Log.Verbose("BehaviorEventDispatcher: Starting worker for behavior '{Behavior}' ...", behaviorName);
+
+        while (await reader.WaitToReadAsync())
+        {
+            while (reader.TryRead(out var eventExecute))
+            {
+                var behaviorEvent = eventExecute.BehaviorEvent;
+                
+                // Create a new instance of the behavior class
+                var instance = Activator.CreateInstance(behaviorEvent.BehaviorType, new BehaviorEventContext(lobby, _cancellationTokenSource!.Token)) as IBehavior;
+
+                try
+                {
+                    //Log.Verbose("BehaviorEventDispatcher: Executing {CallbackName}.{MethodName}() ...", behaviorEvent.Name, behaviorEvent.Method.Name);
+                    using var timer = EventExecuteTime.WithLabels(lobby.LobbyConfigurationId.ToString(), behaviorEvent.Name).NewTimer();
+
+                    // Invoke the method on the behavior class instance
+                    var methodTask = behaviorEvent.Method.Invoke(instance, behaviorEvent.IgnoreArguments ? [] : [eventExecute.Param]);
+
+                    // If we have a return value, it's a task, so await it
+                    if (methodTask != null)
+                    {
+                        await (Task)methodTask;
+                    }
+
+                    // If the behavior class implements IBehaviorDataConsumer, save the data
+                    if (instance is IBehaviorDataConsumer dataBehavior)
+                    {
+                        await dataBehavior.SaveData();
+                    }
+                
+                    EventsExecutedCount.WithLabels(lobby.LobbyConfigurationId.ToString(), behaviorEvent.Name).Inc();
+                }
+                catch (Exception e)
+                {
+                    EventsExceptionCount.WithLabels(lobby.LobbyConfigurationId.ToString(), behaviorEvent.Name).Inc();
+                    
+                    Log.Error("BehaviorEventDispatcher: Exception while executing callback {CallbackName}.{MethodName}(), {Exception}", behaviorEvent.Name, behaviorEvent.Method.Name, e);
+                }
+            }
+        }
+        
+        Log.Verbose("BehaviorEventDispatcher: Stopped worker for behavior '{Behavior}' ...", behaviorName);
+    }
+
+    private record EventExecution(BehaviorEvent BehaviorEvent, object? Param);
 
     private abstract class BehaviorEvent(string name, MethodInfo method, Type behaviorType, bool ignoreArgs)
     {

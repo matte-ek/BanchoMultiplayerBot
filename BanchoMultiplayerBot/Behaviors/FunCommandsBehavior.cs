@@ -276,6 +276,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
     [BotEvent(BotEventType.TimerElapsed, "MatchLateFinishTimer")]
     public Task OnMatchLateFinishTimer()
     {
+        // We don't want to block other FunCommandsBehavior events with this task
         Task.Run(async () =>
         {
             var recentScores = await GetRecentScores();
