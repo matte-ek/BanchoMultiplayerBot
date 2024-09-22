@@ -28,6 +28,14 @@ namespace BanchoMultiplayerBot.Behaviors
             await EnsureQueueValid();
         }
 
+        [BanchoEvent(BanchoEventType.HostChanged)]
+        public Task OnHostChanged()
+        {
+            ApplyRoomHost();
+
+            return Task.CompletedTask;
+        }
+
         [BanchoEvent(BanchoEventType.PlayerJoined)]
         public async Task OnPlayerJoined(MultiplayerPlayer player)
         {
