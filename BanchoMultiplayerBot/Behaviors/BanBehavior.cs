@@ -56,12 +56,18 @@ namespace BanchoMultiplayerBot.Behaviors
             record.Frequency++;
             record.LastJoinTime = DateTime.UtcNow;
 
-            Log.Information("BanBehavior: Banned user '{User}' joined the room, current join frequency {Frequency}", player.Name, record.Frequency);
+            Log.Information("BanBehavior: Banned user '{User}' joined the room, current join frequency {Frequency}",
+                player.Name, record.Frequency);
 
-            //var method = record.Frequency > 5 ? "ban" : "kick";
-            var method = "kick";
-            
+            var method = record.Frequency > 5 ? "ban" : "kick";
+
             context.SendMessage($"!mp {method} {player.Name.ToIrcNameFormat()}");
+        }
+
+        [BotEvent(BotEventType.CommandExecuted, "Ban")]
+        public Task OnBanCommandExecuted(CommandEventContext commandEventContext)
+        {
+            return Task.CompletedTask;
         }
 
         private static async Task<IEnumerable<PlayerBan>> GetActivePlayerBans(string playerName)
@@ -70,7 +76,8 @@ namespace BanchoMultiplayerBot.Behaviors
 
             var user = await userRepository.FindUserAsync(playerName);
 
-            return user?.Bans.Where(x => x.Active && (x.Expire == null || x.Expire > DateTime.UtcNow)).ToList() ?? Enumerable.Empty<PlayerBan>();
+            return user?.Bans.Where(x => x.Active && (x.Expire == null || x.Expire > DateTime.UtcNow)).ToList() ??
+                   Enumerable.Empty<PlayerBan>();
         }
     }
 }

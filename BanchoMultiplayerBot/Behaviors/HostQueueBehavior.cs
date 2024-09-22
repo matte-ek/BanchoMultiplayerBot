@@ -178,6 +178,7 @@ namespace BanchoMultiplayerBot.Behaviors
             }
 
             var autoSkipEnabled = commandEventContext.Arguments[0].ToLower() == "on" ||
+                                  commandEventContext.Arguments[0].ToLower() == "enable" ||
                                   commandEventContext.Arguments[0].ToLower() == "true" ||
                                   commandEventContext.Arguments[0].ToLower() == "yes";
             

@@ -38,8 +38,17 @@ public class AnnouncementBehavior(BehaviorEventContext context) : IBehavior, IBe
         var spamFilter = new string('\u200B', context.Lobby.LobbyConfigurationId);
         
         context.SendMessage($"Notice: {noticeMessage.Message} {spamFilter}");
-        
-        Data.NextNoticeMessageId = notices.IndexOf(noticeMessage) + 1;
+
+        var noticeId = notices.IndexOf(noticeMessage) + 1;
+
+        if (noticeId >= notices.Count)
+        {
+            Data.NextNoticeMessageId = 0;
+        }
+        else
+        {
+            Data.NextNoticeMessageId = notices[noticeId].Id;
+        }
         
         context.TimerProvider.FindOrCreateTimer("NoticeTimer").Start(TimeSpan.FromMinutes(90));
     }
