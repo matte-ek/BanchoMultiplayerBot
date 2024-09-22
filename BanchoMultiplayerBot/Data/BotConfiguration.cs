@@ -10,4 +10,6 @@ public class BotConfiguration : IBotConfiguration
     public string OsuApiClientId { get; init; } = null!;
     
     public string OsuApiClientSecret { get; init; } = null!;
+    
+    public string? DiscordWebhookUrl { get; init; }
 }

@@ -20,4 +20,6 @@ public class BotConfigurationProvider(IConfiguration configuration) : IBotConfig
 
     public string OsuApiClientId { get; init; } = configuration["Osu:ClientId"]!;
     public string OsuApiClientSecret { get; init; } = configuration["Osu:ClientSecret"]!;
+
+    public string? DiscordWebhookUrl { get; init; } = configuration["Bot:DiscordWebhookUrl"];
 }

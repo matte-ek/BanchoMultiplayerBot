@@ -71,18 +71,31 @@ namespace BanchoMultiplayerBot.Behaviors
         [BanchoEvent(BanchoEventType.MessageReceived)]
         public void OnMessageReceived(IPrivateIrcMessage message)
         {
-            if (message.IsBanchoBotMessage == false || 
-                context.MultiplayerLobby.MatchInProgress == false ||
-                !message.Content.Contains("finished playing (Score: "))
+            if (message.IsBanchoBotMessage == false)
             {
                 return;
             }
-
-            Data.PlayerFinishCount++;
-
-            if (Data.PlayerFinishCount > context.MultiplayerLobby.Players.Count / 2)
+            
+            if (context.MultiplayerLobby.MatchInProgress && message.Content.Contains("finished playing (Score: "))
             {
-                context.TimerProvider.FindOrCreateTimer("PlayerFinishTimer").Start(TimeSpan.FromSeconds(30));
+                Data.PlayerFinishCount++;
+
+                if (Data.PlayerFinishCount > context.MultiplayerLobby.Players.Count / 2)
+                {
+                    context.TimerProvider.FindOrCreateTimer("PlayerFinishTimer").Start(TimeSpan.FromSeconds(30));
+                }
+            }
+            
+            // Handle Bancho restart message for the players
+            if (message.Content.StartsWith("Bancho will be restarting for maintenance in 1 minute."))
+            {
+                // This is hacky
+                var spamFilter = new string('\u200B', context.Lobby.LobbyConfigurationId);
+                
+                context.SendMessage($"Bancho is about to restart, the lobby should be automatically re-created in few minutes after Bancho is restarted. {spamFilter}");
+                context.SendMessage($"Try searching for the lobby if you cannot find it in the list, thanks for playing! {spamFilter}");
+                
+                context.Lobby.Bot.NotificationManager.Notify("Bot", "Bancho will be restarting for maintenance in 1 minute.");
             }
         }
 

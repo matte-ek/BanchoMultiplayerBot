@@ -18,6 +18,7 @@ namespace BanchoMultiplayerBot.Bancho
         public IChannelHandler ChannelHandler { get; }
         
         public event Action? OnReady;
+        public event Action? OnConnectionError;
 
         public CancellationToken? ConnectionCancellationToken => _cancellationTokenSource?.Token;
 
@@ -150,6 +151,8 @@ namespace BanchoMultiplayerBot.Bancho
 
             Log.Error($"BanchoConnection: Connection lost, attempting to reconnect in {_banchoConfiguration.BanchoReconnectDelay} seconds...");
 
+            OnConnectionError?.Invoke();
+            
             await Task.Delay(_banchoConfiguration.BanchoReconnectDelay * 1000);
 
             int connectionAttempts = 0;

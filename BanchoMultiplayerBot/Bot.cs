@@ -2,6 +2,7 @@
 using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Database;
 using BanchoMultiplayerBot.Interfaces;
+using BanchoMultiplayerBot.Notifications;
 using BanchoMultiplayerBot.Osu;
 using BanchoMultiplayerBot.Utilities;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +20,8 @@ namespace BanchoMultiplayerBot
         public OsuApiClient OsuApiClient { get; } = new(botConfiguration.OsuApiClientId, botConfiguration.OsuApiClientSecret);
 
         public PerformancePointCalculator? PerformancePointCalculator { get; } = new();
+
+        public NotificationManager NotificationManager { get; } = new(botConfiguration);
         
         public event Action<ILobby>? OnLobbyCreated;
         public event Action<ILobby>? OnLobbyRemoved;
@@ -28,11 +31,14 @@ namespace BanchoMultiplayerBot
         public async Task StartAsync()
         {
             Log.Information("Bot starting up...");
-
+            
+            NotificationManager.Notify("Bot", "Bot is starting up...");
+            
             _commandProcessor ??= new CommandProcessor(this);
             _commandProcessor.Start();
 
             BanchoConnection.OnReady += OnBanchoReady;
+            BanchoConnection.OnConnectionError += OnConnectionError;
 
             await LoadLobbiesFromDatabase();
             await BanchoConnection.StartAsync();
@@ -43,6 +49,7 @@ namespace BanchoMultiplayerBot
             Log.Information("Bot shutting down...");
             
             BanchoConnection.OnReady -= OnBanchoReady;
+            BanchoConnection.OnConnectionError -= OnConnectionError;
             
             _commandProcessor?.Stop();
             
@@ -137,8 +144,15 @@ namespace BanchoMultiplayerBot
                     await Task.Delay(500);
                 }
             }
+            
+            NotificationManager.Notify("Bot", "Bot is now ready");
         }
 
+        private void OnConnectionError()
+        {
+            NotificationManager.Notify("Bot", "Bot has lost connection to Bancho");
+        }
+        
         public async ValueTask DisposeAsync()
         {
             GC.SuppressFinalize(this);

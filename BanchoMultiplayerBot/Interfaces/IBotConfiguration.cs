@@ -8,4 +8,6 @@ public interface IBotConfiguration
 
     public string OsuApiClientId { get; init; }
     public string OsuApiClientSecret { get; init; }
+    
+    public string? DiscordWebhookUrl { get; init; }
 }
