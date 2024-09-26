@@ -51,4 +51,13 @@ public class ScoreRepository : BaseRepository<Score>
             .OrderByDescending(x => x.TotalScore)
             .FirstOrDefaultAsync();
     }
+    
+    public async Task<Score?> GetMapBestScore(int mapId)
+    {
+        return await BotDbContext.Scores
+            .Where(x => x.BeatmapId == mapId)
+            .OrderByDescending(x => x.TotalScore)
+            .Include(x => x.User)
+            .FirstOrDefaultAsync();
+    }
 }

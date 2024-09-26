@@ -194,6 +194,25 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         commandEventContext.Reply($"The map was last played {recentGames[0].Time.Humanize(utcDate: true, culture: CultureInfo.InvariantCulture)}!");
     }
 
+    [BotEvent(BotEventType.CommandExecuted, "MapRecord")]
+    public async Task OnMapRecordCommandExecuted(CommandEventContext commandEventContext)
+    {
+        await using var scoreRepository = new ScoreRepository();
+
+        var mapManagerDataProvider = new BehaviorDataProvider<MapManagerBehaviorData>(context.Lobby);
+        var score = await scoreRepository.GetMapBestScore(mapManagerDataProvider.Data.BeatmapInfo.Id);
+
+        if (score == null)
+        {
+            commandEventContext.Reply("No scores have been set on this map yet!");
+            return;
+        }
+        
+        var accuracy = ScoreUtilities.CalculateAccuracy(score);
+        
+        commandEventContext.Reply($"[https://osu.ppy.sh/users/@{score.User.Name.ToIrcNameFormat()} {score.User.Name}] has the best lobby score on this map with an {score.Rank.ToString()} rank, {accuracy:0.00}% accuracy and x{score.MaxCombo} combo, {score.Count300}/{score.Count100}/{score.Count50}/{score.CountMiss}, set {score.Time.Humanize(utcDate: true, culture: CultureInfo.InvariantCulture)}!");
+    }
+
     [BotEvent(BotEventType.CommandExecuted, "PerformancePoints")]
     public async Task OnPerformancePointsCommandExecuted(CommandEventContext commandEventContext)
     {
