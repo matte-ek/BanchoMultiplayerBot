@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Text;
+using System.Web;
 using BanchoMultiplayerBot.Behaviors.Data;
 using BanchoMultiplayerBot.Host.WebApi.Data;
 using BanchoMultiplayerBot.Providers;
@@ -11,7 +12,7 @@ public class BannerService(BannerCacheService bannerCacheService, Bot bot)
     public async Task<string?> GetBanner()
     {
         // If a user already requested the image within 30 seconds, use that instead.
-        if ((DateTime.UtcNow - bannerCacheService.CacheUpdateTime).TotalSeconds <= 1)
+        if ((DateTime.UtcNow - bannerCacheService.CacheUpdateTime).TotalSeconds <= 30)
         {
             return bannerCacheService.OutputCache;
         }
@@ -43,8 +44,8 @@ public class BannerService(BannerCacheService bannerCacheService, Bot bot)
                 // Prepare SVG
                 var lobbySvg = lobbySvgTemplate.Replace("$ID$", index.ToString());
                 
-                lobbySvg = lobbySvg.Replace("$NAME$", lobbyConfig.Name);
-                lobbySvg = lobbySvg.Replace("$MAP$", $"{mapManagerDataProvider.Data.BeatmapInfo.Artist} - {mapManagerDataProvider.Data.BeatmapInfo.Name}");
+                lobbySvg = lobbySvg.Replace("$NAME$", HttpUtility.HtmlEncode(lobbyConfig.Name));
+                lobbySvg = lobbySvg.Replace("$MAP$", HttpUtility.HtmlEncode($"{mapManagerDataProvider.Data.BeatmapInfo.Artist} - {mapManagerDataProvider.Data.BeatmapInfo.Name}"));
                 lobbySvg = lobbySvg.Replace("$SR$", mapManagerDataProvider.Data.BeatmapInfo.StarRating.ToString("0.00"));
                 lobbySvg = lobbySvg.Replace("$Y$", (index * 220).ToString());
                 
