@@ -2,6 +2,8 @@
 
 Multiplayer bot for osu! written in C#, powered by [BanchoSharp](https://github.com/hburn7/BanchoSharp)
 
+![image](https://bot.matte.sh/api/banner)
+
 ## v2.0 branch
 
 ### Why?
