@@ -48,11 +48,13 @@ await using (var context = new BotDbContext())
 builder.Services.AddSingleton<IBotConfiguration>(new BotConfigurationProvider(builder.Configuration));
 builder.Services.AddSingleton<Bot>();
 builder.Services.AddSingleton<LobbyTrackerService>();
+builder.Services.AddSingleton<BannerCacheService>();
 
 builder.Services.AddScoped<BehaviorService>();
 builder.Services.AddScoped<LobbyService>();
 builder.Services.AddScoped<HealthService>();
 builder.Services.AddScoped<MessageService>();
+builder.Services.AddScoped<BannerService>();
 
 // Setup authentication
 builder.Services.AddAuthentication(options =>
