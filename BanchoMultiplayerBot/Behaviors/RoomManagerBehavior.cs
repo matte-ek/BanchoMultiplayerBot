@@ -21,6 +21,12 @@ namespace BanchoMultiplayerBot.Behaviors
         [BotEvent(BotEventType.Initialize)]
         public async Task OnInitialize()
         {
+            if (Data.IsNewInstance)
+            {
+                await OnMatchFinished();
+                return;
+            }
+            
             await context.ExecuteCommandAsync<RoomSettingsUpdateCommand>();
         }
 

@@ -1,4 +1,5 @@
 ﻿using BanchoMultiplayerBot.Bancho;
+using BanchoMultiplayerBot.Behaviors.Data;
 using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Interfaces;
 using BanchoSharp.Multiplayer;
@@ -302,6 +303,12 @@ namespace BanchoMultiplayerBot
             MultiplayerLobby = new MultiplayerLobby(BanchoConnection.BanchoClient, long.Parse(channel.ChannelName[4..]),
                 channel.ChannelName);
 
+            var managerDataProvider = new BehaviorDataProvider<RoomManagerBehaviorData>(this);
+
+            // Mark the instance as new so that it will be initialized properly
+            managerDataProvider.Data.IsNewInstance = true;
+            
+            await managerDataProvider.SaveData();
             await BuildInstance();
         }
 
@@ -325,6 +332,7 @@ namespace BanchoMultiplayerBot
                 attemptedChannel);
 
             Health = LobbyHealth.CreatingChannel;
+            _isCreatingInstance = true;
 
             await BanchoConnection.BanchoClient?.MakeTournamentLobbyAsync(lobbyConfiguration.Name)!;
         }
