@@ -24,6 +24,9 @@ namespace BanchoMultiplayerBot.Behaviors
             if (Data.IsNewInstance)
             {
                 await OnMatchFinished();
+                
+                Data.IsNewInstance = false;
+                
                 return;
             }
             

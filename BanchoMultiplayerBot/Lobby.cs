@@ -121,6 +121,7 @@ namespace BanchoMultiplayerBot
             
             var lobbyConfiguration = await GetLobbyConfiguration();
             var previousInstance = await GetRecentRoomInstance();
+            
             var existingChannel = string.Empty;
             
             // If we have a previous instance, attempt to join via that channel instead.
@@ -274,7 +275,13 @@ namespace BanchoMultiplayerBot
             // I don't think there should be any issues using the multiplayer lobby provided from the event,
             // but we'll create our own anyway.
             MultiplayerLobby = new MultiplayerLobby(BanchoConnection.BanchoClient, long.Parse(lobby.ChannelName[4..]), lobby.ChannelName);
+            
+            var managerDataProvider = new BehaviorDataProvider<RoomManagerBehaviorData>(this);
 
+            // Mark the instance as new so that it will be initialized properly
+            managerDataProvider.Data.IsNewInstance = true;
+            
+            await managerDataProvider.SaveData();
             await BuildInstance();
         }
 
@@ -303,12 +310,7 @@ namespace BanchoMultiplayerBot
             MultiplayerLobby = new MultiplayerLobby(BanchoConnection.BanchoClient, long.Parse(channel.ChannelName[4..]),
                 channel.ChannelName);
 
-            var managerDataProvider = new BehaviorDataProvider<RoomManagerBehaviorData>(this);
 
-            // Mark the instance as new so that it will be initialized properly
-            managerDataProvider.Data.IsNewInstance = true;
-            
-            await managerDataProvider.SaveData();
             await BuildInstance();
         }
 
