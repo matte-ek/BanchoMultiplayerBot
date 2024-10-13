@@ -271,6 +271,7 @@ namespace BanchoMultiplayerBot
             }
 
             _channelId = lobby.ChannelName;
+            _isCreatingInstance = false;
             
             // I don't think there should be any issues using the multiplayer lobby provided from the event,
             // but we'll create our own anyway.
