@@ -29,9 +29,11 @@ public class HealthMonitorBehavior(BehaviorEventContext context) : IBehavior, IB
             (context.Lobby.Health == LobbyHealth.Ok || context.Lobby.Health == LobbyHealth.Idle))
         {
             Log.Warning("HealthMonitorBehavior: No events have been received in the past hour, assuming lobby is dead.");
-                
+            
             context.Lobby.Health = LobbyHealth.EventTimeoutReached;
-
+                
+            context.Lobby.Bot.NotificationManager.Notify("Health Monitor", $"No events have been received in the past hour, assuming lobby #{context.Lobby.LobbyConfigurationId} is dead.");
+            
             return;
         }
         
