@@ -326,6 +326,9 @@ namespace BanchoMultiplayerBot
             if (attemptedChannel != _channelId)
             {
                 // Not the channel we were trying to join, ignore
+
+                Log.Verbose("Lobby: Ignoring channel {AttemptedChannel}, not the channel we were trying to join, ({ChannelId}).", attemptedChannel, _channelId);
+                
                 return;
             }
 
