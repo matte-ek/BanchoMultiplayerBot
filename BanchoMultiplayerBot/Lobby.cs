@@ -116,6 +116,8 @@ namespace BanchoMultiplayerBot
             if (MultiplayerLobby != null)
             {
                 Log.Verbose("Lobby: Lobby instance already exists, disposing of previous instance...");
+                
+                await BanchoConnection.BanchoClient!.SendAsync($"PART {MultiplayerLobby?.ChannelName}");
                 await ShutdownInstance();
             }
             
