@@ -317,22 +317,34 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
 
                 try
                 {
-                    //Log.Verbose("BehaviorEventDispatcher: Executing {CallbackName}.{MethodName}() ...", behaviorEvent.Name, behaviorEvent.Method.Name);
+                    Log.Verbose("BehaviorEventDispatcher: Executing {CallbackName}.{MethodName}() ...", behaviorEvent.Name, behaviorEvent.Method.Name);
                     using var timer = EventExecuteTime.WithLabels(lobby.LobbyConfigurationId.ToString(), behaviorEvent.Name).NewTimer();
 
-                    // Invoke the method on the behavior class instance
-                    var methodTask = behaviorEvent.Method.Invoke(instance, behaviorEvent.IgnoreArguments ? [] : [eventExecute.Param]);
-
-                    // If we have a return value, it's a task, so await it
-                    if (methodTask != null)
+                    var eventExecuteItem = eventExecute;
+                    
+                    var executeEventTask = Task.Run(async () =>
                     {
-                        await (Task)methodTask;
-                    }
+                        // Invoke the method on the behavior class instance
+                        var methodTask = behaviorEvent.Method.Invoke(instance, behaviorEvent.IgnoreArguments ? [] : [eventExecuteItem.Param]);
 
-                    // If the behavior class implements IBehaviorDataConsumer, save the data
-                    if (instance is IBehaviorDataConsumer dataBehavior)
+                        // If we have a return value, it's a task, so await it
+                        if (methodTask != null)
+                        {
+                            await (Task)methodTask;
+                        }
+
+                        // If the behavior class implements IBehaviorDataConsumer, save the data
+                        if (instance is IBehaviorDataConsumer dataBehavior)
+                        {
+                            await dataBehavior.SaveData();
+                        }
+                    });
+
+                    await Task.WhenAny(executeEventTask, Task.Delay(TimeSpan.FromSeconds(15)));
+                    
+                    if (!executeEventTask.IsCompleted)
                     {
-                        await dataBehavior.SaveData();
+                        Log.Error("BehaviorEventDispatcher: Timeout while executing callback {CallbackName}.{MethodName}()", behaviorEvent.Name, behaviorEvent.Method.Name);
                     }
                 
                     EventsExecutedCount.WithLabels(lobby.LobbyConfigurationId.ToString(), behaviorEvent.Name).Inc();
