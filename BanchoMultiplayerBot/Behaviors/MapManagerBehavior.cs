@@ -229,7 +229,7 @@ namespace BanchoMultiplayerBot.Behaviors
         [BotEvent(BotEventType.CommandExecuted, "Mirror")]
         public void OnMirrorCommandExecuted(CommandEventContext commandEventContext)
         {
-            commandEventContext.Reply($"[https://beatconnect.io/b/{Data.BeatmapInfo.SetId} BeatConnect Mirror] - [https://osu.direct/d/{Data.BeatmapInfo.SetId} osu.direct Mirror]");
+            commandEventContext.Reply($"[https://beatconnect.io/b/{Data.BeatmapInfo.SetId} BeatConnect Mirror] - [https://osu.direct/d/{Data.BeatmapInfo.SetId} osu.direct Mirror] - [https://catboy.best/d/{Data.BeatmapInfo.SetId} Mino Mirror]");
         }
         
         [BotEvent(BotEventType.CommandExecuted, "TimeLeft")]
