@@ -229,7 +229,7 @@ namespace BanchoMultiplayerBot.Behaviors
         [BotEvent(BotEventType.CommandExecuted, "Mirror")]
         public void OnMirrorCommandExecuted(CommandEventContext commandEventContext)
         {
-            commandEventContext.Reply($"[https://beatconnect.io/b/{Data.BeatmapInfo.SetId} BeatConnect Mirror] - [https://osu.direct/d/{Data.BeatmapInfo.SetId} osu.direct Mirror]");
+            commandEventContext.Reply($"[https://beatconnect.io/b/{Data.BeatmapInfo.SetId} BeatConnect Mirror] - [https://osu.direct/d/{Data.BeatmapInfo.SetId} osu.direct Mirror] - [https://catboy.best/d/{Data.BeatmapInfo.SetId} Mino Mirror]");
         }
         
         [BotEvent(BotEventType.CommandExecuted, "TimeLeft")]
@@ -278,7 +278,7 @@ namespace BanchoMultiplayerBot.Behaviors
             var starRatingRounded = Math.Round(difficultyAttributes.DifficultyRating, 2);
             var beatmapSet = (beatmapModel as Beatmap).Set;
             
-            context.SendMessage($"[https://osu.ppy.sh/b/{beatmapInfo.Id} {beatmapSet?.Artist} - {beatmapSet?.Title} [{beatmapModel.Version}]] - ([https://beatconnect.io/b/{beatmapInfo.SetId} BeatConnect Mirror] - [https://osu.direct/d/{beatmapInfo.SetId} osu.direct Mirror])");
+            context.SendMessage($"[https://osu.ppy.sh/b/{beatmapInfo.Id} {beatmapSet?.Artist} - {beatmapSet?.Title} [{beatmapModel.Version}]] - ([https://beatconnect.io/b/{beatmapInfo.SetId} BeatConnect Mirror] - [https://osu.direct/d/{beatmapInfo.SetId} osu.direct Mirror] - [https://catboy.best/d/{beatmapInfo.SetId} Mino Mirror])");
             context.SendMessage($"(Star Rating: {starRatingRounded:.0#} | {beatmapModel.Status.ToString()} | Length: {beatmapInfo.Length:mm\\:ss} | BPM: {beatmapModel.BPM})");
 
             // If the bot has a performance point calculator, we can calculate the performance points for the beatmap.
