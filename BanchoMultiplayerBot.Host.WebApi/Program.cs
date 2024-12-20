@@ -49,6 +49,7 @@ builder.Services.AddSingleton<IBotConfiguration>(new BotConfigurationProvider(bu
 builder.Services.AddSingleton<Bot>();
 builder.Services.AddSingleton<LobbyTrackerService>();
 builder.Services.AddSingleton<BannerCacheService>();
+builder.Services.AddSingleton<BotHealthService>();
 
 builder.Services.AddScoped<BehaviorService>();
 builder.Services.AddScoped<LobbyService>();
@@ -99,6 +100,8 @@ else
 app.Services.GetRequiredService<LobbyTrackerService>().Start();
 
 await app.Services.GetRequiredService<Bot>().StartAsync();
+
+app.Services.GetRequiredService<BotHealthService>().Start();
 
 app.UseCors("DefaultPolicy");
 
