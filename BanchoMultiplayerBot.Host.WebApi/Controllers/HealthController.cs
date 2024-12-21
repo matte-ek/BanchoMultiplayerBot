@@ -7,16 +7,17 @@ namespace BanchoMultiplayerBot.Host.WebApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class HealthController(HealthService healthService, IHostApplicationLifetime applicationLifetime, Bot bot) : ControllerBase
 {
     [HttpGet]
+    [AllowAnonymous]
     public HealthModel Get()
     {
         return healthService.GetHealth();
     }
 
     [HttpGet("quit")]
+    [Authorize]
     public async Task Quit()
     {
         await bot.StopAsync();
