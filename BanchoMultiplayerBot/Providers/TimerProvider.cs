@@ -94,7 +94,7 @@ public class TimerProvider(ILobby lobby) : ITimerProvider
                 EndTime = timer.EndTime
             };
             
-            if ((DateTime.UtcNow - timer.EndTime).TotalSeconds > 45 && timer.IsActive)
+            if (DateTime.UtcNow > timer.EndTime && (DateTime.UtcNow - timer.EndTime).TotalSeconds > 45 && timer.IsActive)
             {
                 // If more than 45 seconds have passed since the timer ended, we'll just mark it as inactive
                 // as the relevant event probably shouldn't be triggered anymore
