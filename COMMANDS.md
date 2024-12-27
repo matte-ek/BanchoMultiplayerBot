@@ -17,8 +17,10 @@ An osu! multiplayer bot that will maintain a queue and pass the host around ever
 | !playtime / !pt      | Shows your current and total playtime. |
 | !playstats / !ps     | Shows your total matches played and #1's |
 | !mapstats / !ms      | Shows play stats of the currently picked map. |
+| !maprecord / !mr     | Shows best lobby score of the currently picked map. |
+| !lastplayed / !lp    | Shows the last time the currently picked map was played. |
 | !rs                  | Shows information about your most recent score. |
-| !timeleft            | Shows the estimated time left of the current map. You may also add "ping" (as in `!timeleft ping`) to get notified when the match finishes. |
+| !timeleft / !tl      | Shows the estimated time left of the current map. You may also add "ping" (as in `!timeleft ping`) to get notified when the match finishes. |
 | !autoskip (on/off)   | Feeling like just tagging along? Auto-skip will automatically skip your turn. |
 | !mirror              | Sends a download link to the map from a mirror. |
 | !mplink              | Sends a link to the osu! match history. |
@@ -29,19 +31,17 @@ An osu! multiplayer bot that will maintain a queue and pass the host around ever
 | Command                       | Description                                                                                        |
 |-------------------------------|----------------------------------------------------------------------------------------------------|
 | !forceskip                    | Will skip the current host, without any vote.                                                      |
-| !sethost \<name\>             | Sets a new host for the round.                                                                     |
-| !setqueuepos \<name\> \<pos\> | Sets a new queue position for the player. Queue position starts from zero.                         |
-| !ban \<name\> \<host-ban\> \<time-days\> | Ban a user, will run `!mp ban` and also save the username and automatically ban in future lobbies. |
+| !sethost \<name\>             | Sets a new host for the round, will also place the previous host as #2.                                                                |
+| !setqueuepos \<name\> \<pos\> | Sets a new queue position for the player. Queue position 0 is host.                         |
+| !ban \<name\> \<time-days\>   | Ban a user from being host in all lobbies.                                                                        |
+| !pban \<name\> \<time-days\>  | Ban a user from playing in all lobbies.
+| !pardon \<name\>              | Unbans a player.                                                                      |
 | !banmapset \<id\>             | Ban a mapset by id                                                                                 |
-| !config \<name\> \<value\>    | Update the lobby properties directly in-game                                                       
 | !addref		                | Adds you as a match referee to use bancho tournament commands.                                     |
-| !togglemapcheck               | Toggle map regulation checker for the lobby.                                                       |
 
 ### Debug Commands
 *Can be used by anyone*
 
 | Command               | Description |
 | -----------           | ----------- |
-| !uptime               | Shows the bot up-time |
-| !issuetime            | Shows the last time since a bot networking issue. |
 | !version              | Shows the currently running bot version. |
