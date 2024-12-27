@@ -15,7 +15,7 @@ public class BanCommand : IPlayerCommand
 
     public int MinimumArguments => 2;
 
-    public string? Usage => "!ban <player_name> <time> <host_ban>";
+    public string? Usage => "!ban <player_name> <time> <reason>";
 
     // Handled by the behavior
     public Task ExecuteAsync(CommandEventContext context) => Task.CompletedTask;

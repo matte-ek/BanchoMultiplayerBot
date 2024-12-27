@@ -3,7 +3,7 @@ using BanchoMultiplayerBot.Interfaces;
 
 namespace BanchoMultiplayerBot.Commands;
 
-public class MapBanCommand : IPlayerCommand
+public class BanMapSetCommand : IPlayerCommand
 {
     public string Command => "BanMapset";
 
@@ -15,7 +15,7 @@ public class MapBanCommand : IPlayerCommand
 
     public int MinimumArguments => 2;
 
-    public string? Usage => "!ban <player_name> <time> <host_ban>";
+    public string? Usage => "!banmapset <mapsetid>";
 
     // Handled by the behavior
     public Task ExecuteAsync(CommandEventContext context) => Task.CompletedTask;

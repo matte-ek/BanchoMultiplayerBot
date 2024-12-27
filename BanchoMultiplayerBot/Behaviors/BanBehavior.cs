@@ -65,11 +65,96 @@ namespace BanchoMultiplayerBot.Behaviors
         }
 
         [BotEvent(BotEventType.CommandExecuted, "Ban")]
-        public Task OnBanCommandExecuted(CommandEventContext commandEventContext)
+        public async Task OnBanCommandExecuted(CommandEventContext commandEventContext)
         {
-            return Task.CompletedTask;
+            await HandleBanCommand(commandEventContext, true);
+        }
+        
+        [BotEvent(BotEventType.CommandExecuted, "PlayerBan")]
+        public async Task OnPlayerBanCommandExecuted(CommandEventContext commandEventContext)
+        {
+            await HandleBanCommand(commandEventContext, false);
+        }
+        
+        [BotEvent(BotEventType.CommandExecuted, "BanMapSetCommand")]
+        public async Task OnBanMapsetCommandExecuted(CommandEventContext commandEventContext)
+        {   
+            if (commandEventContext.Arguments.Length == 0)
+            {
+                context.SendMessage($"Usage: {commandEventContext.PlayerCommand.Usage}");
+                return;
+            }
+
+            if (!int.TryParse(commandEventContext.Arguments[0], out int mapSetId))
+            {
+                context.SendMessage("Invalid map-set id.");
+                return;
+            }
+            
+            await using var mapBanRepository = new MapBanRepository();
+            
+            await mapBanRepository.AddAsync(new MapBan
+            {
+                BeatmapSetId = mapSetId,
+            });
+            
+            await mapBanRepository.SaveAsync();
+            
+            context.SendMessage("Map set has been banned successfully.");
         }
 
+        private async Task HandleBanCommand(CommandEventContext commandEventContext, bool hostBan)
+        {
+            if (commandEventContext.Arguments.Length < 2)
+            {
+                context.SendMessage($"Usage: {commandEventContext.PlayerCommand.Usage}");
+                return;
+            }
+            
+            var playerName = commandEventContext.Arguments[0];
+            var user = await GetUserByName(playerName);
+            
+            if (user == null)
+            {
+                context.SendMessage("User not found.");
+                return;
+            }
+
+            if (!int.TryParse(commandEventContext.Arguments[1], out int lengthDays))
+            {
+                context.SendMessage("Invalid ban length.");
+                return;
+            }
+            
+            await AddPlayerBan(user, TimeSpan.FromDays(lengthDays), true);
+            
+            context.SendMessage($"Player has been banned successfully.");
+        }
+
+        private async Task AddPlayerBan(User user, TimeSpan length, bool hostBan)
+        {
+            await using var banRepository = new PlayerBanRepository();
+            
+            await banRepository.CreateBan(user, hostBan, "",  DateTime.UtcNow + length);
+            await banRepository.SaveAsync();
+        }
+
+        private async Task<User?> GetUserByName(string inputUserName)
+        {
+            await using var userRepository = new UserRepository();
+    
+            var userName = context.MultiplayerLobby.Players.Where(x => x.Name.ToIrcNameFormat().ToLower() == inputUserName.ToIrcNameFormat().ToLower())
+                .Select(x => x.Name).FirstOrDefault();
+            
+            if (userName == null)
+            {
+                // Just use the username at face value instead.
+                userName = inputUserName;
+            }
+            
+            return await userRepository.FindUserAsync(userName);
+        }
+        
         private static async Task<IEnumerable<PlayerBan>> GetActivePlayerBans(string playerName)
         {
             await using var userRepository = new UserRepository();

@@ -3,11 +3,11 @@ using BanchoMultiplayerBot.Interfaces;
 
 namespace BanchoMultiplayerBot.Commands;
 
-public class BanCommand : IPlayerCommand
+public class PlayerBanCommand : IPlayerCommand
 {
-    public string Command => "Ban";
+    public string Command => "PlayerBan";
 
-    public List<string>? Aliases => [ ];
+    public List<string>? Aliases => [ "pban" ];
 
     public bool AllowGlobal => false;
 
@@ -15,7 +15,7 @@ public class BanCommand : IPlayerCommand
 
     public int MinimumArguments => 2;
 
-    public string? Usage => "!ban <player_name> <time> <reason>";
+    public string? Usage => "!pban <player_name> <time> <reason>";
 
     // Handled by the behavior
     public Task ExecuteAsync(CommandEventContext context) => Task.CompletedTask;
