@@ -13,7 +13,7 @@ public class BanMapSetCommand : IPlayerCommand
 
     public bool Administrator => true;
 
-    public int MinimumArguments => 2;
+    public int MinimumArguments => 1;
 
     public string? Usage => "!banmapset <mapsetid>";
 

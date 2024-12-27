@@ -13,7 +13,7 @@ public class PlayerBanRepository : BaseRepository<PlayerBan>
             HostBan = hostBan,
             Reason = reason,
             Expire = expire,
-            Time = DateTime.Now
+            Time = DateTime.UtcNow
         };
 
         await AddAsync(ban);
@@ -34,7 +34,7 @@ public class PlayerBanRepository : BaseRepository<PlayerBan>
     public async Task<IReadOnlyList<PlayerBan>> GetActiveBans()
     {
         return await BotDbContext.PlayerBans
-            .Where(x => x.Active && (x.Expire == null || x.Expire > DateTime.Now))
+            .Where(x => x.Active && (x.Expire == null || x.Expire > DateTime.UtcNow))
             .Include(x => x.User)
             .AsNoTracking()
             .ToListAsync();

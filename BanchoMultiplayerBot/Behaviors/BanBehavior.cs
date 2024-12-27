@@ -76,7 +76,7 @@ namespace BanchoMultiplayerBot.Behaviors
             await HandleBanCommand(commandEventContext, false);
         }
         
-        [BotEvent(BotEventType.CommandExecuted, "BanMapSetCommand")]
+        [BotEvent(BotEventType.CommandExecuted, "BanMapset")]
         public async Task OnBanMapsetCommandExecuted(CommandEventContext commandEventContext)
         {   
             if (commandEventContext.Arguments.Length == 0)
@@ -126,17 +126,12 @@ namespace BanchoMultiplayerBot.Behaviors
                 return;
             }
             
-            await AddPlayerBan(user, TimeSpan.FromDays(lengthDays), true);
-            
-            context.SendMessage($"Player has been banned successfully.");
-        }
-
-        private async Task AddPlayerBan(User user, TimeSpan length, bool hostBan)
-        {
             await using var banRepository = new PlayerBanRepository();
             
-            await banRepository.CreateBan(user, hostBan, "",  DateTime.UtcNow + length);
+            await banRepository.CreateBan(user, hostBan, "N/A",  DateTime.UtcNow + TimeSpan.FromDays(lengthDays));
             await banRepository.SaveAsync();
+            
+            context.SendMessage($"Player has been banned successfully.");
         }
 
         private async Task<User?> GetUserByName(string inputUserName)
