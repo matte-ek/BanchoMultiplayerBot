@@ -132,6 +132,11 @@ namespace BanchoMultiplayerBot.Behaviors
             await banRepository.SaveAsync();
             
             context.SendMessage($"Player has been banned successfully.");
+
+            if (!hostBan)
+            {
+                context.SendMessage($"!mp kick {context.GetPlayerIdentifier(playerName)}");
+            }
         }
 
         private async Task<User?> GetUserByName(string inputUserName)
