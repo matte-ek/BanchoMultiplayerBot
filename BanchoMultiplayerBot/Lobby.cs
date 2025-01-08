@@ -127,7 +127,7 @@ namespace BanchoMultiplayerBot
             var existingChannel = string.Empty;
             
             // If we have a previous instance, attempt to join via that channel instead.
-            if (previousInstance != null)
+            if (previousInstance != null && Health != LobbyHealth.EventTimeoutReached) 
             {
                 existingChannel = previousInstance.Channel;
             }
