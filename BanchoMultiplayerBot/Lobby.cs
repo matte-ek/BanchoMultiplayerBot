@@ -106,6 +106,8 @@ namespace BanchoMultiplayerBot
         /// </summary>
         public async Task ConnectAsync()
         {
+            var hasEventTimeout = Health == LobbyHealth.EventTimeoutReached;
+            
             Health = LobbyHealth.Preparing;
             
             if (BanchoConnection.BanchoClient == null)
@@ -127,7 +129,7 @@ namespace BanchoMultiplayerBot
             var existingChannel = string.Empty;
             
             // If we have a previous instance, attempt to join via that channel instead.
-            if (previousInstance != null && Health != LobbyHealth.EventTimeoutReached) 
+            if (previousInstance != null && !hasEventTimeout) 
             {
                 existingChannel = previousInstance.Channel;
             }
