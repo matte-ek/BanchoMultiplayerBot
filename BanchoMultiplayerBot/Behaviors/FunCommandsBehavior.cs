@@ -4,6 +4,7 @@ using BanchoMultiplayerBot.Attributes;
 using BanchoMultiplayerBot.Behaviors.Config;
 using BanchoMultiplayerBot.Behaviors.Data;
 using BanchoMultiplayerBot.Data;
+using BanchoMultiplayerBot.Database;
 using BanchoMultiplayerBot.Database.Models;
 using BanchoMultiplayerBot.Database.Repositories;
 using BanchoMultiplayerBot.Extensions;
@@ -15,6 +16,7 @@ using BanchoMultiplayerBot.Utilities;
 using BanchoSharp.Multiplayer;
 using Humanizer;
 using Humanizer.Localisation;
+using Microsoft.EntityFrameworkCore;
 using OsuSharp.Enums;
 using Serilog;
 
@@ -238,6 +240,40 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             : "Error calculating performance points");
     }
 
+    [BotEvent(BotEventType.CommandExecuted, "TeamsMode")]
+    public async Task OnTeamsModeCommandExecuted(CommandEventContext commandEventContext)
+    {
+        if (commandEventContext.Arguments.Length == 0 || commandEventContext.Player?.Name == null)
+        {
+            // This should not happen.
+            return;
+        }
+
+        await using var botDbContext = new BotDbContext();
+
+        var teamsMode = commandEventContext.Arguments[0].ToLowerInvariant();
+        var newTeamsModeState = teamsMode == "on";
+
+        Data.InTeamsMode = newTeamsModeState;
+        Data.TeamsModeActivator = commandEventContext.Player.Name;
+
+        // Apply the new teams mode state to the config
+        var configuration = await botDbContext.LobbyConfigurations.FirstOrDefaultAsync(x => x.Id == context.Lobby.LobbyConfigurationId);
+
+        if (configuration == null)
+        {
+            return;
+        }
+
+        // Ideally we should reset to the previous mode, but we don't have that information,
+        // and the effort to account for that is not worth it.
+        configuration.TeamMode = newTeamsModeState ? LobbyFormat.TeamVs : LobbyFormat.HeadToHead;
+
+        await botDbContext.SaveChangesAsync();
+
+        commandEventContext.Reply($"Teams mode has been {(newTeamsModeState ? "enabled" : "disabled")}.");
+    }
+
     [BanchoEvent(BanchoEventType.PlayerJoined)]
     public void OnPlayerJoined(MultiplayerPlayer player)
     {
@@ -252,6 +288,24 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
     public async Task OnPlayerDisconnected(MultiplayerPlayer player)
     {
         await using var userRepository = new UserRepository();
+
+        // Restore teams mode if activated
+        if (player.Name == Data.TeamsModeActivator && Data.InTeamsMode)
+        {
+            await using var botDbContext = new BotDbContext();
+
+            var configuration = await botDbContext.LobbyConfigurations.FirstOrDefaultAsync(x => x.Id == context.Lobby.LobbyConfigurationId);
+            if (configuration == null)
+            {
+                return;
+            }
+
+            Data.InTeamsMode = false;
+
+            configuration.TeamMode = LobbyFormat.HeadToHead;
+
+            await botDbContext.SaveChangesAsync();
+        }
 
         var record = Data.PlayerTimeRecords.FirstOrDefault(x => x.PlayerName == player.Name);
         if (record == null)
