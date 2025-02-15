@@ -46,6 +46,7 @@ public class BannerService(BannerCacheService bannerCacheService, Bot bot)
                 
                 lobbySvg = lobbySvg.Replace("$NAME$", HttpUtility.HtmlEncode(lobbyConfig.Name));
                 lobbySvg = lobbySvg.Replace("$MAP$", HttpUtility.HtmlEncode($"{mapManagerDataProvider.Data.BeatmapInfo.Artist} - {mapManagerDataProvider.Data.BeatmapInfo.Name}"));
+                lobbySvg = lobbySvg.Replace("$PLAYERS$", lobby.MultiplayerLobby?.Players.Count.ToString() ?? "0");
                 lobbySvg = lobbySvg.Replace("$SR$", mapManagerDataProvider.Data.BeatmapInfo.StarRating.ToString("0.00"));
                 lobbySvg = lobbySvg.Replace("$Y$", (index * 220).ToString());
                 
