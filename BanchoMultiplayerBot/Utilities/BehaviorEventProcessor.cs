@@ -317,7 +317,8 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
 
                 try
                 {
-                    Log.Verbose("BehaviorEventDispatcher: Executing {CallbackName}.{MethodName}() ...", behaviorEvent.Name, behaviorEvent.Method.Name);
+                    //Log.Verbose("BehaviorEventDispatcher: Executing {CallbackName}.{MethodName}() ...", behaviorEvent.Name, behaviorEvent.Method.Name);
+                    
                     using var timer = EventExecuteTime.WithLabels(lobby.LobbyConfigurationId.ToString(), behaviorEvent.Name).NewTimer();
 
                     var eventExecuteItem = eventExecute;
