@@ -115,8 +115,10 @@ namespace BanchoMultiplayerBot
                 
                 Log.Information("Bot: Loaded lobby configuration with id {LobbyConfigurationId}", lobbyConfiguration.Id);
             }
+
+            Lobbies.Sort((x, y) => x.LobbyConfigurationId.CompareTo(y.LobbyConfigurationId));
         }
-        
+
         private async void OnBanchoReady()
         {
             foreach (var lobby in Lobbies)
