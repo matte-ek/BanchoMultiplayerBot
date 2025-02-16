@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.Text;
 using BanchoMultiplayerBot.Attributes;
+using BanchoMultiplayerBot.Bancho.Commands;
 using BanchoMultiplayerBot.Behaviors.Config;
 using BanchoMultiplayerBot.Behaviors.Data;
 using BanchoMultiplayerBot.Data;
@@ -270,6 +271,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         configuration.TeamMode = newTeamsModeState ? LobbyFormat.TeamVs : LobbyFormat.HeadToHead;
 
         await botDbContext.SaveChangesAsync();
+        await context.ExecuteCommandAsync<MatchSetSettingsCommand>([Data.InTeamsMode ? "2" : "0", "0", "16"]);
 
         commandEventContext.Reply($"Teams mode has been {(newTeamsModeState ? "enabled" : "disabled")}.");
     }
