@@ -19,6 +19,7 @@ using Humanizer;
 using Humanizer.Localisation;
 using Microsoft.EntityFrameworkCore;
 using OsuSharp.Enums;
+using Prometheus;
 using Serilog;
 
 namespace BanchoMultiplayerBot.Behaviors;
@@ -32,6 +33,8 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
 
     private FunCommandsBehaviorData Data => _dataProvider.Data;
     private FunCommandsBehaviorConfig Config => _configProvider.Data;
+    
+    private static readonly Histogram StoreGameDataTime = Metrics.CreateHistogram("bot_behavior_store_game_data_time", "Time it took to store game related data to the database", "lobby_index");
 
     [BotEvent(BotEventType.CommandExecuted, "PlayTime")]
     public void OnPlayTimeCommandExecuted(CommandEventContext commandEventContext)
@@ -356,10 +359,13 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         Task.Run(async () =>
         {
             var recentScores = await GetRecentScores();
-
-            await StoreGameData(recentScores);
-            await StorePlayerFinishData(recentScores);
-            await AnnounceLeaderboardResults(recentScores);
+            
+            using (StoreGameDataTime.WithLabels(context.Lobby.LobbyConfigurationId.ToString()).NewTimer())
+            {
+                await StoreGameData(recentScores);
+                await StorePlayerFinishData(recentScores);
+                await AnnounceLeaderboardResults(recentScores);
+            }
         });
 
         return Task.CompletedTask;
