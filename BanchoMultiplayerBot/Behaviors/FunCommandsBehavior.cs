@@ -106,7 +106,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         var bestScoreAcc = bestScore != null ? ScoreUtilities.CalculateAccuracy(bestScore) : 0f;
                     
         commandEventContext.Reply(bestScore != null
-            ? $"{commandEventContext.Player?.Name}, your best score on this map in this lobby is an {bestScore.Rank.ToString()} rank with {bestScoreAcc:0.00}% accuracy and x{bestScore.MaxCombo} combo, {bestScore.Count300}/{bestScore.Count100}/{bestScore.Count50}/{bestScore.CountMiss}!"
+            ? $"{commandEventContext.Player?.Name}, your best score on this map in this lobby is an {bestScore.Rank.ToString()} rank with {bestScoreAcc:0.00}% accuracy and x{bestScore.MaxCombo} combo, {bestScore.Count300}/{bestScore.Count100}/{bestScore.Count50}/{bestScore.CountMiss}, set {bestScore.Time.Humanize(utcDate: true, culture: CultureInfo.InvariantCulture)}!"
             : $"{commandEventContext.Player?.Name}, you haven't played this map in this lobby yet!");
     }
     
