@@ -66,7 +66,7 @@ namespace BanchoMultiplayerBot.Behaviors
         }
         
         [BanchoEvent(BanchoEventType.PlayerDisconnected)]
-        public void OnPlayerDisconnected(MultiplayerPlayer player)
+        public async Task OnPlayerDisconnected(MultiplayerPlayer player)
         {
             if (!Data.Queue.Contains(player.Name))
             {
@@ -74,19 +74,22 @@ namespace BanchoMultiplayerBot.Behaviors
                 return;
             }
             
-            // Since we'll be removing the host from the queue, the queue will be rotated automatically,
-            // however since we do that we don't want to skip the player whenever the match finishes,
-            // so we set this `PreventHostSkip` flag.
-            if (Data.IsMatchActive && Data.Queue.FirstOrDefault() == player.Name)
+            StoreQueuePosition(player);
+
+            if (Data.Queue.FirstOrDefault() == player.Name)
             {
-                Data.PreventHostSkip = true;
+                await SkipHost();
+
+                // Since we'll be removing the host from the queue, the queue will be rotated automatically,
+                // however since we do that we don't want to skip the player whenever the match finishes,
+                // so we set this `PreventHostSkip` flag.
+                if (Data.IsMatchActive)
+                {
+                    Data.PreventHostSkip = true;
+                }
             }
             
-            StoreQueuePosition(player);
-            
             Data.Queue.Remove(player.Name);
-            
-            ApplyRoomHost();
         }
 
         [BanchoEvent(BanchoEventType.MatchStarted)]
