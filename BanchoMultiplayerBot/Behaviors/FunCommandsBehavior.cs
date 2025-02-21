@@ -362,7 +362,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
     [BanchoEvent(BanchoEventType.MatchFinished)]
     public void OnMatchFinished()
     {
-        Data.MapFinishPlayerCount = Data.PlayerTimeRecords.Count(x => x.MatchedPlayerCount > 0);
+        Data.MapFinishPlayerCount = Data.PlayerTimeRecords.Count(x => x.MatchedPlayerCount > 0 && context.MultiplayerLobby.Players.Any(y => y.Name.ToIrcNameFormat() == x.PlayerName.ToIrcNameFormat()));
         
         context.Lobby.TimerProvider?.FindOrCreateTimer("MatchLateFinishTimer").Start(TimeSpan.FromSeconds(10));
     }
