@@ -18,6 +18,11 @@ public class FunCommandsBehaviorData
     /// The amount of players that were in the lobby when the map was started.
     /// </summary>
     public int MapStartPlayerCount { get; set; }
+    
+    /// <summary>
+    /// The amount of players that were in the lobby when the map was finished.
+    /// </summary>
+    public int MapFinishPlayerCount { get; set; }
 
     /// <summary>
     /// Whether the lobby is in "temporary teams mode", which can be activated by an admin.
@@ -36,5 +41,7 @@ public class FunCommandsBehaviorData
         public string PlayerName { get; init; } = string.Empty;
 
         public DateTime JoinTime { get; init; }
+
+        public int MatchedPlayerCount { get; set; } = 0;
     }
 }

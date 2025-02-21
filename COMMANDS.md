@@ -19,6 +19,7 @@ An osu! multiplayer bot that will maintain a queue and pass the host around ever
 | !mapstats / !ms      | Shows play stats of the currently picked map. |
 | !maprecord / !mr     | Shows best lobby score of the currently picked map. |
 | !lastplayed / !lp    | Shows the last time the currently picked map was played. |
+| !leavecount / !lc    | Shows the amount of people that left the previous map. |
 | !rs                  | Shows information about your most recent score. |
 | !timeleft / !tl      | Shows the estimated time left of the current map. You may also add "ping" (as in `!timeleft ping`) to get notified when the match finishes. |
 | !autoskip (on/off)   | Feeling like just tagging along? Auto-skip will automatically skip your turn. |

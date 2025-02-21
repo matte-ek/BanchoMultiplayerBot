@@ -50,7 +50,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             totalPlaytime += currentPlaytime;
         }
         
-        commandEventContext.Reply($"{commandEventContext.Player?.Name} has been here for {currentPlaytime.Humanize(3, maxUnit: TimeUnit.Day, minUnit: TimeUnit.Second)} ({totalPlaytime.Humanize(4, maxUnit: TimeUnit.Day, minUnit: TimeUnit.Second)} ({totalPlaytime.TotalHours:F0}h) in total).");
+        commandEventContext.Reply($"{commandEventContext.Player?.Name} has been here for {currentPlaytime.Humanize(3, maxUnit: TimeUnit.Day, minUnit: TimeUnit.Second)}, playing {record?.MatchedPlayerCount} {(record?.MatchedPlayerCount != 1 ? "matches" : "match")}. ({totalPlaytime.Humanize(4, maxUnit: TimeUnit.Day, minUnit: TimeUnit.Second)} ({totalPlaytime.TotalHours:F0}h) in total).");
     }
 
     [BotEvent(BotEventType.CommandExecuted, "PlayStatistics")]
@@ -244,6 +244,14 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             : "Error calculating performance points");
     }
 
+    [BotEvent(BotEventType.CommandExecuted, "LeaveCount")]
+    public void OnLeaveCountCommandExecuted(CommandEventContext commandEventContext)
+    {
+        var leftCount = Data.MapStartPlayerCount - Data.MapFinishPlayerCount;
+        
+        commandEventContext.Reply($"There were {leftCount} player(s) that left the lobby the previous map!");
+    }
+
     [BotEvent(BotEventType.CommandExecuted, "TeamsMode")]
     public async Task OnTeamsModeCommandExecuted(CommandEventContext commandEventContext)
     {
@@ -344,11 +352,18 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
 
         Data.MapStartPlayerCount = context.MultiplayerLobby.Players.Count;
         Data.LastPlayedBeatmapInfo = mapManagerDataProvider.Data.BeatmapInfo;
+        
+        foreach (var data in Data.PlayerTimeRecords)
+        {
+            data.MatchedPlayerCount++;
+        }
     }
 
     [BanchoEvent(BanchoEventType.MatchFinished)]
     public void OnMatchFinished()
     {
+        Data.MapFinishPlayerCount = Data.PlayerTimeRecords.Count(x => x.MatchedPlayerCount > 0);
+        
         context.Lobby.TimerProvider?.FindOrCreateTimer("MatchLateFinishTimer").Start(TimeSpan.FromSeconds(10));
     }
 
@@ -391,7 +406,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             PlayerFinishCount = playerFinishCount,
             PlayerPassedCount = playerPassedCount
         };
-
+        
         await gameRepository.AddAsync(game);
         await gameRepository.SaveAsync();
 
