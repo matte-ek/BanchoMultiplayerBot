@@ -361,14 +361,12 @@ namespace BanchoMultiplayerBot.Behaviors
             if ((context.MultiplayerLobby.Mods & Mods.Hidden) != 0)
                 mods.Add("HD");
                 
-            var beatmapInfo = await context.UsingApiClient(async (apiClient) => await apiClient.GetBeatmapAsync(Data.CurrentMapId));
             var difficultyAttributes = await context.UsingApiClient(async (apiClient) => await apiClient.GetDifficultyAttributesAsync(Data.CurrentMapId, mods.ToArray()));
-
-            if (beatmapInfo != null && difficultyAttributes != null)
+            if (difficultyAttributes != null)
             {
                 var lobbyConfig = await context.Lobby.GetLobbyConfiguration();
                 var mapValidator = new MapValidator(context.Lobby, lobbyConfig, Config);
-                var mapValidationResult = await mapValidator.ValidateBeatmap(difficultyAttributes, beatmapInfo, (context.MultiplayerLobby.Mods & Mods.Freemod) != 0);
+                var mapValidationResult = await mapValidator.ValidateBeatmap(difficultyAttributes, null);
 
                 if (mapValidationResult != MapValidator.MapStatus.Ok)
                 {
