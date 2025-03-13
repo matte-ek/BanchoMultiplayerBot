@@ -13,11 +13,11 @@ namespace BanchoMultiplayerBot.Utilities;
 /// </summary>
 public class MapValidator(ILobby lobby, LobbyConfiguration lobbyConfiguration, MapManagerBehaviorConfig mapManagerBehaviorConfig)
 {
-    public async Task<MapStatus> ValidateBeatmap(DifficultyAttributes difficultyAttributes, BeatmapExtended? beatmapInfo, bool useBeatmapStarRating = false)
+    public async Task<MapStatus> ValidateBeatmap(DifficultyAttributes difficultyAttributes, BeatmapExtended? beatmapInfo)
     {
         if (await IsHostAdministrator())
             return MapStatus.Ok;
-        if (!IsAllowedBeatmapStarRating(difficultyAttributes, beatmapInfo, useBeatmapStarRating))
+        if (!IsAllowedBeatmapStarRating(difficultyAttributes))
             return MapStatus.StarRating;
         if (await IsBannedBeatmap(beatmapInfo))
             return MapStatus.Banned;
@@ -29,15 +29,11 @@ public class MapValidator(ILobby lobby, LobbyConfiguration lobbyConfiguration, M
         return MapStatus.Ok;
     }
 
-    private bool IsAllowedBeatmapStarRating(DifficultyAttributes beatmap, BeatmapExtended? beatmapInfo, bool useBeatmapStarRating)
+    private bool IsAllowedBeatmapStarRating(DifficultyAttributes beatmap)
     {
         if (!mapManagerBehaviorConfig.LimitStarRating)
             return true;
 
-        var starRating = useBeatmapStarRating ? beatmapInfo?.DifficultyRating : beatmap.DifficultyRating;
-
-        starRating ??= beatmap.DifficultyRating;
-        
         var minRating = mapManagerBehaviorConfig.MinimumStarRating;
         var maxRating = mapManagerBehaviorConfig.MaximumStarRating;
 
@@ -47,7 +43,7 @@ public class MapValidator(ILobby lobby, LobbyConfiguration lobbyConfiguration, M
             maxRating += mapManagerBehaviorConfig.StarRatingErrorMargin.Value;
         }
 
-        return maxRating >= starRating && starRating >= minRating;
+        return maxRating >= beatmap.DifficultyRating && beatmap.DifficultyRating >= minRating;
     }
 
     private bool IsAllowedBeatmapLength(BeatmapExtended? beatmap)

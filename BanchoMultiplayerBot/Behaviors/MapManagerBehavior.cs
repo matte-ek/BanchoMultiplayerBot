@@ -95,7 +95,7 @@ namespace BanchoMultiplayerBot.Behaviors
 
                 var lobbyConfig = await context.Lobby.GetLobbyConfiguration();
                 var mapValidator = new MapValidator(context.Lobby, lobbyConfig, Config);
-                var mapValidationResult = await mapValidator.ValidateBeatmap(beatmapAttributes, beatmapInfo, (context.MultiplayerLobby.Mods & Mods.Freemod) != 0);
+                var mapValidationResult = await mapValidator.ValidateBeatmap(beatmapAttributes, beatmapInfo);
 
                 // Special case for double-time, we want to check if
                 // the map was rejected for star rating
