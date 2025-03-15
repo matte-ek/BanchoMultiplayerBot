@@ -37,7 +37,7 @@ namespace BanchoMultiplayerBot.Bancho.Interfaces
         /// <returns>The runtime channel id, if known.</returns>
         public int? GetChannelRuntimeId(string channelName);
         
-        internal void Start();
-        internal void Stop();
+        public void Start();
+        public void Stop();
     }
 }

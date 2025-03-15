@@ -34,12 +34,12 @@ namespace BanchoMultiplayerBot.Bancho.Interfaces
         /// <summary>
         /// Starts the internal message pump
         /// </summary>
-        internal void Start();
+        public void Start();
 
         /// <summary>
         /// Stops the internal message pump, if necessary. 
         /// Will be blocking until task is closed, should be instantaneous.
         /// </summary>
-        internal void Stop();
+        public void Stop();
     }
 }
