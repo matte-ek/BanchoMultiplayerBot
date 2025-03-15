@@ -119,13 +119,15 @@ namespace BanchoMultiplayerBot
             {
                 Log.Verbose("Lobby: Lobby instance already exists, disposing of previous instance...");
                 
+                // Make sure to leave the channel just in case. In most situations this branch will
+                // only get hit for bancho restarts and such, and the channel will be closed anyway.
                 await BanchoConnection.BanchoClient!.SendAsync($"PART {MultiplayerLobby?.ChannelName}");
+                
                 await ShutdownInstance();
             }
             
             var lobbyConfiguration = await GetLobbyConfiguration();
             var previousInstance = await GetRecentRoomInstance();
-            
             var existingChannel = string.Empty;
             
             // If we have a previous instance, attempt to join via that channel instead.
@@ -171,7 +173,6 @@ namespace BanchoMultiplayerBot
             if (configuration == null)
             {
                 Log.Error("Lobby: Failed to find lobby configuration.");
-
                 throw new InvalidOperationException("Failed to find lobby configuration.");
             }
 
@@ -209,7 +210,8 @@ namespace BanchoMultiplayerBot
             
             BehaviorEventProcessor.Start();
             
-            // Make sure we have a database entry for this lobby instance
+            // Make sure we have a database entry for this lobby instance, so we can
+            // reconnect to it later, if needed.
             var recentRoomInstance = await GetRecentRoomInstance(_channelId);
             if (recentRoomInstance == null)
             {
@@ -281,9 +283,10 @@ namespace BanchoMultiplayerBot
             // but we'll create our own anyway.
             MultiplayerLobby = new MultiplayerLobby(BanchoConnection.BanchoClient, long.Parse(lobby.ChannelName[4..]), lobby.ChannelName);
             
+            // Mark the instance as new for the RoomManagerBehavior
+            // so that it will be initialized properly.
             var managerDataProvider = new BehaviorDataProvider<RoomManagerBehaviorData>(this);
-
-            // Mark the instance as new so that it will be initialized properly
+            
             managerDataProvider.Data.IsNewInstance = true;
             
             await managerDataProvider.SaveData();

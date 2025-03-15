@@ -17,16 +17,36 @@ namespace BanchoMultiplayerBot.Utilities;
 /// </summary>
 public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
 {
+    /// <summary>
+    /// Allows for external listeners to listen to behavior events
+    /// </summary>
     public event Action<string>? OnExternalBehaviorEvent;
     
+    /// <summary>
+    /// A list of all registered behavior events
+    /// </summary>
     private readonly List<BehaviorEvent> _events = [];
     
+    /// <summary>
+    /// A list of all registered behavior class names
+    /// </summary>
     private readonly List<string> _registeredBehaviors = [];
     
+    /// <summary>
+    /// A dictionary of all event channels, where the key is the behavior class name
+    /// We do this so we can have a worker for each behavior class. We use the channel
+    /// to process events in a FIFO order for each behavior.
+    /// </summary>
     private readonly Dictionary<string, Channel<EventExecution>> _eventChannels = new();
     
+    /// <summary>
+    /// A list of all worker tasks, one for each behavior class
+    /// </summary>
     private readonly List<Task> _workers = [];
     
+    /// <summary>
+    /// Signal to cancel any running workers
+    /// </summary>
     private CancellationTokenSource? _cancellationTokenSource;
 
     private static readonly Counter EventsExecutedCount = Metrics.CreateCounter("bot_event_processor_execution_count", "The number events executed", ["lobby_index", "event_type"]);
@@ -75,7 +95,12 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
         }
         
         // Create at least one instance of each behavior class to ensure that
-        // configurations and such as created.
+        // configurations and data is created for each behavior. We don't care
+        // about the instance, we just want the constructor to run.
+        // 
+        // This should not matter for the bot to run, however the API for the frontend
+        // will fail if the configuration and data is not created. This is a workaround
+        // to make the life for the API easier.
         Activator.CreateInstance(behaviorType, new BehaviorEventContext(lobby, CancellationToken.None));
 
         _registeredBehaviors.Add(behavior);
@@ -318,8 +343,7 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
                 try
                 {
                     //Log.Verbose("BehaviorEventDispatcher: Executing {CallbackName}.{MethodName}() ...", behaviorEvent.Name, behaviorEvent.Method.Name);
-                    
-                    using var timer = EventExecuteTime.WithLabels(lobby.LobbyConfigurationId.ToString(), behaviorEvent.Name).NewTimer();
+                    using var executionTimer = EventExecuteTime.WithLabels(lobby.LobbyConfigurationId.ToString(), behaviorEvent.Name).NewTimer();
 
                     var eventExecuteItem = eventExecute;
                     
@@ -328,7 +352,8 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
                         // Invoke the method on the behavior class instance
                         var methodTask = behaviorEvent.Method.Invoke(instance, behaviorEvent.IgnoreArguments ? [] : [eventExecuteItem.Param]);
 
-                        // If we have a return value, it's a task, so await it
+                        // If we have a return value, it's a task, so await it.
+                        // I might want to change this to run multiple tasks in parallel sometime.
                         if (methodTask != null)
                         {
                             await (Task)methodTask;
@@ -341,11 +366,14 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
                         }
                     });
 
+                    // Wait for the event to execute, or we have a fail-safe timeout of 15 seconds
+                    // to make sure the worker will never stall on an event.
                     await Task.WhenAny(executeEventTask, Task.Delay(TimeSpan.FromSeconds(15)));
                     
                     if (!executeEventTask.IsCompleted)
                     {
                         Log.Error("BehaviorEventDispatcher: Timeout while executing callback {CallbackName}.{MethodName}()", behaviorEvent.Name, behaviorEvent.Method.Name);
+                        EventsExceptionCount.WithLabels(lobby.LobbyConfigurationId.ToString(), behaviorEvent.Name).Inc();
                     }
                 
                     EventsExecutedCount.WithLabels(lobby.LobbyConfigurationId.ToString(), behaviorEvent.Name).Inc();

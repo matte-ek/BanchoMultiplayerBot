@@ -15,6 +15,7 @@ public static class AuthenticationBuilderExtensions
     {
         return builder.AddCookie(options =>
         {
+            // This will depend on the deployment environment, but generally in production you want to use strict
             options.Cookie.SameSite = configuration["Bot:AllowSameSiteNone"] == "true" ? SameSiteMode.None : SameSiteMode.Strict;
             options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
             options.Cookie.HttpOnly = true;
@@ -84,6 +85,9 @@ public static class AuthenticationBuilderExtensions
         });
     }
 
+    /// <summary>
+    /// Handles user authentication with provided claims and checks if the user is an administrator.
+    /// </summary>
     private static async Task<bool> HandleUserAuthentication(IEnumerable<Claim> claims)
     {
         var username = claims.FirstOrDefault(x => x.Type == ClaimTypes.Name)?.Value;

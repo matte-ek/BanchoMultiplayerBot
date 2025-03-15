@@ -3,6 +3,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BanchoMultiplayerBot.Host.WebApi.Services;
 
+/// <summary>
+/// This service handles behavior configurations and data, data is read-only and configurations can be updated.
+/// </summary>
 public class BehaviorService
 {
     public static async Task<string?> GetBehaviorConfig(int lobbyId, string behaviorName)

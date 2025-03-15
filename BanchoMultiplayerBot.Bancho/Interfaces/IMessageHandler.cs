@@ -3,6 +3,9 @@ using BanchoSharp.Interfaces;
 
 namespace BanchoMultiplayerBot.Bancho.Interfaces
 {
+    /// <summary>
+    /// Handles sending and receiving messages from bancho.
+    /// </summary>
     public interface IMessageHandler
     {
         /// <summary>
@@ -12,17 +15,6 @@ namespace BanchoMultiplayerBot.Bancho.Interfaces
 
         public event Action<IPrivateIrcMessage>? OnMessageReceived;
         public event Action<IPrivateIrcMessage>? OnMessageSent;
-
-        /// <summary>
-        /// Starts the internal message pump
-        /// </summary>
-        public void Start();
-
-        /// <summary>
-        /// Stops the internal message pump, if necessary. 
-        /// Will be blocking until task is closed, should be instantaneous.
-        /// </summary>
-        public void Stop();
 
         /// <summary>
         /// Sends a message to a channel with rate limiting and whatnot
@@ -38,5 +30,16 @@ namespace BanchoMultiplayerBot.Bancho.Interfaces
         /// <param name="message">The message contents, max 300 characters</param>
         /// <returns>Tracking cookie</returns>
         public TrackedMessageCookie SendMessageTracked(string channel, string message);
+        
+        /// <summary>
+        /// Starts the internal message pump
+        /// </summary>
+        internal void Start();
+
+        /// <summary>
+        /// Stops the internal message pump, if necessary. 
+        /// Will be blocking until task is closed, should be instantaneous.
+        /// </summary>
+        internal void Stop();
     }
 }

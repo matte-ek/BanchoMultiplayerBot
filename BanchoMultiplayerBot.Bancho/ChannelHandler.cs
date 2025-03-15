@@ -18,7 +18,7 @@ namespace BanchoMultiplayerBot.Bancho
         
         private readonly Dictionary<string, int> _channelIds = new();
 
-        public int? GetChannelId(string channelName)
+        public int? GetChannelRuntimeId(string channelName)
         {
             if (_channelIds.TryGetValue(channelName, out var channelId))
             {

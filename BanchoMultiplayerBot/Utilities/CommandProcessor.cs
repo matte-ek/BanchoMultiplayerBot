@@ -7,6 +7,10 @@ using Serilog;
 
 namespace BanchoMultiplayerBot.Utilities;
 
+/// <summary>
+/// This command processor will handle any user commands sent to the bot,
+/// and will make sure to execute the corresponding command if it exists.
+/// </summary>
 public class CommandProcessor(Bot bot)
 {
     private readonly List<IPlayerCommand> _commands = [];
@@ -29,6 +33,7 @@ public class CommandProcessor(Bot bot)
     {
         Log.Verbose("CommandProcessor: Registering commands...");
 
+        // Find each class implementing IPlayerCommand
         var commands = AppDomain.CurrentDomain
             .GetAssemblies()
             .SelectMany(s => s.GetTypes())

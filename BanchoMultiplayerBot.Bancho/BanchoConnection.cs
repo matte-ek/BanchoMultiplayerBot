@@ -7,24 +7,65 @@ using BanchoSharp.Interfaces;
 
 namespace BanchoMultiplayerBot.Bancho
 {
+    /// <summary>
+    /// Main class for handling the connection to Bancho within BanchoMultiplayerBot.Bancho.
+    /// </summary>
     public class BanchoConnection : IBanchoConnection
     {
-        public bool IsConnected { get; private set; }
+        /// <summary>
+        /// If the connection to Bancho is currently active.
+        /// </summary>
+        public bool IsConnected 
+        {
+            get => _isConnected;
+            
+            private set
+            {
+                _isConnected = value;
+                ConnectionHealth.Set(_isConnected ? 1 : 0);
+            }    
+        }
 
+        /// <summary>
+        /// The underlying BanchoSharp Bancho client 
+        /// </summary>
         public IBanchoClient? BanchoClient { get; private set; }
 
+        /// <summary>
+        /// Handler for incoming and outgoing messages to Bancho
+        /// </summary>
         public IMessageHandler MessageHandler { get; }
+        
+        /// <summary>
+        /// Handler for executing bancho multiplayer commands, in a more structured way.
+        /// </summary>
         public ICommandHandler CommandHandler { get; }
+        
+        /// <summary>
+        /// Handler for managing channels that we are connected to.
+        /// </summary>
         public IChannelHandler ChannelHandler { get; }
         
+        /// <summary>
+        /// Invoked whenever a connection to Bancho is ready.
+        /// </summary>
         public event Action? OnReady;
+        
+        /// <summary>
+        /// Invoked whenever a connection to Bancho has an error, however
+        /// the bancho connection will attempt to reconnect automatically.
+        /// </summary>
         public event Action? OnConnectionError;
 
+        /// <summary>
+        /// Used to cancel the connection to Bancho.
+        /// </summary>
         public CancellationToken? ConnectionCancellationToken => _cancellationTokenSource?.Token;
 
         private readonly BanchoClientConfiguration _banchoConfiguration;
         private ConnectionHandler? _connectionWatchdog;
         private CancellationTokenSource? _cancellationTokenSource;
+        private bool _isConnected;
 
         private static readonly Gauge ConnectionHealth = Metrics.CreateGauge("bot_connection_health", "Bancho connection health");
 
@@ -37,6 +78,10 @@ namespace BanchoMultiplayerBot.Bancho
             CommandHandler = new CommandHandler(MessageHandler, banchoClientConfiguration);
         }
 
+        /// <summary>
+        /// Attempt to connect to Bancho, this is non-blocking, and will
+        /// return immediately.
+        /// </summary>
         public Task StartAsync()
         {
             _ = Task.Run(ConnectAsync);
@@ -44,11 +89,15 @@ namespace BanchoMultiplayerBot.Bancho
             return Task.CompletedTask;
         }
         
+        /// <summary>
+        /// Stop the connection to Bancho, this is blocking, and will
+        /// return when the connection is fully terminated.
+        /// </summary>
         public async Task StopAsync()
         {
             await DisconnectAsync();
         }
-
+        
         private async Task ConnectAsync()
         {
             _cancellationTokenSource = new CancellationTokenSource();
@@ -57,6 +106,8 @@ namespace BanchoMultiplayerBot.Bancho
             // we more or less want a fully reset state.
             await DisconnectAsync();
 
+            // We set up the BanchoClient here without any logging and such
+            // since we deal with that ourselves.
             BanchoClient = new BanchoClient(
                                     new BanchoClientConfig(new IrcCredentials(_banchoConfiguration.Username, _banchoConfiguration.Password), 
                                     LogLevel.None,
@@ -64,10 +115,12 @@ namespace BanchoMultiplayerBot.Bancho
 
             BanchoClient.OnAuthenticated += BanchoOnAuthenticated;
             
-            Log.Information("BanchoConnection: Connecting to Bancho...");
-
             try
             {
+                Log.Information("BanchoConnection: Connecting to Bancho...");
+                
+                // This call is blocking and only return once the connection is
+                // terminated, so ideally we'll stay here till something goes wrong.
                 await BanchoClient.ConnectAsync();
             }
             catch (Exception e)
@@ -81,8 +134,6 @@ namespace BanchoMultiplayerBot.Bancho
 
         private async Task DisconnectAsync()
         {
-            ConnectionHealth.Set(0);
-
             if (_connectionWatchdog?.IsRunning == true)
             {
                 _connectionWatchdog.OnConnectionLost -= OnConnectionLost;
@@ -104,7 +155,6 @@ namespace BanchoMultiplayerBot.Bancho
                 await BanchoClient.DisconnectAsync();
 
                 BanchoClient.OnAuthenticated -= BanchoOnAuthenticated;
-
                 BanchoClient.TcpClient?.Dispose();
                 BanchoClient?.Dispose();
             }
@@ -127,8 +177,6 @@ namespace BanchoMultiplayerBot.Bancho
             
             IsConnected = true;
 
-            ConnectionHealth.Set(1);
-
             // Once we got a connection successfully up and running, make sure to initiate
             // the connection watchdog immediately
             _connectionWatchdog = new ConnectionHandler(BanchoClient.TcpClient, MessageHandler);
@@ -143,16 +191,15 @@ namespace BanchoMultiplayerBot.Bancho
 
         private async void OnConnectionLost()
         {
+            Log.Error($"BanchoConnection: Connection lost, attempting to reconnect in {_banchoConfiguration.BanchoReconnectDelay} seconds...");
+            
             IsConnected = false;
             
             _cancellationTokenSource?.Cancel();
             
-            ConnectionHealth.Set(0);
-
-            Log.Error($"BanchoConnection: Connection lost, attempting to reconnect in {_banchoConfiguration.BanchoReconnectDelay} seconds...");
-
             OnConnectionError?.Invoke();
             
+            // Wait a bit before attempting to reconnect
             await Task.Delay(_banchoConfiguration.BanchoReconnectDelay * 1000);
 
             int connectionAttempts = 0;
@@ -162,6 +209,7 @@ namespace BanchoMultiplayerBot.Bancho
 
                 _ = Task.Run(ConnectAsync);
 
+                // In normal circumstances, we should be able to reconnect within 10 seconds
                 await Task.Delay(10000);
 
                 // If we're back in action, IsConnected will be true

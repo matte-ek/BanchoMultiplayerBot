@@ -7,7 +7,6 @@ namespace BanchoMultiplayerBot.Host.WebApi.Controllers;
 [Route("api/[controller]")]
 public class BannerController(BannerService bannerService, Bot bot) : ControllerBase
 {
-    
     [HttpGet]
     public async Task<IActionResult> GetBanner()
     {
@@ -41,7 +40,7 @@ public class BannerController(BannerService bannerService, Bot bot) : Controller
             return BadRequest();
         }
         
-        var channelId = bot.BanchoConnection.ChannelHandler.GetChannelId(lobby.MultiplayerLobby!.ChannelName) ?? 0;
+        var channelId = bot.BanchoConnection.ChannelHandler.GetChannelRuntimeId(lobby.MultiplayerLobby!.ChannelName) ?? 0;
 
         return Redirect( $"osu://mp/{channelId}");
     }    

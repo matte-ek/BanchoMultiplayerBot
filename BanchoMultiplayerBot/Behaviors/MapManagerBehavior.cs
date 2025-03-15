@@ -36,7 +36,7 @@ namespace BanchoMultiplayerBot.Behaviors
         public async Task OnMatchFinished()
         {
             var lobbyConfig = await context.Lobby.GetLobbyConfiguration();
-            var channelId = context.Lobby.BanchoConnection.ChannelHandler.GetChannelId(context.MultiplayerLobby.ChannelName) ?? 0;
+            var channelId = context.Lobby.BanchoConnection.ChannelHandler.GetChannelRuntimeId(context.MultiplayerLobby.ChannelName) ?? 0;
             
             foreach (var player in Data.MatchFinishMessageSubscribers)
             {

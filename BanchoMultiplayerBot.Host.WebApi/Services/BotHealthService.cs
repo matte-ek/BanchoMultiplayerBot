@@ -36,7 +36,6 @@ public class BotHealthService(Bot bot, IHostApplicationLifetime applicationLifet
         {
             await Task.Delay(TimeSpan.FromSeconds(1));
             
-            // Check if the bot is connected to Bancho
             if (!bot.BanchoConnection.IsConnected)
             {
                 _unconnectedSeconds++;
@@ -49,15 +48,13 @@ public class BotHealthService(Bot bot, IHostApplicationLifetime applicationLifet
                 Log.Fatal("Bot is not connected to Bancho for more than 60 seconds, stopping the bot.");
                     
                 // If we're not connected for more than 60 seconds, we should just quit the bot
-                // as something has probably gone wrong.
+                // as something has probably gone wrong. This will trigger a full "cold" restart.
                 applicationLifetime.StopApplication();
             }
             else
             {
                 _unconnectedSeconds = 0;
             }
-            
-            // TODO: Possibly also check if the bot is receiving messages, etc.
         }
     }
 }
