@@ -51,7 +51,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             totalPlaytime += currentPlaytime;
         }
         
-        commandEventContext.Reply($"{commandEventContext.Player?.Name} has been here for {currentPlaytime.Humanize(3, maxUnit: TimeUnit.Day, minUnit: TimeUnit.Second)}, playing {record?.MatchedPlayerCount} {"match".ToQuantity(record?.MatchedPlayerCount ?? 0)}. ({totalPlaytime.Humanize(4, maxUnit: TimeUnit.Day, minUnit: TimeUnit.Second)} ({totalPlaytime.TotalHours:F0}h) in total).");
+        commandEventContext.Reply($"{commandEventContext.Player?.Name} has been here for {currentPlaytime.Humanize(3, maxUnit: TimeUnit.Day, minUnit: TimeUnit.Second)}, playing {"match".ToQuantity(record?.MatchedPlayerCount ?? 0)}. ({totalPlaytime.Humanize(4, maxUnit: TimeUnit.Day, minUnit: TimeUnit.Second)} ({totalPlaytime.TotalHours:F0}h) in total).");
     }
 
     [BotEvent(BotEventType.CommandExecuted, "PlayStatistics")]
