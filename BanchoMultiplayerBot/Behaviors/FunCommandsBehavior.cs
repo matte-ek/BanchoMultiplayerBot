@@ -18,6 +18,7 @@ using BanchoSharp.Multiplayer;
 using Humanizer;
 using Humanizer.Localisation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Primitives;
 using OsuSharp.Enums;
 using Prometheus;
 using Serilog;
@@ -50,7 +51,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             totalPlaytime += currentPlaytime;
         }
         
-        commandEventContext.Reply($"{commandEventContext.Player?.Name} has been here for {currentPlaytime.Humanize(3, maxUnit: TimeUnit.Day, minUnit: TimeUnit.Second)}, playing {record?.MatchedPlayerCount} {(record?.MatchedPlayerCount != 1 ? "matches" : "match")}. ({totalPlaytime.Humanize(4, maxUnit: TimeUnit.Day, minUnit: TimeUnit.Second)} ({totalPlaytime.TotalHours:F0}h) in total).");
+        commandEventContext.Reply($"{commandEventContext.Player?.Name} has been here for {currentPlaytime.Humanize(3, maxUnit: TimeUnit.Day, minUnit: TimeUnit.Second)}, playing {record?.MatchedPlayerCount} {"match".ToQuantity(record?.MatchedPlayerCount ?? 0)}. ({totalPlaytime.Humanize(4, maxUnit: TimeUnit.Day, minUnit: TimeUnit.Second)} ({totalPlaytime.TotalHours:F0}h) in total).");
     }
 
     [BotEvent(BotEventType.CommandExecuted, "PlayStatistics")]
@@ -107,10 +108,43 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         var scores = await scoreRepository.GetScoresByMapAndPlayerIdAsync(commandEventContext.Player.Id.Value, mapManagerDataProvider.Data.BeatmapInfo.Id);
         var bestScore = scores.MaxBy(x => x.TotalScore);
         var bestScoreAcc = bestScore != null ? ScoreUtilities.CalculateAccuracy(bestScore) : 0f;
-                    
-        commandEventContext.Reply(bestScore != null
-            ? $"{commandEventContext.Player?.Name}, your best score on this map in this lobby is an {bestScore.Rank.ToString()} rank with {bestScoreAcc:0.00}% accuracy and x{bestScore.MaxCombo} combo, {bestScore.Count300}/{bestScore.Count100}/{bestScore.Count50}/{bestScore.CountMiss}, set {bestScore.Time.Humanize(utcDate: true, culture: CultureInfo.InvariantCulture)}!"
-            : $"{commandEventContext.Player?.Name}, you haven't played this map in this lobby yet!");
+        var stringBuilder = new StringBuilder(64);
+        
+        stringBuilder.Append(commandEventContext.Player?.Name);
+
+        if (bestScore != null)
+        {
+            stringBuilder.Append(", your best score on this map in this lobby is ");
+
+            // Make sure to use "an" or "a" depending on the rank
+            // I wish Humanizer would do this for me :(
+            if (bestScore.Rank == OsuRank.SS ||
+                bestScore.Rank == OsuRank.S ||
+                bestScore.Rank == OsuRank.A ||
+                bestScore.Rank == OsuRank.F)
+            {
+                stringBuilder.Append("an ");
+            }
+            else
+            {
+                stringBuilder.Append("a ");
+            }
+            
+            stringBuilder.Append($"{bestScore.Rank.ToString()} rank with {bestScoreAcc:0.00}% accuracy and x{bestScore.MaxCombo} combo, {bestScore.Count300}/{bestScore.Count100}/{bestScore.Count50}/{bestScore.CountMiss}");
+
+            if (bestScore.Mods != 0)
+            {
+                stringBuilder.Append(" + " + ((OsuMods)bestScore.Mods).ToAbbreviatedForm());
+            }
+
+            stringBuilder.Append($" set {bestScore.Time.Humanize(utcDate: true, culture: CultureInfo.InvariantCulture)}");
+        }
+        else
+        {
+            stringBuilder.Append(", you haven't played this map in this lobby yet!");
+        }
+        
+        commandEventContext.Reply(stringBuilder.ToString());
     }
     
     [BotEvent(BotEventType.CommandExecuted, "MapStatistics")]

@@ -1,5 +1,6 @@
 ﻿namespace BanchoMultiplayerBot.Osu.Data;
 
+[Flags]
 public enum OsuMods
 {
     None           = 0,
