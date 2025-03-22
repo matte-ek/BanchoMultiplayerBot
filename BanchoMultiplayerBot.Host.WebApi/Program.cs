@@ -78,10 +78,13 @@ builder.Services.AddCors(options =>
 });
 
 // Migrate database before starting
+// TODO: Look into breaking change of EF 9
+/*
 await using (var context = new BotDbContext())
 {
     await context.Database.MigrateAsync();
 }
+*/
 
 var app = builder.Build();
 
