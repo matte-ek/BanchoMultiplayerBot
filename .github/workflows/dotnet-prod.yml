@@ -68,7 +68,7 @@ jobs:
       id: build-artifact
       with:
         name: build
-        path: BanchoMultiplayerBot.Host.WebApi/bin/Release/net8.0/publish
+        path: BanchoMultiplayerBot.Host.WebApi/bin/Release/net9.0/publish
 
     - name: Deploy build
       run: |
