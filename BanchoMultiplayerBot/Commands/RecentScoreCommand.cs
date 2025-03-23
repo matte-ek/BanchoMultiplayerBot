@@ -89,7 +89,7 @@ public class RecentScoreCommand : IPlayerCommand
 
         response.Append($"| {(score.Accuracy * 100f):0.00}% | ");
 
-        response.Append($"x{score.MaxCombo}/{beatmapInformation.MaxCombo} | {score.Statistics.Good}/{score.Statistics.Ok}/{score.Statistics.Meh}/{score.Statistics.Miss}");
+        response.Append($"x{score.MaxCombo}/{beatmapInformation.MaxCombo} | {score.Statistics.Great}/{score.Statistics.Ok}/{score.Statistics.Meh}/{score.Statistics.Miss}");
         
         context.Reply(response.ToString());
     }
