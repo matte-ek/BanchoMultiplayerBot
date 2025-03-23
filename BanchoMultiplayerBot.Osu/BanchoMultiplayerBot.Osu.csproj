@@ -7,15 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="osu.NET" Version="0.6.0" />
     <PackageReference Include="Serilog" Version="4.2.0" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="BanchoSharp">
       <HintPath>..\..\forks\BanchoSharp\BanchoSharp\bin\Release\net8.0\BanchoSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="OsuSharp">
-      <HintPath>..\..\forks\osu-sharp\OsuSharp\bin\Release\net8.0\OsuSharp.dll</HintPath>
     </Reference>
   </ItemGroup>
 

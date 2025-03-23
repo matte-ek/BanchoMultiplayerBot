@@ -1,5 +1,5 @@
 ﻿using BanchoMultiplayerBot.Osu.Data;
-using OsuSharp.Models.Scores;
+using osu.NET.Models.Scores;
 using Serilog;
 
 namespace BanchoMultiplayerBot.Osu.Extensions;
@@ -42,5 +42,5 @@ public static class ScoreExtensions
         return bitset;
     }
 
-    public static int GetModsBitset(this Score score) => GetModsBitset(score.Mods);
+    public static int GetModsBitset(this Score score) => GetModsBitset(score.Mods.Select(m => m.ToString()).ToArray()!);
 }

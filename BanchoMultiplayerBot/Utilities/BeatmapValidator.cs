@@ -3,8 +3,8 @@ using BanchoMultiplayerBot.Database.Models;
 using BanchoMultiplayerBot.Database.Repositories;
 using BanchoMultiplayerBot.Interfaces;
 using BanchoSharp.Multiplayer;
-using OsuSharp.Enums;
-using OsuSharp.Models.Beatmaps;
+using osu.NET.Enums;
+using osu.NET.Models.Beatmaps;
 
 namespace BanchoMultiplayerBot.Utilities;
 

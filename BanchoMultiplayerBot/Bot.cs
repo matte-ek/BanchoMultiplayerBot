@@ -6,7 +6,8 @@ using BanchoMultiplayerBot.Notifications;
 using BanchoMultiplayerBot.Osu;
 using BanchoMultiplayerBot.Utilities;
 using Microsoft.EntityFrameworkCore;
-using OsuSharp;
+using osu.NET;
+using osu.NET.Authorization;
 using Serilog;
 
 namespace BanchoMultiplayerBot
@@ -17,7 +18,7 @@ namespace BanchoMultiplayerBot
         
         public BanchoConnection BanchoConnection { get; } = new(botConfiguration.BanchoClientConfiguration);
 
-        public OsuApiClient OsuApiClient { get; } = new(botConfiguration.OsuApiClientId, botConfiguration.OsuApiClientSecret);
+        public OsuApiClient OsuApiClient { get; } = new(new OsuClientAccessTokenProvider(botConfiguration.OsuApiClientId, botConfiguration.OsuApiClientSecret), new OsuApiClientOptions(), null!);
 
         public PerformancePointCalculator? PerformancePointCalculator { get; } = new();
 

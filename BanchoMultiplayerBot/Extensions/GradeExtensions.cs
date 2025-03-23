@@ -1,5 +1,5 @@
 ﻿using BanchoMultiplayerBot.Osu.Data;
-using OsuSharp.Enums;
+using osu.NET.Enums;
 
 namespace BanchoMultiplayerBot.Extensions;
 

@@ -9,7 +9,9 @@ using BanchoMultiplayerBot.Osu;
 using BanchoMultiplayerBot.Providers;
 using BanchoMultiplayerBot.Utilities;
 using BanchoSharp.Multiplayer;
-using OsuSharp.Models.Beatmaps;
+using osu.NET;
+using osu.NET.Enums;
+using osu.NET.Models.Beatmaps;
 using Serilog;
 
 namespace BanchoMultiplayerBot.Behaviors
@@ -70,21 +72,33 @@ namespace BanchoMultiplayerBot.Behaviors
             
             try
             {
-                var beatmapInfo = await context.UsingApiClient(async (apiClient) => await apiClient.GetBeatmapAsync(beatmapShell.Id));
-                var beatmapAttributes = await context.UsingApiClient(async (apiClient) => await apiClient.GetDifficultyAttributesAsync(beatmapShell.Id));
-
-                if (beatmapInfo == null)
+                var beatmapInfoResult = await context.UsingApiClient(async (apiClient) => await apiClient.GetBeatmapAsync(beatmapShell.Id));
+                var beatmapAttributesResult = await context.UsingApiClient(async (apiClient) => await apiClient.GetDifficultyAttributesAsync(beatmapShell.Id));
+                
+                if (beatmapInfoResult.IsFailure)
                 {
-                    Log.Information("MapManagerBehavior: Beatmap {BeatmapId} not found, applying fallback beatmap", beatmapShell.Id);
+                    if (beatmapInfoResult.Error.Type == APIErrorType.BeatmapNotFound)
+                    {
+                        Log.Information("MapManagerBehavior: Beatmap {BeatmapId} not found, applying fallback beatmap", beatmapShell.Id);
                 
-                    await ApplyBeatmap(Data.BeatmapFallbackId);
+                        await ApplyBeatmap(Data.BeatmapFallbackId);
                 
-                    context.SendMessage("The selected beatmap is not submitted, please pick another one");
+                        context.SendMessage("The selected beatmap is not submitted, please pick another one");
 
+                        return;
+                    }
+
+                    // Not sure what we want to do in this scenario, we'll just have to trust the 
+                    // players pick valid maps until the API gets into a better state.
+                    
+                    Log.Error("MapManagerBehavior: Failed to get beatmap information for map {BeatmapId}", beatmapShell.Id);
+                    
+                    context.SendMessage("osu!api error while trying to get beatmap information");
+                    
                     return;
                 }
                 
-                if (beatmapAttributes == null)
+                if (beatmapAttributesResult.IsFailure)
                 {
                     Log.Error("MapManagerBehavior: Failed to get beatmap information for map {BeatmapId}", beatmapShell.Id);
                     
@@ -92,7 +106,9 @@ namespace BanchoMultiplayerBot.Behaviors
 
                     return;
                 }
-
+                
+                var beatmapInfo =  beatmapInfoResult.Value!;
+                var beatmapAttributes = beatmapAttributesResult.Value!;
                 var lobbyConfig = await context.Lobby.GetLobbyConfiguration();
                 var mapValidator = new MapValidator(context.Lobby, lobbyConfig, Config);
                 var mapValidationResult = await mapValidator.ValidateBeatmap(beatmapAttributes, beatmapInfo);
@@ -103,18 +119,18 @@ namespace BanchoMultiplayerBot.Behaviors
                     Config.MinimumStarRating >= Math.Round(beatmapAttributes.DifficultyRating, 2) &&
                     Config.AllowDoubleTime)
                 {
-                    var doubleTimeMapAttributes = await context.UsingApiClient(async (apiClient) => await apiClient.GetDifficultyAttributesAsync(beatmapShell.Id, ["DT"]));
+                    var doubleTimeMapAttributesResult = await context.UsingApiClient(async (apiClient) => await apiClient.GetDifficultyAttributesAsync(beatmapShell.Id, Ruleset.Osu, ["DT"]));
                  
                     // Check if map is OK with double time
-                    if (doubleTimeMapAttributes != null &&
-                        await mapValidator.ValidateBeatmap(doubleTimeMapAttributes, null) == MapValidator.MapStatus.Ok)
+                    if (doubleTimeMapAttributesResult.IsSuccess &&
+                        await mapValidator.ValidateBeatmap(doubleTimeMapAttributesResult.Value!, null) == MapValidator.MapStatus.Ok)
                     {
                         // Check room settings to make sure double time is enabled
                         await context.ExecuteCommandAsync<RoomSettingsUpdateCommand>();
 
                         if ((context.MultiplayerLobby.Mods & Mods.DoubleTime) != 0)
                         {
-                            await EnforceBeatmapRegulations(beatmapInfo, doubleTimeMapAttributes, MapValidator.MapStatus.Ok, (int)Mods.DoubleTime);
+                            await EnforceBeatmapRegulations(beatmapInfo, doubleTimeMapAttributesResult.Value!, MapValidator.MapStatus.Ok, (int)Mods.DoubleTime);
 
                             return;
                         }
@@ -140,7 +156,7 @@ namespace BanchoMultiplayerBot.Behaviors
         private async Task EnforceBeatmapRegulations(BeatmapExtended beatmapModel, DifficultyAttributes difficultyAttributes, MapValidator.MapStatus status, int mods = 0)
         {
             var lobbyConfig = await context.Lobby.GetLobbyConfiguration();
-            var beatmapSet = (beatmapModel as Beatmap).Set;
+            var beatmapSet = beatmapModel.Set;
 
             Log.Verbose("MapManagerBehavior: Enforcing beatmap regulations for map {BeatmapId}, status: {MapStatus}", beatmapModel.Id, status);
 
@@ -276,7 +292,7 @@ namespace BanchoMultiplayerBot.Behaviors
         {
             var beatmapInfo = Data.BeatmapInfo;
             var starRatingRounded = Math.Round(difficultyAttributes.DifficultyRating, 2);
-            var beatmapSet = (beatmapModel as Beatmap).Set;
+            var beatmapSet = beatmapModel.Set;
             
             context.SendMessage($"[https://osu.ppy.sh/b/{beatmapInfo.Id} {beatmapSet?.Artist} - {beatmapSet?.Title} [{beatmapModel.Version}]] - ([https://beatconnect.io/b/{beatmapInfo.SetId} BeatConnect Mirror] - [https://osu.direct/d/{beatmapInfo.SetId} osu.direct Mirror] - [https://catboy.best/d/{beatmapInfo.SetId} Mino Mirror])");
             context.SendMessage($"(Star Rating: {starRatingRounded:.0#} | {beatmapModel.Status.ToString()} | Length: {beatmapInfo.Length:mm\\:ss} | BPM: {beatmapModel.BPM})");
@@ -361,12 +377,12 @@ namespace BanchoMultiplayerBot.Behaviors
             if ((context.MultiplayerLobby.Mods & Mods.Hidden) != 0)
                 mods.Add("HD");
                 
-            var difficultyAttributes = await context.UsingApiClient(async (apiClient) => await apiClient.GetDifficultyAttributesAsync(Data.CurrentMapId, mods.ToArray()));
-            if (difficultyAttributes != null)
+            var difficultyAttributesResult = await context.UsingApiClient(async (apiClient) => await apiClient.GetDifficultyAttributesAsync(Data.CurrentMapId, Ruleset.Osu, mods.ToArray()));
+            if (difficultyAttributesResult.IsSuccess)
             {
                 var lobbyConfig = await context.Lobby.GetLobbyConfiguration();
                 var mapValidator = new MapValidator(context.Lobby, lobbyConfig, Config);
-                var mapValidationResult = await mapValidator.ValidateBeatmap(difficultyAttributes, null);
+                var mapValidationResult = await mapValidator.ValidateBeatmap(difficultyAttributesResult.Value!, null);
 
                 if (mapValidationResult != MapValidator.MapStatus.Ok)
                 {

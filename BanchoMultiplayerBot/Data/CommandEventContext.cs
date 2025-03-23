@@ -2,7 +2,7 @@
 using BanchoMultiplayerBot.Interfaces;
 using BanchoSharp.Interfaces;
 using BanchoSharp.Multiplayer;
-using OsuSharp;
+using osu.NET;
 using Prometheus;
 
 namespace BanchoMultiplayerBot.Data;

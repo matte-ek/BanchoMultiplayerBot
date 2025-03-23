@@ -18,8 +18,8 @@ using BanchoSharp.Multiplayer;
 using Humanizer;
 using Humanizer.Localisation;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Primitives;
-using OsuSharp.Enums;
+using osu.NET;
+using osu.NET.Enums;
 using Prometheus;
 using Serilog;
 
@@ -479,9 +479,18 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             return;
         }
         
-        var leaderboardScores = await context.UsingApiClient(async (apiClient) => await apiClient.GetBeatmapScoresAsync(Data.LastPlayedBeatmapInfo.Id, Ruleset.Osu, legacyOnly: true));
-        if (leaderboardScores == null || leaderboardScores.Length == 0)
+        var leaderboardScoresResult = await context.UsingApiClient(async (apiClient) => await apiClient.GetBeatmapScoresAsync(Data.LastPlayedBeatmapInfo.Id, true, Ruleset.Osu));
+        if (leaderboardScoresResult.IsFailure)
         {
+            Log.Error($"API leaderboard lookup failed {leaderboardScoresResult.Error}");
+            return;
+        }
+        
+        var leaderboardScores = leaderboardScoresResult.Value!;
+
+        if (!leaderboardScores.Any())
+        {
+            Log.Warning("API leaderboard lookup returned 0 scores");
             return;
         }
         
@@ -517,7 +526,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         {
             foreach (var result in recentScores)
             {
-                if (result.Score?.Statistics.Count50 == null)
+                if (result.Score?.Statistics.Meh == null)
                 {
                     continue;
                 }
@@ -532,14 +541,14 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
                     LobbyId = context.Lobby.LobbyConfigurationId - 1,
                     GameId = game.Id,
                     OsuScoreId = score.Id,
-                    BeatmapId = score.Beatmap!.Id,
+                    BeatmapId = score.BeatmapId,
                     TotalScore = score.TotalScore,
                     Rank = score.Grade.GetOsuRank(),
                     MaxCombo = score.MaxCombo,
-                    Count300 = score.Statistics.Count300 ?? 0,
-                    Count100 = score.Statistics.Count100 ?? 0,
-                    Count50 = score.Statistics.Count50 ?? 0,
-                    CountMiss = score.Statistics.Misses,
+                    Count300 = score.Statistics.Great,
+                    Count100 = score.Statistics.Ok,
+                    Count50 = score.Statistics.Meh,
+                    CountMiss = score.Statistics.Miss,
                     Mods = score.GetModsBitset(),
                     Time = DateTime.UtcNow
                 });
@@ -560,14 +569,12 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
     /// </summary>
     private async Task<IReadOnlyList<PlayerScoreResult>> GetRecentScores()
     {
-        var players = context.MultiplayerLobby.Players.Where(x => x.Id != null && x.Score > 0).ToList();
-        var grabScoreTasks = new List<Task<OsuSharp.Models.Scores.Score[]?>>();
-
-        await context.Lobby.Bot.OsuApiClient.EnsureAccessTokenAsync();
+        var players = context.MultiplayerLobby.Players.Where(x => x is { Id: not null, Score: > 0 }).ToList();
+        var grabScoreTasks = new List<Task<APIResult<osu.NET.Models.Scores.Score[]>>>();
         
         for (int i = 0; i < players.Count;i++)
         {
-            int index = i;
+            var index = i;
             
             grabScoreTasks.Add(Task.Run(async () =>
             {
@@ -575,13 +582,13 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
                 
                 Log.Information($"FunCommandsBehavior: Executing osu! API call for {players[index].Name}");
                 
-                return await context.UsingApiClient(async (apiClient) => await apiClient.GetUserScoresAsync(players[index].Id!.Value, UserScoreType.Recent, true, true, Ruleset.Osu, 1));
+                return await context.UsingApiClient(async (apiClient) => await apiClient.GetUserScoresAsync(players[index].Id!.Value, UserScoreType.Recent, true, true, Ruleset.Osu));
             }));
         }
         
         await Task.WhenAll(grabScoreTasks);
         
-        return players.Select(player => new PlayerScoreResult(player, grabScoreTasks.Select(x => x.Result?.FirstOrDefault()).ToList()
+        return players.Select(player => new PlayerScoreResult(player, grabScoreTasks.Select(x => x.Result?.Value?.FirstOrDefault()).ToList()
                 .FirstOrDefault(x => x?.UserId == player.Id!)))
                 .ToList();
     }

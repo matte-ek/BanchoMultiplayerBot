@@ -1,7 +1,7 @@
 ﻿using BanchoMultiplayerBot.Bancho.Interfaces;
 using BanchoMultiplayerBot.Interfaces;
 using BanchoSharp.Multiplayer;
-using OsuSharp;
+using osu.NET;
 using Prometheus;
 using Serilog;
 

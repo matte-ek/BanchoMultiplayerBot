@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using BanchoMultiplayerBot.Osu.Data;
 using BanchoMultiplayerBot.Osu.Extensions;
 using BanchoMultiplayerBot.Osu.Interfaces;
-using OsuSharp.Models.Scores;
+using osu.NET.Models.Scores;
 using Serilog;
 
 namespace BanchoMultiplayerBot.Osu;
@@ -50,10 +50,10 @@ public class PerformancePointCalculator
         {
             return (PlayPerformanceInfo?)await CalculateBeatmapPerformancePoints(beatmapId,
                 scoreModel.GetModsBitset(),
-                scoreModel.Statistics.Count300,
-                scoreModel.Statistics.Count100,
-                scoreModel.Statistics.Count50,
-                scoreModel.Statistics.Misses,
+                scoreModel.Statistics.Great,
+                scoreModel.Statistics.Ok,
+                scoreModel.Statistics.Meh,
+                scoreModel.Statistics.Miss,
                 scoreModel.MaxCombo);
         }
         catch (Exception e)

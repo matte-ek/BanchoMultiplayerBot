@@ -2,7 +2,8 @@
 using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Extensions;
 using BanchoMultiplayerBot.Interfaces;
-using OsuSharp.Enums;
+using osu.NET.Enums;
+using Serilog;
 
 namespace BanchoMultiplayerBot.Commands;
 
@@ -26,34 +27,39 @@ public class RecentScoreCommand : IPlayerCommand
 
         if (playerId == null)
         {
-            var user = await context.UsingApiClient(async (apiClient) => await apiClient.GetUserAsync(context.Message.Sender));
-
-            if (user == null)
+            var userResult = await context.UsingApiClient(async (apiClient) => await apiClient.GetUserAsync(context.Message.Sender));
+            
+            if (userResult.IsFailure)
             {
+                Log.Error($"API user lookup failed, {userResult.Error}");
                 context.Reply("Unable to find user.");
                 return;
             }
 
-            playerId = user.Id;
+            playerId = userResult!.Value!.Id;
         }
 
-        var score = (await context.UsingApiClient(async (apiClient) => await apiClient.GetUserScoresAsync(playerId.Value, UserScoreType.Recent, true, true, Ruleset.Osu,
-            1)))?.FirstOrDefault();
+        var scoresResult = (await context.UsingApiClient(async (apiClient) => await apiClient.GetUserScoresAsync(playerId.Value, UserScoreType.Recent, true, true, Ruleset.Osu, 1)));
 
-        if (score == null)
+        if (scoresResult.IsFailure)
         {
             context.Reply("Unable to find any recent score.");
             return;
         }
 
-        var beatmapInformation = await context.UsingApiClient(async (apiClient) => await apiClient.GetBeatmapAsync(score.Beatmap!.Id));
-        if (beatmapInformation == null)
+        var score = scoresResult.Value!.First();
+        
+        var beatmapInformationResult = await context.UsingApiClient(async (apiClient) => await apiClient.GetBeatmapAsync(score.BeatmapId));
+        if (beatmapInformationResult.IsFailure)
         {
+            Log.Error($"API beatmap lookup failed, {beatmapInformationResult.Error}");
             context.Reply("Unable to find beatmap.");
             return;
         }
         
-        var ppInformation = await context.Bot.PerformancePointCalculator!.CalculateScorePerformancePoints(score.Beatmap!.Id, score);
+        var beatmapInformation = beatmapInformationResult.Value!;
+        
+        var ppInformation = await context.Bot.PerformancePointCalculator!.CalculateScorePerformancePoints(score.BeatmapId, score);
         if (ppInformation == null)
         {
             context.Reply("Unable to calculate performance points.");
@@ -65,25 +71,25 @@ public class RecentScoreCommand : IPlayerCommand
         response.Append($"Recent score for {context.Message.Sender}: ");
 
         response.Append(
-            $"[https://osu.ppy.sh/b/{score.BeatmapSet?.Id} {score.BeatmapSet?.Artist} - {score.BeatmapSet?.Title} [{score.Beatmap?.Version ?? string.Empty}]]");
+            $"[https://osu.ppy.sh/b/{beatmapInformation.SetId} {beatmapInformation.Set?.Artist} - {beatmapInformation.Set?.Title} [{beatmapInformation.Version}]]");
 
         if (score.Mods.Length != 0)
         {
-            response.Append($" + {string.Join("", score.Mods)}");
+            response.Append($" + {string.Join("", score.Mods.Select(m => m.ToString()))}");
         }
 
         response.Append($" | [{score.Grade.AsHumanString()}]");
                 
         response.Append($" | {ppInformation.PerformancePoints} pp ");
                 
-        if (!score.IsPerfect && ppInformation.MaximumPerformancePoints != ppInformation.PerformancePoints)
+        if (!score.IsPerfectComboLegacy && ppInformation.MaximumPerformancePoints != ppInformation.PerformancePoints)
         {
             response.Append($"({ppInformation.MaximumPerformancePoints} pp if FC) ");
         }
 
         response.Append($"| {(score.Accuracy * 100f):0.00}% | ");
 
-        response.Append($"x{score.MaxCombo}/{beatmapInformation.MaxCombo} | {score.Statistics.Count300}/{score.Statistics.Count100}/{score.Statistics.Count50}/{score.Statistics.Misses}");
+        response.Append($"x{score.MaxCombo}/{beatmapInformation.MaxCombo} | {score.Statistics.Good}/{score.Statistics.Ok}/{score.Statistics.Meh}/{score.Statistics.Miss}");
         
         context.Reply(response.ToString());
     }
