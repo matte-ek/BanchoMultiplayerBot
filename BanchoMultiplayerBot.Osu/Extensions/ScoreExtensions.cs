@@ -42,5 +42,5 @@ public static class ScoreExtensions
         return bitset;
     }
 
-    public static int GetModsBitset(this Score score) => GetModsBitset(score.Mods.Select(m => m.ToString()).ToArray()!);
+    public static int GetModsBitset(this Score score) => GetModsBitset(score.Mods.Select(m => m.Acronym.ToString()).ToArray()!);
 }
