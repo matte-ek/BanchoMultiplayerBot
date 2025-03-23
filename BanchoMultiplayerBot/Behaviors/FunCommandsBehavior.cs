@@ -399,7 +399,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             x.MatchedPlayerCount > 0 &&
             context.MultiplayerLobby.Players.Any(y => y.Name.ToIrcNameFormat() == x.PlayerName.ToIrcNameFormat()));
 
-        context.Lobby.TimerProvider?.FindOrCreateTimer("MatchLateFinishTimer").Start(TimeSpan.FromSeconds(10));
+        context.Lobby.TimerProvider?.FindOrCreateTimer("MatchLateFinishTimer").Start(TimeSpan.FromSeconds(15));
     }
 
     [BotEvent(BotEventType.TimerElapsed, "MatchLateFinishTimer")]
@@ -525,7 +525,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
     {
         await using var userRepository = new UserRepository();
         await using var scoreRepository = new ScoreRepository();
-
+        
         try
         {
             foreach (var result in recentScores)
@@ -535,6 +535,12 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
                     continue;
                 }
 
+                if (result.Score?.BeatmapId != game.BeatmapId)
+                {
+                    Log.Warning($"Ignoring score due to wrong beatmap id.");
+                    continue;
+                }
+                
                 var score = result.Score;
                 var user = await userRepository.FindOrCreateUserAsync(result.Player.Name);
 
