@@ -546,7 +546,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
                     GameId = game.Id,
                     OsuScoreId = score.Id,
                     BeatmapId = score.BeatmapId,
-                    TotalScore = score.TotalScore,
+                    TotalScore = score.LegacyTotalScore ?? 0,
                     Rank = score.Grade.GetOsuRank(),
                     MaxCombo = score.MaxCombo,
                     Count300 = score.Statistics.Great,
