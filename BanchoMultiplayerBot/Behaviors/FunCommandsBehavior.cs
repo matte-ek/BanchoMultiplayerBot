@@ -594,7 +594,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
 
                 return await context.UsingApiClient(async (apiClient) =>
                     await apiClient.GetUserScoresAsync(players[index].Id!.Value, UserScoreType.Recent, true, true,
-                        Ruleset.Osu));
+                        Ruleset.Osu, limit: 1, offset: 0));
             }));
         }
 
