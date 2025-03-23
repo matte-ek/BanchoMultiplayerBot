@@ -29,6 +29,12 @@ public static class ScoreExtensions
         
         foreach (var mod in input)
         {
+            if (mod == "CL")
+            {
+                // Every score will have CL since we're using lazer endpoints.
+                continue;
+            }
+            
             if (ModsAbbreviationMap.TryGetValue(mod.ToUpper(), out var modEnum))
             {
                 bitset |= (int)modEnum;
