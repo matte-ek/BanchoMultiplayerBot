@@ -34,8 +34,11 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
 
     private FunCommandsBehaviorData Data => _dataProvider.Data;
     private FunCommandsBehaviorConfig Config => _configProvider.Data;
-    
-    private static readonly Histogram StoreGameDataTime = Metrics.CreateHistogram("bot_behavior_store_game_data_time", "Time it took to store game related data to the database", "lobby_index");
+
+    private static readonly Histogram StoreGameDataTime = Metrics.CreateHistogram(
+        "bot_behavior_store_game_data_time", 
+        "Time it took to store game related data to the database", 
+        "lobby_index");
 
     [BotEvent(BotEventType.CommandExecuted, "PlayTime")]
     public void OnPlayTimeCommandExecuted(CommandEventContext commandEventContext)
@@ -43,21 +46,22 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         var record = Data.PlayerTimeRecords.FirstOrDefault(x => x.PlayerName == commandEventContext.Player?.Name);
         var totalPlaytime = TimeSpan.FromSeconds(commandEventContext.User.Playtime);
         var currentPlaytime = TimeSpan.FromSeconds(0);
-    
+
         // Append current playtime to the record
         if (record != null)
         {
             currentPlaytime = DateTime.UtcNow - record.JoinTime;
             totalPlaytime += currentPlaytime;
         }
-        
+
         commandEventContext.Reply($"{commandEventContext.Player?.Name} has been here for {currentPlaytime.Humanize(3, maxUnit: TimeUnit.Day, minUnit: TimeUnit.Second)}, playing {"match".ToQuantity(record?.MatchedPlayerCount ?? 0)}. ({totalPlaytime.Humanize(4, maxUnit: TimeUnit.Day, minUnit: TimeUnit.Second)} ({totalPlaytime.TotalHours:F0}h) in total).");
     }
 
     [BotEvent(BotEventType.CommandExecuted, "PlayStatistics")]
     public void OnPlayStatisticsCommandExecuted(CommandEventContext commandEventContext)
     {
-        commandEventContext.Reply($"{commandEventContext.Player?.Name} has played {"match".ToQuantity(commandEventContext.User.MatchesPlayed)} with a total of {commandEventContext.User.NumberOneResults} #1's.");
+        commandEventContext.Reply(
+            $"{commandEventContext.Player?.Name} has played {"match".ToQuantity(commandEventContext.User.MatchesPlayed)} with a total of {commandEventContext.User.NumberOneResults} #1's.");
     }
 
     [BotEvent(BotEventType.CommandExecuted, "PersonalMapStatistics")]
@@ -67,19 +71,21 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         {
             return;
         }
-        
+
         await using var scoreRepository = new ScoreRepository();
-        
         var mapManagerDataProvider = new BehaviorDataProvider<MapManagerBehaviorData>(context.Lobby);
-        var scores = await scoreRepository.GetScoresByMapAndPlayerIdAsync(commandEventContext.Player.Id.Value, mapManagerDataProvider.Data.BeatmapInfo.Id);
         
+        var scores = await scoreRepository.GetScoresByMapAndPlayerIdAsync(
+            commandEventContext.Player.Id.Value,
+            mapManagerDataProvider.Data.BeatmapInfo.Id);
+
         var failCount = scores.Count(x => x.Rank == OsuRank.F);
         var passCount = scores.Count - failCount;
-        var passFail =  failCount >= passCount ? "fail" : "pass";
+        var passFail = failCount >= passCount ? "fail" : "pass";
         var mostCommonRank = scores.Select(x => x.Rank)
-            .GroupBy(i=>i)
-            .OrderByDescending(grp=>grp.Count())
-            .Select(grp=>grp.Key).FirstOrDefault();
+            .GroupBy(i => i)
+            .OrderByDescending(grp => grp.Count())
+            .Select(grp => grp.Key).FirstOrDefault();
         var avgAccuracy = scores.Count > 0 ? scores.Average(ScoreUtilities.CalculateAccuracy) : 0;
 
         if (scores.Count > 0)
@@ -90,10 +96,11 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         }
         else
         {
-            commandEventContext.Reply($"{commandEventContext.Player?.Name}, you haven't played this map in this lobby yet!");  
+            commandEventContext.Reply(
+                $"{commandEventContext.Player?.Name}, you haven't played this map in this lobby yet!");
         }
     }
-    
+
     [BotEvent(BotEventType.CommandExecuted, "BestMapStatistics")]
     public async Task OnBestMapStatisticsCommandExecuted(CommandEventContext commandEventContext)
     {
@@ -101,15 +108,15 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         {
             return;
         }
-        
+
         await using var scoreRepository = new ScoreRepository();
-        
+
         var mapManagerDataProvider = new BehaviorDataProvider<MapManagerBehaviorData>(context.Lobby);
         var scores = await scoreRepository.GetScoresByMapAndPlayerIdAsync(commandEventContext.Player.Id.Value, mapManagerDataProvider.Data.BeatmapInfo.Id);
         var bestScore = scores.MaxBy(x => x.TotalScore);
         var bestScoreAcc = bestScore != null ? ScoreUtilities.CalculateAccuracy(bestScore) : 0f;
         var stringBuilder = new StringBuilder(64);
-        
+
         stringBuilder.Append(commandEventContext.Player?.Name);
 
         if (bestScore != null)
@@ -118,18 +125,8 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
 
             // Make sure to use "an" or "a" depending on the rank
             // I wish Humanizer would do this for me :(
-            if (bestScore.Rank == OsuRank.SS ||
-                bestScore.Rank == OsuRank.S ||
-                bestScore.Rank == OsuRank.A ||
-                bestScore.Rank == OsuRank.F)
-            {
-                stringBuilder.Append("an ");
-            }
-            else
-            {
-                stringBuilder.Append("a ");
-            }
-            
+            stringBuilder.Append(bestScore.Rank is OsuRank.SS or OsuRank.S or OsuRank.A or OsuRank.F ? "an " : "a ");
+
             stringBuilder.Append($"{bestScore.Rank.ToString()} rank with {bestScoreAcc:0.00}% accuracy and x{bestScore.MaxCombo} combo, {bestScore.Count300}/{bestScore.Count100}/{bestScore.Count50}/{bestScore.CountMiss}");
 
             if (bestScore.Mods != 0)
@@ -137,16 +134,17 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
                 stringBuilder.Append(" + " + ((OsuMods)bestScore.Mods).ToAbbreviatedForm());
             }
 
-            stringBuilder.Append($" set {bestScore.Time.Humanize(utcDate: true, culture: CultureInfo.InvariantCulture)}");
+            stringBuilder.Append(
+                $" set {bestScore.Time.Humanize(utcDate: true, culture: CultureInfo.InvariantCulture)}");
         }
         else
         {
             stringBuilder.Append(", you haven't played this map in this lobby yet!");
         }
-        
+
         commandEventContext.Reply(stringBuilder.ToString());
     }
-    
+
     [BotEvent(BotEventType.CommandExecuted, "MapStatistics")]
     public async Task OnMapStatisticsCommandExecuted(CommandEventContext commandEventContext)
     {
@@ -155,7 +153,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
 
         var mapManagerDataProvider = new BehaviorDataProvider<MapManagerBehaviorData>(context.Lobby);
         var beatmapId = mapManagerDataProvider.Data.BeatmapInfo.Id;
-        
+
         var totalPlayCount = await gameRepository.GetGameCountByMapIdAsync(beatmapId, null);
         var pastWeekPlayCount = await gameRepository.GetGameCountByMapIdAsync(beatmapId, DateTime.UtcNow.AddDays(-7));
 
@@ -181,7 +179,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         if (recentScores.Any())
         {
             var avgAccuracy = recentScores.Average(ScoreUtilities.CalculateAccuracy);
-      
+
             outputMessage.Append($" | Average accuracy: {avgAccuracy:0.00}%");
         }
 
@@ -230,7 +228,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             commandEventContext.Reply("This map has not been played yet!");
             return;
         }
-        
+
         commandEventContext.Reply($"The map was last played {recentGames[0].Time.Humanize(utcDate: true, culture: CultureInfo.InvariantCulture)}!");
     }
 
@@ -247,9 +245,9 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             commandEventContext.Reply("No scores have been set on this map yet!");
             return;
         }
-        
+
         var accuracy = ScoreUtilities.CalculateAccuracy(score);
-        
+
         commandEventContext.Reply($"[https://osu.ppy.sh/users/@{score.User.Name.ToIrcNameFormat()} {score.User.Name}] has the best lobby score on this map with an {score.Rank.ToString()} rank, {accuracy:0.00}% accuracy and x{score.MaxCombo} combo, {score.Count300}/{score.Count100}/{score.Count50}/{score.CountMiss}, set {score.Time.Humanize(utcDate: true, culture: CultureInfo.InvariantCulture)}!");
     }
 
@@ -261,18 +259,18 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             commandEventContext.Reply("Performance point calculator is not available.");
             return;
         }
-        
+
         var mapManagerDataProvider = new BehaviorDataProvider<MapManagerBehaviorData>(context.Lobby);
         var beatmapId = mapManagerDataProvider.Data.BeatmapInfo.Id;
         int mods = 0;
-        
+
         if (commandEventContext.Arguments.Length > 0)
         {
             mods = ScoreExtensions.GetModsBitset(commandEventContext.Arguments[0].Chunk(2).Select(x => new string(x)).ToArray());
         }
-        
+
         var ppInfo = await context.Lobby.Bot.PerformancePointCalculator.CalculatePerformancePoints(beatmapId, mods);
-        
+
         commandEventContext.Reply(ppInfo != null
             ? $"{commandEventContext.Message.Sender}, 100%: {ppInfo.Performance100}pp | 98%: {ppInfo.Performance98}pp | 95%: {ppInfo.Performance95}pp"
             : "Error calculating performance points");
@@ -282,7 +280,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
     public void OnLeaveCountCommandExecuted(CommandEventContext commandEventContext)
     {
         var leftCount = Data.MapStartPlayerCount - Data.MapFinishPlayerCount;
-        
+
         commandEventContext.Reply($"There were {leftCount} player(s) that left the lobby the previous map!");
     }
 
@@ -330,7 +328,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             JoinTime = DateTime.UtcNow
         });
     }
-    
+
     [BanchoEvent(BanchoEventType.PlayerDisconnected)]
     public async Task OnPlayerDisconnected(MultiplayerPlayer player)
     {
@@ -361,11 +359,11 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         }
 
         var user = await userRepository.FindOrCreateUserAsync(player.Name);
-        
+
         user.Playtime += (int)(DateTime.UtcNow - record.JoinTime).TotalSeconds;
 
         await userRepository.SaveAsync();
-        
+
         Data.PlayerTimeRecords.Remove(record);
     }
 
@@ -373,7 +371,8 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
     public void OnSettingsUpdated()
     {
         // Remove records of players that are no longer in the lobby
-        foreach (var record in Data.PlayerTimeRecords.ToList().Where(record => context.MultiplayerLobby.Players.All(x => x.Name != record.PlayerName)))
+        foreach (var record in Data.PlayerTimeRecords.ToList()
+                     .Where(record => context.MultiplayerLobby.Players.All(x => x.Name != record.PlayerName)))
         {
             Data.PlayerTimeRecords.Remove(record);
         }
@@ -386,7 +385,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
 
         Data.MapStartPlayerCount = context.MultiplayerLobby.Players.Count;
         Data.LastPlayedBeatmapInfo = mapManagerDataProvider.Data.BeatmapInfo;
-        
+
         foreach (var data in Data.PlayerTimeRecords)
         {
             data.MatchedPlayerCount++;
@@ -396,8 +395,10 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
     [BanchoEvent(BanchoEventType.MatchFinished)]
     public void OnMatchFinished()
     {
-        Data.MapFinishPlayerCount = Data.PlayerTimeRecords.Count(x => x.MatchedPlayerCount > 0 && context.MultiplayerLobby.Players.Any(y => y.Name.ToIrcNameFormat() == x.PlayerName.ToIrcNameFormat()));
-        
+        Data.MapFinishPlayerCount = Data.PlayerTimeRecords.Count(x =>
+            x.MatchedPlayerCount > 0 &&
+            context.MultiplayerLobby.Players.Any(y => y.Name.ToIrcNameFormat() == x.PlayerName.ToIrcNameFormat()));
+
         context.Lobby.TimerProvider?.FindOrCreateTimer("MatchLateFinishTimer").Start(TimeSpan.FromSeconds(10));
     }
 
@@ -408,7 +409,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         Task.Run(async () =>
         {
             var recentScores = await GetRecentScores();
-            
+
             using (StoreGameDataTime.WithLabels(context.Lobby.LobbyConfigurationId.ToString()).NewTimer())
             {
                 await StoreGameData(recentScores);
@@ -440,7 +441,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             PlayerFinishCount = playerFinishCount,
             PlayerPassedCount = playerPassedCount
         };
-        
+
         await gameRepository.AddAsync(game);
         await gameRepository.SaveAsync();
 
@@ -478,14 +479,15 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         {
             return;
         }
-        
-        var leaderboardScoresResult = await context.UsingApiClient(async (apiClient) => await apiClient.GetBeatmapScoresAsync(Data.LastPlayedBeatmapInfo.Id, true, Ruleset.Osu));
+
+        var leaderboardScoresResult = await context.UsingApiClient(async (apiClient) =>
+            await apiClient.GetBeatmapScoresAsync(Data.LastPlayedBeatmapInfo.Id, true, Ruleset.Osu));
         if (leaderboardScoresResult.IsFailure)
         {
             Log.Error($"API leaderboard lookup failed {leaderboardScoresResult.Error}");
             return;
         }
-        
+
         var leaderboardScores = leaderboardScoresResult.Value!;
 
         if (!leaderboardScores.Any())
@@ -493,7 +495,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             Log.Warning("API leaderboard lookup returned 0 scores");
             return;
         }
-        
+
         foreach (var score in recentScores)
         {
             var leaderboardScore = leaderboardScores.FirstOrDefault(x => x.Id == score.Score?.Id);
@@ -501,18 +503,20 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             {
                 continue;
             }
-            
+
             var scorePosition = leaderboardScores.ToList().FindIndex(x => x.Id == score.Score?.Id);
             if (scorePosition == -1)
             {
                 continue;
             }
 
-            Log.Verbose("FunCommandsBehavior: Found leaderboard score with id {ScoreId} and placement {Placement}", score.Score?.Id, scorePosition + 1);
+            Log.Verbose("FunCommandsBehavior: Found leaderboard score with id {ScoreId} and placement {Placement}",
+                score.Score?.Id, scorePosition + 1);
 
             if (Config.AnnounceLeaderboardScores)
             {
-                context.SendMessage($"Congratulations {score.Player.Name} for getting #{scorePosition + 1} on the map's leaderboard!");
+                context.SendMessage(
+                    $"Congratulations {score.Player.Name} for getting #{scorePosition + 1} on the map's leaderboard!");
             }
         }
     }
@@ -533,7 +537,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
 
                 var score = result.Score;
                 var user = await userRepository.FindOrCreateUserAsync(result.Player.Name);
-                
+
                 await scoreRepository.AddAsync(new Score
                 {
                     UserId = user.Id,
@@ -553,7 +557,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
                     Time = DateTime.UtcNow
                 });
             }
-            
+
             Log.Verbose($"FunCommands: Stored {recentScores.Count} scores for game {game.Id}");
         }
         catch (Exception e)
@@ -571,25 +575,28 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
     {
         var players = context.MultiplayerLobby.Players.Where(x => x is { Id: not null, Score: > 0 }).ToList();
         var grabScoreTasks = new List<Task<APIResult<osu.NET.Models.Scores.Score[]>>>();
-        
-        for (int i = 0; i < players.Count;i++)
+
+        for (int i = 0; i < players.Count; i++)
         {
             var index = i;
-            
+
             grabScoreTasks.Add(Task.Run(async () =>
             {
                 await Task.Delay(index * 250);
-                
+
                 Log.Information($"FunCommandsBehavior: Executing osu! API call for {players[index].Name}");
-                
-                return await context.UsingApiClient(async (apiClient) => await apiClient.GetUserScoresAsync(players[index].Id!.Value, UserScoreType.Recent, true, true, Ruleset.Osu));
+
+                return await context.UsingApiClient(async (apiClient) =>
+                    await apiClient.GetUserScoresAsync(players[index].Id!.Value, UserScoreType.Recent, true, true,
+                        Ruleset.Osu));
             }));
         }
-        
+
         await Task.WhenAll(grabScoreTasks);
-        
-        return players.Select(player => new PlayerScoreResult(player, grabScoreTasks.Select(x => x.Result?.Value?.FirstOrDefault()).ToList()
-                .FirstOrDefault(x => x?.UserId == player.Id!)))
-                .ToList();
+
+        return players.Select(player => new PlayerScoreResult(player,
+                grabScoreTasks.Select(x => x.Result?.Value?.FirstOrDefault()).ToList()
+                    .FirstOrDefault(x => x?.UserId == player.Id!)))
+            .ToList();
     }
 }
