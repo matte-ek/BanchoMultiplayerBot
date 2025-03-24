@@ -75,7 +75,7 @@ public class RecentScoreCommand : IPlayerCommand
 
         if (score.Mods.Length != 0)
         {
-            response.Append($" + {string.Join("", score.Mods.Select(m => m.Acronym.ToString()))}");
+            response.Append($" + {string.Join("", score.Mods.Where(m => m.Acronym != "CL").Select(m => m.Acronym.ToString()))}");
         }
 
         response.Append($" | [{score.Grade.AsHumanString()}]");
