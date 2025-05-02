@@ -336,9 +336,6 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
             while (reader.TryRead(out var eventExecute))
             {
                 var behaviorEvent = eventExecute.BehaviorEvent;
-                
-                // Create a new instance of the behavior class
-                var instance = Activator.CreateInstance(behaviorEvent.BehaviorType, new BehaviorEventContext(lobby, _cancellationTokenSource!.Token)) as IBehavior;
 
                 try
                 {
@@ -349,6 +346,9 @@ public class BehaviorEventProcessor(ILobby lobby) : IBehaviorEventProcessor
                     
                     var executeEventTask = Task.Run(async () =>
                     {
+                        // Create a new instance of the behavior class
+                        var instance = Activator.CreateInstance(behaviorEvent.BehaviorType, new BehaviorEventContext(lobby, _cancellationTokenSource!.Token)) as IBehavior;
+
                         // Invoke the method on the behavior class instance
                         var methodTask = behaviorEvent.Method.Invoke(instance, behaviorEvent.IgnoreArguments ? [] : [eventExecuteItem.Param]);
 
