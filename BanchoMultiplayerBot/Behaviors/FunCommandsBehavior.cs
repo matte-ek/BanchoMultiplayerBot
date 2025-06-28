@@ -466,8 +466,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             var user = await userRepository.FindUserAsync(result.Player.Name) ??
                        await userRepository.CreateUserAsync(result.Player.Name);
 
-            if (result.Score?.Grade != Grade.F)
-                user.MatchesPlayed++;
+            user.MatchesPlayed++;
         }
 
         await userRepository.SaveAsync();
