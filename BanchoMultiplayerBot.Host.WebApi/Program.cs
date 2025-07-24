@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Prometheus;
 using Serilog;
+using Serilog.Sinks.OpenTelemetry;
 
 // Setup 30 day rolling file logging
 // We also ignore verbose logs in the file, only writing information and above
@@ -20,6 +21,7 @@ Log.Logger = new LoggerConfiguration()
         restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information,
         rollingInterval: RollingInterval.Day,
         rollOnFileSizeLimit: true)
+    .WriteTo.OpenTelemetry()
     .CreateLogger();
 
 // This is generally done as a fail-safe to log any unhandled exceptions to the log file
