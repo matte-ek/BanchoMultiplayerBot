@@ -180,7 +180,7 @@ namespace BanchoMultiplayerBot.Bancho
 
         private void BanchoOnPrivateMessageReceived(IPrivateIrcMessage e)
         {
-            Log.Information($"MessageHandler: [{e.Recipient}] {e.Sender}: {e.Content}");
+            Log.Information("{Component}: [{Recipient}] {Sender}: {Content}", "MessageHandler", e.Recipient, e.Sender, e.Content);
 
             MessagesReceivedCounter.Inc();
 
@@ -189,7 +189,7 @@ namespace BanchoMultiplayerBot.Bancho
 
         private void BanchoOnPrivateMessageSent(IPrivateIrcMessage e)
         {
-            Log.Information($"MessageHandler: [{e.Recipient}] {e.Sender}: {e.Content}");
+            Log.Information("{Component}: [{Recipient}] {Sender}: {Content}", "MessageHandler", e.Recipient, e.Sender, e.Content);
 
             MessagesSentCounter.Inc();
 

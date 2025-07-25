@@ -483,7 +483,11 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             await apiClient.GetBeatmapScoresAsync(Data.LastPlayedBeatmapInfo.Id, true, Ruleset.Osu));
         if (leaderboardScoresResult.IsFailure)
         {
-            Log.Error($"API leaderboard lookup failed {leaderboardScoresResult.Error}");
+            Log.Error("{Component}: API leaderboard lookup failed for beatmap id {BeatmapId}, {Error}",
+                nameof(FunCommandsBehavior),
+                Data.LastPlayedBeatmapInfo.Id,
+                leaderboardScoresResult.Error);
+            
             return;
         }
 
@@ -491,7 +495,10 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
 
         if (!leaderboardScores.Any())
         {
-            Log.Warning("API leaderboard lookup returned 0 scores");
+            Log.Warning("{Component}: API leaderboard lookup returned 0 scores using beatmap id {BeatmapId}",
+                nameof(FunCommandsBehavior),
+                Data.LastPlayedBeatmapInfo.Id);
+            
             return;
         }
 
@@ -536,7 +543,12 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
 
                 if (result.Score?.BeatmapId != game.BeatmapId)
                 {
-                    Log.Warning($"Ignoring score due to wrong beatmap id.");
+                    Log.Warning("{Component}: Ignoring score {ScoreId} due to wrong beatmap id. ({ScoreBeatmapId} != {GameBeatmapId})", 
+                        nameof(FunCommandsBehavior),
+                        result.Score?.Id,
+                        result.Score?.BeatmapId,
+                        game.BeatmapId);
+                    
                     continue;
                 }
                 
@@ -563,11 +575,14 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
                 });
             }
 
-            Log.Verbose($"FunCommands: Stored {recentScores.Count} scores for game {game.Id}");
+            Log.Verbose("{Component}: Stored {ScoreCount} scores for game {GameId}", 
+                nameof(FunCommandsBehavior), 
+                recentScores.Count,
+                game.Id);
         }
         catch (Exception e)
         {
-            Log.Error($"Exception at StoreScoreData(): {e}");
+            Log.Error("{Component}: Exception at StoreScoreData(): {Exception}", nameof(FunCommandsBehavior), e);
         }
 
         await scoreRepository.SaveAsync();
