@@ -162,6 +162,12 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             outputMessage.Append($" ({"time".ToQuantity(pastWeekPlayCount)} past week)");
         }
 
+        if (recentGames.Count != 0)
+        {
+            outputMessage.Append(
+                $" | last played {recentGames.First().Time.Humanize(utcDate: true, culture: CultureInfo.InvariantCulture)}");
+        }
+
         if (mapPosition != null)
         {
             outputMessage.Append($" | #{mapPosition} most played");
