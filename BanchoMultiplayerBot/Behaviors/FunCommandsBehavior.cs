@@ -173,10 +173,14 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             outputMessage.Append($" | #{mapPosition} most played");
         }
 
+        commandEventContext.Reply(outputMessage.ToString());
+
+        outputMessage.Clear();
+
         if (recentGames.Count != 0)
         {
             var avgAccuracy = recentScores.Average(ScoreUtilities.CalculateAccuracy);
-            outputMessage.Append($" | Average accuracy: {avgAccuracy:0.00}%");
+            outputMessage.Append($"Average accuracy: {avgAccuracy:0.00}%");
         }
 
         if (recentGames.Count != 0)
