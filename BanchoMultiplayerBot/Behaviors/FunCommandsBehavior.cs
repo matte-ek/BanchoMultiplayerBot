@@ -313,7 +313,13 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             return;
         }
 
-        var tags = beatmapData.TopTags.OrderByDescending(x => x.Count).Select(x => _tagCache.First(y => y.Id == x.TagId).Name);
+        var tags = beatmapData.TopTags.OrderByDescending(x => x.Count).Select(x => _tagCache.First(y => y.Id == x.TagId).Name).ToList();
+
+        if (tags.Count == 0)
+        {
+            commandEventContext.Reply("No beatmap tags found.");
+            return;
+        }
         
         commandEventContext.Reply($"Beatmap tags are: {string.Join(", ", tags)}");
     }
