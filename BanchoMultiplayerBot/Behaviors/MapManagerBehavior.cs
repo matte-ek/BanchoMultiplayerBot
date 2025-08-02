@@ -77,7 +77,7 @@ namespace BanchoMultiplayerBot.Behaviors
                 
                 if (beatmapInfoResult.IsFailure)
                 {
-                    if (beatmapInfoResult.Error.Type == APIErrorType.BeatmapNotFound)
+                    if (beatmapInfoResult.Error.Type == ApiErrorType.BeatmapNotFound)
                     {
                         Log.Information("MapManagerBehavior: Beatmap {BeatmapId} not found, applying fallback beatmap", beatmapShell.Id);
                 

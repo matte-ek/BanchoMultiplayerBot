@@ -592,7 +592,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
     private async Task<IReadOnlyList<PlayerScoreResult>> GetRecentScores()
     {
         var players = context.MultiplayerLobby.Players.Where(x => x is { Id: not null, Score: > 0 }).ToList();
-        var grabScoreTasks = new List<Task<APIResult<osu.NET.Models.Scores.Score[]>>>();
+        var grabScoreTasks = new List<Task<ApiResult<osu.NET.Models.Scores.Score[]>>>();
 
         for (var i = 0; i < players.Count; i++)
         {
