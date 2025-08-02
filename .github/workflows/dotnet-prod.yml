@@ -33,22 +33,22 @@ jobs:
         cd BanchoSharp/BanchoSharp
         dotnet build -c Release
 
-    - name: Restore osu-sharp from cache
-      id: cache-osusharp
+    - name: Restore osu.NET from cache
+      id: cache-osunet
       uses: actions/cache@v4
       with:
-        path: ~/work/BanchoMultiplayerBot/forks/osu-sharp/OsuSharp/bin
-        key: ${{ runner.os }}-forks-osusharp
+        path: ~/work/BanchoMultiplayerBot/forks/osu.NET/osu.NET/bin
+        key: ${{ runner.os }}-forks-osunet
 
-    - name: Build osu-sharp
-      if: steps.cache-osusharp.outputs.cache-hit != 'true'
+    - name: Build osu.NET
+      if: steps.cache-osunet.outputs.cache-hit != 'true'
       run: |
         cd ${{github.workspace}}
         cd ..
         mkdir -p forks
         cd forks
-        git clone --single-branch --branch bancho-multiplayer-bot https://github.com/matte-ek/osu-sharp.git
-        cd osu-sharp/OsuSharp
+        git clone https://github.com/matte-ek/osu.NET.git
+        cd osu.NET/osu.NET
         dotnet build -c Release
 
     - name: Restore dependencies
