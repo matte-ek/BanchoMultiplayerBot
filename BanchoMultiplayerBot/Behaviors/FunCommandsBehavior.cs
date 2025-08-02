@@ -20,6 +20,7 @@ using Humanizer.Localisation;
 using Microsoft.EntityFrameworkCore;
 using osu.NET;
 using osu.NET.Enums;
+using osu.NET.Models.Other;
 using Prometheus;
 using Serilog;
 
@@ -34,6 +35,8 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
 
     private FunCommandsBehaviorData Data => _dataProvider.Data;
     private FunCommandsBehaviorConfig Config => _configProvider.Data;
+
+    private static Tag[]? _tagsCache;
 
     private static readonly Histogram StoreGameDataTime = Metrics.CreateHistogram(
         "bot_behavior_store_game_data_time", 
@@ -269,6 +272,49 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         var leftCount = Data.MapStartPlayerCount - Data.MapFinishPlayerCount;
 
         commandEventContext.Reply($"There were {leftCount} player(s) that left the lobby the previous map!");
+    }
+
+    [BotEvent(BotEventType.CommandExecuted, "MapTags")]
+    public async Task OnTagsCommandExecuted(CommandEventContext commandEventContext)
+    {
+        if (_tagsCache == null)
+        {
+            var tagsRequest = await context.UsingApiClient(client => client.GetTagsAsync());
+
+            if (tagsRequest.IsFailure)
+            {
+                commandEventContext.Reply("osu! api request failed.");
+                return;
+            }
+
+            _tagsCache = tagsRequest.Value;
+
+            if (_tagsCache == null)
+            {
+                Log.Error("{Component}: Global tags lookup failed.", nameof(FunCommandsBehavior));
+                return;
+            }
+        }
+
+        var beatmapInfo = new BehaviorDataProvider<MapManagerBehaviorData>(context.Lobby).Data.BeatmapInfo;
+        var beatmapSetInfo = await context.UsingApiClient(client => client.GetBeatmapSetAsync(beatmapInfo.SetId));
+
+        if (beatmapSetInfo.IsFailure)
+        {
+            commandEventContext.Reply("osu! api request failed.");
+            return;
+        }
+        
+        var beatmapData = beatmapSetInfo.Value?.Beatmaps?.FirstOrDefault(x => x.Id == beatmapInfo.Id);
+        if (beatmapData?.TopTags == null)
+        {
+            commandEventContext.Reply("Beatmap tags are missing.");
+            return;
+        }
+
+        var tags = beatmapData.TopTags.Select(x => _tagsCache[x.TagId].Name);
+        
+        commandEventContext.Reply($"Beatmap tags are: {string.Join(", ", tags)}");
     }
 
     [BotEvent(BotEventType.CommandExecuted, "TeamsMode")]
