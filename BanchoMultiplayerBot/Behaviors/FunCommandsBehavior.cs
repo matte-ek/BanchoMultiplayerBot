@@ -20,6 +20,7 @@ using Humanizer.Localisation;
 using Microsoft.EntityFrameworkCore;
 using osu.NET;
 using osu.NET.Enums;
+using osu.NET.Models.Beatmaps;
 using osu.NET.Models.Other;
 using Prometheus;
 using Serilog;
@@ -36,7 +37,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
     private FunCommandsBehaviorData Data => _dataProvider.Data;
     private FunCommandsBehaviorConfig Config => _configProvider.Data;
 
-    private static Tag[]? _tagsCache;
+    private static Tag[]? _tagCache;
 
     private static readonly Histogram StoreGameDataTime = Metrics.CreateHistogram(
         "bot_behavior_store_game_data_time", 
@@ -277,7 +278,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
     [BotEvent(BotEventType.CommandExecuted, "MapTags")]
     public async Task OnTagsCommandExecuted(CommandEventContext commandEventContext)
     {
-        if (_tagsCache == null)
+        if (_tagCache == null)
         {
             var tagsRequest = await context.UsingApiClient(client => client.GetTagsAsync());
 
@@ -287,9 +288,9 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
                 return;
             }
 
-            _tagsCache = tagsRequest.Value;
+            _tagCache = tagsRequest.Value;
 
-            if (_tagsCache == null)
+            if (_tagCache == null)
             {
                 Log.Error("{Component}: Global tags lookup failed.", nameof(FunCommandsBehavior));
                 return;
@@ -312,7 +313,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             return;
         }
 
-        var tags = beatmapData.TopTags.Select(x => _tagsCache[x.TagId].Name);
+        var tags = beatmapData.TopTags.OrderByDescending(x => x.Count).Select(x => _tagCache.First(y => y.Id == x.TagId).Name);
         
         commandEventContext.Reply($"Beatmap tags are: {string.Join(", ", tags)}");
     }

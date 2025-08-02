@@ -10,6 +10,9 @@
     <Reference Include="BanchoSharp">
       <HintPath>..\..\forks\BanchoSharp\BanchoSharp\bin\Release\net8.0\BanchoSharp.dll</HintPath>
     </Reference>
+    <Reference Include="osu.NET">
+      <HintPath>..\..\forks\osu.NET\osu.NET\bin\Release\net9.0\osu.NET.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
@@ -25,7 +28,6 @@
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.3" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
-    <PackageReference Include="osu.NET" Version="0.8.1" />
     <PackageReference Include="Serilog" Version="4.2.0" />
     <PackageReference Include="System.Text.Json" Version="9.0.3" />
   </ItemGroup>
