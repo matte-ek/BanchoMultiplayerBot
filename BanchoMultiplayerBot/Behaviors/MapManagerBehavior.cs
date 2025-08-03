@@ -303,7 +303,7 @@ namespace BanchoMultiplayerBot.Behaviors
                 var ppInfo = await context.Lobby.Bot.PerformancePointService.CalculatePerformancePoints(beatmapInfo.Id, mods);
                 if (ppInfo != null)
                 {
-                    context.SendMessage($"(AR: {beatmapModel.ApproachRate} | CS: {beatmapModel.CircleSize} | OD: {beatmapModel.OverallDifficulty} | HP: {beatmapModel.HealthDrain} | 100%: {ppInfo.Performance100}pp | 98%: {ppInfo.Performance98}pp | 95%: {ppInfo.Performance95}pp)");
+                    context.SendMessage($"(AR: {beatmapModel.ApproachRate} | CS: {beatmapModel.CircleSize} | OD: {beatmapModel.OverallDifficulty} | HP: {beatmapModel.HealthDrain} | 100%: {(int)ppInfo.Performance100}pp | 98%: {(int)ppInfo.Performance98}pp | 95%: {(int)ppInfo.Performance95}pp)");
 
                     return;
                 }

@@ -263,7 +263,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         var ppInfo = await context.Lobby.Bot.PerformancePointService.CalculatePerformancePoints(beatmapId, providedMods);
 
         commandEventContext.Reply(ppInfo != null
-            ? $"{commandEventContext.Message.Sender}, 100%: {ppInfo.Performance100}pp | 98%: {ppInfo.Performance98}pp | 95%: {ppInfo.Performance95}pp"
+            ? $"{commandEventContext.Message.Sender}, 100%: {(int)ppInfo.Performance100}pp | 98%: {(int)ppInfo.Performance98}pp | 95%: {(int)ppInfo.Performance95}pp"
             : "Error calculating performance points");
     }
 

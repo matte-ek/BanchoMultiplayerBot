@@ -80,11 +80,11 @@ public class RecentScoreCommand : IPlayerCommand
 
         response.Append($" | [{score.Grade.AsHumanString()}]");
                 
-        response.Append($" | {ppInformation.PerformancePoints} pp ");
+        response.Append($" | {(int)ppInformation.PerformancePoints} pp ");
                 
-        if (!score.IsPerfectComboLegacy && ppInformation.MaximumPerformancePoints != ppInformation.PerformancePoints)
+        if (!score.IsPerfectComboLegacy && (int)ppInformation.MaximumPerformancePoints != (int)ppInformation.PerformancePoints)
         {
-            response.Append($"({ppInformation.MaximumPerformancePoints} pp if FC) ");
+            response.Append($"({(int)ppInformation.MaximumPerformancePoints} pp if FC) ");
         }
 
         response.Append($"| {(score.Accuracy * 100f):0.00}% | ");
