@@ -33,6 +33,11 @@ namespace BanchoMultiplayerBot.Bancho
 
         public void SendMessage(string channel, string message)
         {
+            if (message.Length == 0 || channel.Length == 0)
+            {
+                return;
+            }
+
             _messageQueue.Add(new QueuedMessage
             {
                 Channel = channel,
@@ -42,6 +47,11 @@ namespace BanchoMultiplayerBot.Bancho
 
         public TrackedMessageCookie SendMessageTracked(string channel, string message)
         {
+            if (message.Length == 0 || channel.Length == 0)
+            {
+                return null!;
+            }
+
             var trackedMessage = new TrackedMessageCookie();
 
             _messageQueue.Add(new QueuedMessage

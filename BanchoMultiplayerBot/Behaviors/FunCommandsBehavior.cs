@@ -205,7 +205,8 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             }
         }
 
-        commandEventContext.Reply(outputMessage.ToString());
+        if (outputMessage.Length > 0)
+            commandEventContext.Reply(outputMessage.ToString());
     }
 
     [BotEvent(BotEventType.CommandExecuted, "LastPlayed")]
