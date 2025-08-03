@@ -2,6 +2,7 @@
 using System.Text;
 using System.Text.Json;
 using BanchoMultiplayerBot.Osu.Data;
+using BanchoMultiplayerBot.Osu.Extensions;
 using osu.NET.Models.Scores;
 using Serilog;
 
@@ -83,7 +84,7 @@ public class PerformancePointService(string? performancePointServiceUrl, string?
                         n50 = scoreModel.Statistics.Meh,
                         miss = scoreModel.Statistics.Miss,
                         max_combo = scoreModel.MaxCombo,
-                        mods = scoreModel.Mods
+                        mods = scoreModel.GetModsBitset()
                     }), 
                     Encoding.UTF8,
                     "application/json")
