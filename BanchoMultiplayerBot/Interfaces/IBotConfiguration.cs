@@ -10,4 +10,7 @@ public interface IBotConfiguration
     public string OsuApiClientSecret { get; init; }
     
     public string? DiscordWebhookUrl { get; init; }
+    
+    public string? PerformancePointServiceUrl { get; init; }
+    public string? BeatmapCacheDirectory { get; init; }
 }

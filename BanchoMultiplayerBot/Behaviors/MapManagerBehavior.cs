@@ -298,10 +298,9 @@ namespace BanchoMultiplayerBot.Behaviors
             context.SendMessage($"(Star Rating: {starRatingRounded:.0#} | {beatmapModel.Status.ToString()} | Length: {beatmapInfo.Length:mm\\:ss} | BPM: {beatmapModel.BPM})");
 
             // If the bot has a performance point calculator, we can calculate the performance points for the beatmap.
-            if (PerformancePointCalculator.IsAvailable && 
-                context.Lobby.Bot.PerformancePointCalculator != null)
+            if (context.Lobby.Bot.PerformancePointService is { IsAvailable: true })
             {
-                var ppInfo = await context.Lobby.Bot.PerformancePointCalculator.CalculatePerformancePoints(beatmapInfo.Id, mods);
+                var ppInfo = await context.Lobby.Bot.PerformancePointService.CalculatePerformancePoints(beatmapInfo.Id, mods);
                 if (ppInfo != null)
                 {
                     context.SendMessage($"(AR: {beatmapModel.ApproachRate} | CS: {beatmapModel.CircleSize} | OD: {beatmapModel.OverallDifficulty} | HP: {beatmapModel.HealthDrain} | 100%: {ppInfo.Performance100}pp | 98%: {ppInfo.Performance98}pp | 95%: {ppInfo.Performance95}pp)");

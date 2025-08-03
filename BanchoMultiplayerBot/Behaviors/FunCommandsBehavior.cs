@@ -248,7 +248,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
     [BotEvent(BotEventType.CommandExecuted, "PerformancePoints")]
     public async Task OnPerformancePointsCommandExecuted(CommandEventContext commandEventContext)
     {
-        if (context.Lobby.Bot.PerformancePointCalculator == null)
+        if (context.Lobby.Bot.PerformancePointService == null)
         {
             commandEventContext.Reply("Performance point calculator is not available.");
             return;
@@ -260,7 +260,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
             ? ScoreExtensions.GetModsBitset(commandEventContext.Arguments[0].Chunk(2).Select(x => new string(x)).ToArray()) 
             : 0;
 
-        var ppInfo = await context.Lobby.Bot.PerformancePointCalculator.CalculatePerformancePoints(beatmapId, providedMods);
+        var ppInfo = await context.Lobby.Bot.PerformancePointService.CalculatePerformancePoints(beatmapId, providedMods);
 
         commandEventContext.Reply(ppInfo != null
             ? $"{commandEventContext.Message.Sender}, 100%: {ppInfo.Performance100}pp | 98%: {ppInfo.Performance98}pp | 95%: {ppInfo.Performance95}pp"
@@ -341,7 +341,7 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         Data.InTeamsMode = newTeamsModeState;
         Data.TeamsModeActivator = commandEventContext.Player.Name;
 
-        // Apply the new teams mode state to the config
+        // Apply the new team mode state to the config
         var configuration = await botDbContext.LobbyConfigurations.FirstOrDefaultAsync(x => x.Id == context.Lobby.LobbyConfigurationId);
 
         if (configuration == null)

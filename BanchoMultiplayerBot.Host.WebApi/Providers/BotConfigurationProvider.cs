@@ -22,4 +22,8 @@ public class BotConfigurationProvider(IConfiguration configuration) : IBotConfig
     public string OsuApiClientSecret { get; init; } = configuration["Osu:ClientSecret"]!;
 
     public string? DiscordWebhookUrl { get; init; } = configuration["Bot:DiscordWebhookUrl"];
+    
+    public string? PerformancePointServiceUrl { get; init; } = configuration["Bot:PerformancePointServiceUrl"];
+    
+    public string? BeatmapCacheDirectory { get; init; } = configuration["Bot:BeatmapCacheDirectory"];
 }

@@ -20,7 +20,7 @@ namespace BanchoMultiplayerBot
 
         public OsuApiClient OsuApiClient { get; } = new(new OsuClientAccessTokenProvider(botConfiguration.OsuApiClientId, botConfiguration.OsuApiClientSecret), new OsuApiClientOptions(), null!);
 
-        public PerformancePointCalculator? PerformancePointCalculator { get; } = new();
+        public PerformancePointService? PerformancePointService { get; } = new(botConfiguration.PerformancePointServiceUrl, botConfiguration.BeatmapCacheDirectory);
 
         public NotificationManager NotificationManager { get; } = new(botConfiguration);
         
