@@ -300,7 +300,7 @@ namespace BanchoMultiplayerBot.Behaviors
             // If the bot has a performance point calculator, we can calculate the performance points for the beatmap.
             if (context.Lobby.Bot.PerformancePointService is { IsAvailable: true })
             {
-                var ppInfo = await context.Lobby.Bot.PerformancePointService.CalculatePerformancePoints(beatmapInfo.Id, mods);
+                var ppInfo = await context.Lobby.Bot.PerformancePointService.CalculatePerformancePoints(beatmapInfo.Id, mods, beatmapModel.LastUpdated);
                 if (ppInfo != null)
                 {
                     context.SendMessage($"(AR: {beatmapModel.ApproachRate} | CS: {beatmapModel.CircleSize} | OD: {beatmapModel.OverallDifficulty} | HP: {beatmapModel.HealthDrain} | 100%: {(int)ppInfo.Performance100}pp | 98%: {(int)ppInfo.Performance98}pp | 95%: {(int)ppInfo.Performance95}pp)");

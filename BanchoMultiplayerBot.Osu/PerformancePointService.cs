@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using BanchoMultiplayerBot.Osu.Data;
 using BanchoMultiplayerBot.Osu.Extensions;
+using osu.NET.Models.Beatmaps;
 using osu.NET.Models.Scores;
 using Serilog;
 
@@ -19,7 +20,7 @@ public class PerformancePointService(string? performancePointServiceUrl, string?
     /// <summary>
     /// Calculates the pp values for 100%, 98% and 95% with NM for the specified beatmap.
     /// </summary>
-    public async Task<BeatmapPerformanceInfo?> CalculatePerformancePoints(int beatmapId, int mods = 0)
+    public async Task<BeatmapPerformanceInfo?> CalculatePerformancePoints(int beatmapId, int mods = 0, DateTimeOffset? lastUpdatedHint = null)
     {
         if (!await DownloadBeatmapFile(beatmapId))
         {
@@ -113,7 +114,7 @@ public class PerformancePointService(string? performancePointServiceUrl, string?
         }
     }
 
-    private async Task<bool> DownloadBeatmapFile(int beatmapId)
+    private async Task<bool> DownloadBeatmapFile(int beatmapId, DateTimeOffset? lastUpdatedHint = null)
     {
         var beatmapFilePath = $"{_cacheDirectoryPath}/{beatmapId}.osu";
 
@@ -131,7 +132,22 @@ public class PerformancePointService(string? performancePointServiceUrl, string?
 
         if (File.Exists(beatmapFilePath))
         {
-            return true;
+            var fileWrittenTime = File.GetLastWriteTimeUtc(beatmapFilePath);
+            
+            if (lastUpdatedHint != null &&
+                lastUpdatedHint.Value.UtcDateTime > fileWrittenTime)
+            {
+                Log.Warning("PerformancePointCalculator: Beatmap id {BeatmapId} was found to be outdated ({LastUpdatedTime} > {LastDownloadedTime}), downloading update...",
+                    beatmapId, 
+                    lastUpdatedHint.Value.UtcDateTime,
+                    fileWrittenTime);
+                
+                File.Delete(beatmapFilePath);
+            }
+            else
+            {
+                return true;
+            }
         }
         
         // Download the beatmap, this will only download the beatmap itself (.osu), without any additional media.
