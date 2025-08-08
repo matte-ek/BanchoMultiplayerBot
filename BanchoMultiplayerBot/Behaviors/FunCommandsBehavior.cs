@@ -413,27 +413,18 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         Data.MapFinishPlayerCount = Data.PlayerTimeRecords.Count(
             x => x.MatchedPlayerCount > 0 &&
                  context.MultiplayerLobby.Players.Any(y => y.Name.ToIrcNameFormat() == x.PlayerName.ToIrcNameFormat()));
-
-        context.Lobby.TimerProvider?.FindOrCreateTimer("MatchLateFinishTimer").Start(TimeSpan.FromSeconds(15));
     }
 
-    [BotEvent(BotEventType.TimerElapsed, "MatchLateFinishTimer")]
-    public Task OnMatchLateFinishTimer()
+    [BotEvent(BotEventType.BehaviourEvent, "MatchPlayerScoreData")]
+    public async Task OnMatchPlayerScoreData(MatchPlayerScoreData data)
     {
-        // We don't want to block other FunCommandsBehavior events with this task
-        Task.Run(async () =>
+        using (StoreGameDataTime.WithLabels(context.Lobby.LobbyConfigurationId.ToString()).NewTimer())
         {
-            var recentScores = await GetRecentScores();
-
-            using (StoreGameDataTime.WithLabels(context.Lobby.LobbyConfigurationId.ToString()).NewTimer())
-            {
-                await StoreGameData(recentScores);
-                await StorePlayerFinishData(recentScores);
-                await AnnounceLeaderboardResults(recentScores);
-            }
-        });
-
-        return Task.CompletedTask;
+            await StoreGameData(data.RecentPlayerScores);
+            await StorePlayerFinishData(data.RecentPlayerScores);
+            
+            AnnounceLeaderboardResults(data.RecentPlayerScores, data.LeaderboardScores);
+        }
     }
 
     private async Task StorePlayerPlaytime(MultiplayerPlayer player)
@@ -523,34 +514,10 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         await userRepository.SaveAsync();
     }
 
-    private async Task AnnounceLeaderboardResults(IReadOnlyList<PlayerScoreResult> recentScores)
+    private void AnnounceLeaderboardResults(IReadOnlyList<PlayerScoreResult> recentScores, osu.NET.Models.Scores.Score[] leaderboardScores)
     {
         if (Data.LastPlayedBeatmapInfo == null)
         {
-            return;
-        }
-
-        var leaderboardScoresResult = await context.UsingApiClient(
-            async (apiClient) => await apiClient.GetBeatmapScoresAsync(Data.LastPlayedBeatmapInfo.Id, true, Ruleset.Osu));
-        
-        if (leaderboardScoresResult.IsFailure)
-        {
-            Log.Error("{Component}: API leaderboard lookup failed for beatmap id {BeatmapId}, {Error}",
-                nameof(FunCommandsBehavior),
-                Data.LastPlayedBeatmapInfo.Id,
-                leaderboardScoresResult.Error);
-            
-            return;
-        }
-
-        var leaderboardScores = leaderboardScoresResult.Value!;
-
-        if (leaderboardScores.Length == 0)
-        {
-            Log.Warning("{Component}: API leaderboard lookup returned 0 scores using beatmap id {BeatmapId}",
-                nameof(FunCommandsBehavior),
-                Data.LastPlayedBeatmapInfo.Id);
-            
             return;
         }
 
@@ -638,38 +605,6 @@ public class FunCommandsBehavior(BehaviorEventContext context) : IBehavior, IBeh
         }
 
         await scoreRepository.SaveAsync();
-    }
-
-    /// <summary>
-    /// Find all scores for the players in the lobby if they have played the last played map.
-    /// </summary>
-    private async Task<IReadOnlyList<PlayerScoreResult>> GetRecentScores()
-    {
-        var players = context.MultiplayerLobby.Players.Where(x => x is { Id: not null, Score: > 0 }).ToList();
-        var grabScoreTasks = new List<Task<ApiResult<osu.NET.Models.Scores.Score[]>>>();
-
-        for (var i = 0; i < players.Count; i++)
-        {
-            var index = i;
-
-            grabScoreTasks.Add(Task.Run(async () =>
-            {
-                await Task.Delay(index * 250);
-
-                Log.Information("FunCommandsBehavior: Executing osu! API call for {Name}", players[index].Name);
-
-                return await context.UsingApiClient(async (apiClient) =>
-                    await apiClient.GetUserScoresAsync(players[index].Id!.Value, UserScoreType.Recent, true, true,
-                        Ruleset.Osu, limit: 1, offset: 0));
-            }));
-        }
-
-        await Task.WhenAll(grabScoreTasks);
-
-        return players.Select(player => new PlayerScoreResult(player,
-                grabScoreTasks.Select(x => x.Result.Value?.FirstOrDefault()).ToList()
-                    .FirstOrDefault(x => x?.UserId == player.Id!)))
-            .ToList();
     }
     
     private static string BuildScoreHumanString(Score bestScore)

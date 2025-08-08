@@ -1,4 +1,4 @@
-﻿namespace BanchoMultiplayerBot.Data
+﻿namespace BanchoMultiplayerBot.Behaviors.Data
 {
     public sealed class BanBehaviorData
     {

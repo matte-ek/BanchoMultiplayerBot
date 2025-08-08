@@ -195,6 +195,7 @@ namespace BanchoMultiplayerBot
             BehaviorEventProcessor.RegisterBehavior("AnnouncementBehavior");
             BehaviorEventProcessor.RegisterBehavior("HealthMonitorBehavior");
             BehaviorEventProcessor.RegisterBehavior("StatisticsBehavior");
+            BehaviorEventProcessor.RegisterBehavior("DataProviderBehavior");
     
             // Load custom specified behaviors
             if (lobbyConfiguration.Behaviours != null)

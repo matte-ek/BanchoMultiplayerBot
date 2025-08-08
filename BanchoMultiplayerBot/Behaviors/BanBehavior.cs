@@ -1,4 +1,5 @@
 ﻿using BanchoMultiplayerBot.Attributes;
+using BanchoMultiplayerBot.Behaviors.Data;
 using BanchoMultiplayerBot.Data;
 using BanchoMultiplayerBot.Database.Models;
 using BanchoMultiplayerBot.Database.Repositories;
