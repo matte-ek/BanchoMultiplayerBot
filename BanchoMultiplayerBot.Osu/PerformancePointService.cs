@@ -22,7 +22,7 @@ public class PerformancePointService(string? performancePointServiceUrl, string?
     /// </summary>
     public async Task<BeatmapPerformanceInfo?> CalculatePerformancePoints(int beatmapId, int mods = 0, DateTimeOffset? lastUpdatedHint = null)
     {
-        if (!await DownloadBeatmapFile(beatmapId))
+        if (!await DownloadBeatmapFile(beatmapId, lastUpdatedHint))
         {
             return null;
         }
