@@ -66,9 +66,9 @@ public class PerformancePointService(string? performancePointServiceUrl, string?
     /// <summary>
     /// Calculates the pp for an individual score.
     /// </summary>
-    public async Task<ScorePerformanceInfo?> CalculateScorePerformancePoints(int beatmapId, Score scoreModel)
+    public async Task<ScorePerformanceInfo?> CalculateScorePerformancePoints(int beatmapId, Score scoreModel, DateTimeOffset? lastUpdated = null)
     {
-        if (!await DownloadBeatmapFile(beatmapId))
+        if (!await DownloadBeatmapFile(beatmapId, lastUpdated))
         {
             return null;
         }

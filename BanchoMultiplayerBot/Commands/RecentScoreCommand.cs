@@ -59,7 +59,7 @@ public class RecentScoreCommand : IPlayerCommand
         
         var beatmapInformation = beatmapInformationResult.Value!;
         
-        var ppInformation = await context.Bot.PerformancePointService!.CalculateScorePerformancePoints(score.BeatmapId, score);
+        var ppInformation = await context.Bot.PerformancePointService!.CalculateScorePerformancePoints(score.BeatmapId, score, beatmapInformation.LastUpdated);
         if (ppInformation == null)
         {
             context.Reply("Unable to calculate performance points.");
