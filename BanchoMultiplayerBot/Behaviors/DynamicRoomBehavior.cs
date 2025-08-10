@@ -8,6 +8,7 @@ using BanchoMultiplayerBot.Osu.Data;
 using BanchoMultiplayerBot.Providers;
 using Microsoft.EntityFrameworkCore;
 using osu.NET.Models.Scores;
+using Serilog;
 
 namespace BanchoMultiplayerBot.Behaviors;
 
@@ -19,9 +20,13 @@ namespace BanchoMultiplayerBot.Behaviors;
 public class DynamicRoomBehavior(BehaviorEventContext context) : IBehavior, IBehaviorDataConsumer
 {
     public async Task SaveData() => await _dataProvider.SaveData();
+    
     private readonly BehaviorDataProvider<DynamicRoomBehaviorData> _dataProvider = new(context.Lobby);
     private DynamicRoomBehaviorData Data => _dataProvider.Data;
 
+    private readonly BehaviorConfigProvider<DynamicRoomBehaviorConfig> _configProvider = new(context.Lobby);
+    private DynamicRoomBehaviorConfig Config => _configProvider.Data;
+    
     [BanchoEvent(BanchoEventType.MatchFinished)]
     public async Task OnMatchFinished()
     {
@@ -55,15 +60,19 @@ public class DynamicRoomBehavior(BehaviorEventContext context) : IBehavior, IBeh
         {
             averageSuccess = 0.5f;
         }
-
-        var srChange = 3f * averageSuccess - 2f;
-
+        
+        var srChange = Config.StarRatingIncrease * averageSuccess - Config.StarRatingDecrease;
+        
         srChange *= mapDifficultyFactor;
+        
+        Log.Information("DynamicRoomBehavior: mapDiff: {MapDifficultyFactor}, avgSuccess: {AverageSuccess}, srChange: {SrChange}",
+            mapDifficultyFactor, averageSuccess, srChange);
         
         Data.StarRatingTarget += srChange;
         Data.StarRatingTarget = Math.Clamp(Data.StarRatingTarget, 1f, 8f);
-        
         Data.HasPendingUpdate = true;
+        
+        Log.Information("DynamicRoomBehavior: New target SR: {StarRatingTarget}", Data.StarRatingTarget);
     }
 
     private static float ComputeMapDifficultyFactor(MatchPlayerScoreData data)
