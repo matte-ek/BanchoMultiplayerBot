@@ -108,7 +108,7 @@ public class DataProviderBehavior(BehaviorEventContext context) : IBehavior, IBe
             await Task.Delay(executeDelay.Value);
         }
         
-        Log.Information("{Component}: Executing osu! API call for {Name}", nameof(DataProviderBehavior), player);
+        Log.Information("{Component}: Executing osu! API call for {Name}", nameof(DataProviderBehavior), player.Name);
         
         var scores = await context.UsingApiClient(async (apiClient) =>
             await apiClient.GetUserScoresAsync(
