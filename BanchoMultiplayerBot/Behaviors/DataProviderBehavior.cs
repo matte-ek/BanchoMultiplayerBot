@@ -25,7 +25,7 @@ public class DataProviderBehavior(BehaviorEventContext context) : IBehavior, IBe
     [BanchoEvent(BanchoEventType.MatchFinished)]
     public void OnMatchFinished()
     {
-        context.Lobby.TimerProvider?.FindOrCreateTimer("MatchLateFinishTimer").Start(TimeSpan.FromSeconds(15));
+        context.Lobby.TimerProvider?.FindOrCreateTimer("MatchLateFinishTimer").Start(TimeSpan.FromSeconds(10));
     }
 
     /// <summary>
