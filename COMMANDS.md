@@ -18,6 +18,7 @@ An osu! multiplayer bot that will maintain a queue and pass the host around ever
 | !playstats / !ps     | Shows your total matches played and #1's |
 | !mapstats / !ms      | Shows play stats of the currently picked map. |
 | !maprecord / !mr     | Shows best lobby score of the currently picked map. |
+| !maptags / !mt       | Shows the osu! user tags on the currently picked map. |
 | !lastplayed / !lp    | Shows the last time the currently picked map was played. |
 | !leavecount / !lc    | Shows the amount of people that left the previous map. |
 | !rs                  | Shows information about your most recent score. |
