@@ -1,11 +1,11 @@
 ﻿using BanchoMultiplayerBot.Database;
 using BanchoMultiplayerBot.Database.Models;
 using BanchoMultiplayerBot.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Serilog;
 
 namespace BanchoMultiplayerBot.Providers;
-
 
 public sealed class BehaviorConfigProvider<T> where T : class
 {
@@ -41,5 +41,34 @@ public sealed class BehaviorConfigProvider<T> where T : class
         }
 
         Data = JsonConvert.DeserializeObject<T>(data.Data) ?? throw new InvalidOperationException();
+    }
+    
+    public async Task SaveData()
+    {
+        await using var dbContext = new BotDbContext();
+
+        var typeName = typeof(T).Name;
+
+        var data = await dbContext.LobbyBehaviorConfig.FirstOrDefaultAsync(x => x.LobbyConfigurationId == _lobby.LobbyConfigurationId && x.BehaviorName == typeName);
+        
+        if (data == null)
+        {
+            data = new LobbyBehaviorConfig
+            {
+                LobbyConfigurationId = _lobby.LobbyConfigurationId,
+                BehaviorName = typeName,
+                Data = JsonConvert.SerializeObject(Data)
+            };
+
+            dbContext.LobbyBehaviorConfig.Add(data);
+
+            await dbContext.SaveChangesAsync();
+
+            return;
+        }
+        
+        data.Data = JsonConvert.SerializeObject(Data);
+
+        await dbContext.SaveChangesAsync();
     }
 }
