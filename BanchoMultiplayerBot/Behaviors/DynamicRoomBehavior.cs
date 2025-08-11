@@ -62,17 +62,18 @@ public class DynamicRoomBehavior(BehaviorEventContext context) : IBehavior, IBeh
         }
         
         var srChange = Config.StarRatingIncrease * averageSuccess - Config.StarRatingDecrease;
+        var mapSrDelta = lastPlayedBeatmapInfo.StarRating - Data.StarRatingTarget;
         
         srChange *= mapDifficultyFactor;
         
-        Log.Information("DynamicRoomBehavior: mapDiff: {MapDifficultyFactor}, avgSuccess: {AverageSuccess}, srChange: {SrChange}",
-            mapDifficultyFactor, averageSuccess, srChange);
+        Log.Information("{Component}: mapDiff: {MapDifficultyFactor}, avgSuccess: {AverageSuccess}, srChange: {SrChange}",
+            nameof(DynamicRoomBehavior), mapDifficultyFactor, averageSuccess, srChange);
         
         Data.StarRatingTarget += srChange;
         Data.StarRatingTarget = Math.Clamp(Data.StarRatingTarget, 1f, 8f);
         Data.HasPendingUpdate = true;
         
-        Log.Information("DynamicRoomBehavior: New target SR: {StarRatingTarget}", Data.StarRatingTarget);
+        Log.Information("{Component}: New target SR: {StarRatingTarget}", nameof(DynamicRoomBehavior), Data.StarRatingTarget);
     }
 
     private static float ComputeMapDifficultyFactor(MatchPlayerScoreData data)
@@ -109,7 +110,7 @@ public class DynamicRoomBehavior(BehaviorEventContext context) : IBehavior, IBeh
             return -1f;
         }
 
-        return performancePoints.PerformancePoints / beatmapPerformanceInfo.Performance100;
+        return Math.Min(performancePoints.PerformancePoints / beatmapPerformanceInfo.Performance98, 1f);
     }
 
     private async Task ApplyRoomUpdates()
@@ -128,7 +129,8 @@ public class DynamicRoomBehavior(BehaviorEventContext context) : IBehavior, IBeh
         var configuration = await dbContext.LobbyConfigurations.FirstOrDefaultAsync(x => x.Id == context.Lobby.LobbyConfigurationId);
         if (configuration != null)
         {
-            configuration.Name = $"{roomMapConfiguration.Data.MinimumStarRating:.0#}* - {roomMapConfiguration.Data.MaximumStarRating:.0#}** Dynamic SR | Auto Host Rotate";
+            configuration.Name = $"{roomMapConfiguration.Data.MinimumStarRating:.0#}* - {roomMapConfiguration.Data.MaximumStarRating:.0#}* Dynamic SR | Auto Host Rotate";
+            await dbContext.SaveChangesAsync();
         }
         
         await roomMapConfiguration.SaveData();
