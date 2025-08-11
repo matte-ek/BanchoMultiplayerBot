@@ -110,7 +110,7 @@ public class DynamicRoomBehavior(BehaviorEventContext context) : IBehavior, IBeh
             return -1f;
         }
 
-        return performancePoints.PerformancePoints / beatmapPerformanceInfo.Performance98;
+        return Math.Min(performancePoints.PerformancePoints / beatmapPerformanceInfo.Performance98, 1f);
     }
 
     private async Task ApplyRoomUpdates()

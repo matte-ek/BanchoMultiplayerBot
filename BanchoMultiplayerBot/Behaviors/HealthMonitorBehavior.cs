@@ -25,7 +25,7 @@ public class HealthMonitorBehavior(BehaviorEventContext context) : IBehavior, IB
     [BotEvent(BotEventType.TimerElapsed, "HealthMonitorTimer")]
     public void OnHealthMonitorTimerElapsed()
     {
-        if ((DateTime.UtcNow - Data.LastEventTime).TotalHours > 1.5 &&
+        if ((DateTime.UtcNow - Data.LastEventTime).TotalHours > 6 &&
             (context.Lobby.Health == LobbyHealth.Ok || context.Lobby.Health == LobbyHealth.Idle))
         {
             Log.Warning("HealthMonitorBehavior: No events have been received in the past hour, assuming lobby is dead.");
