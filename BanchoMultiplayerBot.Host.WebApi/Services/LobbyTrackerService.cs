@@ -120,13 +120,13 @@ public class LobbyTrackerService(Bot bot, IServiceScopeFactory serviceScopeFacto
         {
             if (Lobby.MultiplayerLobby == null)
             {
-                Log.Error("LobbyTrackerService: MultiplayerLobby is null");
+                Log.Error("{Component}: MultiplayerLobby is null for {LobbyId}", nameof(LobbyTrackerService), Lobby.LobbyConfigurationId);
                 return;
             }
             
             if (Lobby.BehaviorEventProcessor == null)
             {
-                Log.Error("LobbyTrackerService: BehaviorEventProcessor is null");
+                Log.Error("{Component}: BehaviorEventProcessor is null for {LobbyId}", nameof(LobbyTrackerService), Lobby.LobbyConfigurationId);
                 return;
             }
             
@@ -137,6 +137,8 @@ public class LobbyTrackerService(Bot bot, IServiceScopeFactory serviceScopeFacto
             Lobby.MultiplayerLobby.OnMatchAborted += OnMatchAborted;
             Lobby.MultiplayerLobby.OnSettingsUpdated += OnSettingsUpdated;
             Lobby.BehaviorEventProcessor.OnExternalBehaviorEvent += OnBehaviorEvent;
+            
+            Log.Information("{Component}: Started tracking lobby {LobbyId}!", nameof(LobbyTrackerService), Lobby.LobbyConfigurationId);
         }
 
         /// <summary>
@@ -146,13 +148,13 @@ public class LobbyTrackerService(Bot bot, IServiceScopeFactory serviceScopeFacto
         {
             if (Lobby.MultiplayerLobby == null)
             {
-                Log.Error("LobbyTrackerService: MultiplayerLobby is null");
+                Log.Error("{Component}: MultiplayerLobby is null for {LobbyId}", nameof(LobbyTrackerService), Lobby.LobbyConfigurationId);
                 return;
             }
             
             if (Lobby.BehaviorEventProcessor == null)
             {
-                Log.Error("LobbyTrackerService: BehaviorEventProcessor is null");
+                Log.Error("{Component}: BehaviorEventProcessor is null for {LobbyId}", nameof(LobbyTrackerService), Lobby.LobbyConfigurationId);
                 return;
             }
             
@@ -163,6 +165,8 @@ public class LobbyTrackerService(Bot bot, IServiceScopeFactory serviceScopeFacto
             Lobby.MultiplayerLobby.OnMatchAborted -= OnMatchAborted;
             Lobby.MultiplayerLobby.OnSettingsUpdated -= OnSettingsUpdated;
             Lobby.BehaviorEventProcessor.OnExternalBehaviorEvent -= OnBehaviorEvent;
+            
+            Log.Information("{Component}: Stopped tracking lobby {LobbyId}!", nameof(LobbyTrackerService), Lobby.LobbyConfigurationId);
         }
 
         public void AddMessage(MessageModel messageModel)

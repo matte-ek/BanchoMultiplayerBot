@@ -235,7 +235,7 @@ namespace BanchoMultiplayerBot
             
             Health = LobbyHealth.Ok;
             
-            Log.Verbose("Lobby: Lobby instance built successfully");
+            Log.Verbose("{Component}: Lobby instance built successfully", nameof(Lobby));
         }
 
         private async Task ShutdownInstance()
@@ -260,7 +260,7 @@ namespace BanchoMultiplayerBot
             if (Health != LobbyHealth.Initializing)
                 Health = LobbyHealth.Stopped; 
             
-            Log.Verbose("Lobby: Lobby instance shutdown successfully");
+            Log.Verbose("{Component}: Lobby instance shutdown successfully", nameof(Lobby));
         }
         
         private async void OnLobbyCreated(IMultiplayerLobby lobby)
