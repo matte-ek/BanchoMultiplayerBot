@@ -174,15 +174,15 @@ namespace BanchoMultiplayerBot.Behaviors
                 };
 
                 Data.BeatmapFallbackId = Data.BeatmapInfo.Id;
-
-                // Fire off any "new map" events
-                await context.Lobby.BehaviorEventProcessor!.OnBehaviorEvent("MapManagerNewMap");
                 
                 // By "setting" the map our self directly after the host picked it, 
                 // it will automatically be set to the newest version, even if the host's one is outdated.
                 await ApplyBeatmap(Data.BeatmapInfo.Id);
                 await AnnounceBeatmap(beatmapModel, difficultyAttributes, mods);
 
+                // Fire off any "new map" events
+                await context.Lobby.BehaviorEventProcessor!.OnBehaviorEvent("MapManagerNewMap");
+                
                 return;
             }
 
