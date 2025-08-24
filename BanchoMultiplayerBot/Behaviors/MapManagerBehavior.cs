@@ -191,7 +191,10 @@ namespace BanchoMultiplayerBot.Behaviors
             switch (status)
             {
                 case MapValidator.MapStatus.Length:
-                    context.SendMessage($"The selected beatmap you've picked is too long. Max map length: {TimeSpan.FromSeconds(Config.MaximumMapLength):mm\\:ss}");
+                    context.SendMessage(beatmapModel.TotalLength.TotalSeconds >= Config.MaximumMapLength
+                        ? $"The selected beatmap you've picked is too long. Max map length: {TimeSpan.FromSeconds(Config.MaximumMapLength):mm\\:ss}"
+                        : $"The selected beatmap you've picked is too short. Min map length: {TimeSpan.FromSeconds(Config.MinimumMapLength):mm\\:ss}");
+                    
                     break;
                 case MapValidator.MapStatus.StarRating:
                     context.SendMessage(difficultyAttributes.DifficultyRating >= Config.MaximumStarRating
